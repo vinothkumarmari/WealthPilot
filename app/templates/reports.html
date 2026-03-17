@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Reports - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">assessment</span> {{ t('Financial Reports & Turnover') }}</h4>
+    <p class="text-muted">{{ t('Monthly analysis, income vs expense, and turnover tracking') }}</p>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-income">
+            <span class="material-icons-outlined stat-icon">trending_up</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Total Turnover') }}</span><span class="stat-value">₹{{ turnover|inr }}</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-invest">
+            <span class="material-icons-outlined stat-icon">payments</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Total Income') }}</span><span class="stat-value">₹{{ total_income|inr }}</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-expense">
+            <span class="material-icons-outlined stat-icon">receipt_long</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Total Expense') }}</span><span class="stat-value">₹{{ total_expense|inr }}</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card {% if net_savings >= 0 %}stat-savings{% else %}stat-debt{% endif %}">
+            <span class="material-icons-outlined stat-icon">savings</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Net Savings') }}</span><span class="stat-value">₹{{ net_savings|inr }}</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">bar_chart</span> {{ t('Monthly Income vs Expense') }} (12 Months)</h6></div>
+            <div class="card-body">
+                <canvas id="monthlyChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">show_chart</span> {{ t('Monthly Savings Trend') }}</h6></div>
+            <div class="card-body">
+                <canvas id="savingsChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Breakdown Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">table_chart</span> {{ t('Monthly Breakdown') }}</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="monthlyTable">
+                        <thead>
+                            <tr><th>{{ t('Month') }}</th><th>{{ t('Income') }}</th><th>{{ t('Expense') }}</th><th>{{ t('Savings') }}</th><th>{{ t('Savings %') }}</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const mData = {{ months_data|safe }};
+    
+    // Income vs Expense Bar Chart
+    new Chart(document.getElementById('monthlyChart'), {
+        type: 'bar',
+        data: {
+            labels: mData.map(d => d.month),
+            datasets: [
+                { label: 'Income', data: mData.map(d => d.income), backgroundColor: 'rgba(46, 204, 113, 0.8)' },
+                { label: 'Expense', data: mData.map(d => d.expense), backgroundColor: 'rgba(231, 76, 60, 0.8)' }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' } } },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+    
+    // Savings Trend Line
+    new Chart(document.getElementById('savingsChart'), {
+        type: 'line',
+        data: {
+            labels: mData.map(d => d.month),
+            datasets: [{
+                label: 'Savings',
+                data: mData.map(d => d.savings),
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+    
+    // Populate table
+    const tbody = document.querySelector('#monthlyTable tbody');
+    mData.forEach(d => {
+        const savingsPercent = d.income > 0 ? ((d.savings / d.income) * 100).toFixed(1) : '0.0';
+        tbody.innerHTML += `<tr>
+            <td>${d.month}</td>
+            <td class="text-success">₹${Number(d.income).toLocaleString('en-IN')}</td>
+            <td class="text-danger">₹${Number(d.expense).toLocaleString('en-IN')}</td>
+            <td class="${d.savings >= 0 ? 'text-success' : 'text-danger'} fw-bold">₹${Number(d.savings).toLocaleString('en-IN')}</td>
+            <td><span class="badge bg-${d.savings >= 0 ? 'success' : 'danger'}">${savingsPercent}%</span></td>
+        </tr>`;
+    });
+</script>
+{% endblock %}

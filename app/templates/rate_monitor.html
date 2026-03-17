@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Rate Monitor - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">monitoring</span> {{ t('Rate Monitor — Live Government Rates') }}</h4>
+    <p class="text-muted">Central dashboard for all scheme rates, tax slabs, and investment benchmarks. Auto-synced across the app.</p>
+</div>
+
+<!-- Small Savings Scheme Rates -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0"><span class="material-icons-outlined">account_balance</span> {{ t('Small Savings Scheme Rates') }} (Post Office / NSI)</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>{{ t('Scheme') }}</th><th>{{ t('Interest Rate') }}</th><th>{{ t('Tenure') }}</th><th>{{ t('Tax Benefit') }}</th><th>{{ t('Updated') }}</th></tr></thead>
+                <tbody>
+                {% for key, s in rates.small_savings.items() %}
+                <tr>
+                    <td class="fw-medium">{{ s.get('name', key) }}</td>
+                    <td><span class="badge bg-success fs-6">{{ s.rate }}%</span></td>
+                    <td>{{ s.get('tenure', '-') }}</td>
+                    <td><small>{{ s.get('tax', '-') }}</small></td>
+                    <td><small class="text-muted">{{ s.last_updated }}</small></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- PF & NPS Rates -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">savings</span> Provident Fund Rates</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Type</th><th>Rate</th><th>Updated</th></tr></thead>
+                    <tbody>
+                    {% for key, pf in rates.pf_rates.items() %}
+                    <tr>
+                        <td class="fw-medium">{{ pf.name }}</td>
+                        <td><span class="badge bg-primary fs-6">{{ pf.rate }}%</span></td>
+                        <td><small class="text-muted">{{ pf.last_updated }}</small></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">trending_up</span> NPS Historical Returns</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Allocation</th><th>Return Range</th><th>Updated</th></tr></thead>
+                    <tbody>
+                    {% for key, nps in rates.nps_returns.items() %}
+                    <tr>
+                        <td class="fw-medium">{{ nps.name }}</td>
+                        <td><span class="badge bg-info">{{ nps.range[0] }}% - {{ nps.range[1] }}%</span></td>
+                        <td><small class="text-muted">{{ nps.last_updated }}</small></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tax Slabs -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">receipt</span> Income Tax Slabs — New Regime (FY 2025-26)</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Income Slab (₹)</th><th>Tax Rate</th><th>Tax Amount</th></tr></thead>
+                <tbody>
+                {% for slab in rates.tax_slabs %}
+                <tr>
+                    <td>₹{{ "{:,.0f}".format(slab[0]) }} — {% if slab[1] > 99999999 %}Above{% else %}₹{{ "{:,.0f}".format(slab[1]) }}{% endif %}</td>
+                    <td><span class="badge bg-{{ 'success' if slab[2] == 0 else ('warning' if slab[2] <= 10 else ('info' if slab[2] <= 20 else 'danger')) }}">{{ slab[2] }}%</span></td>
+                    <td>{{ slab[3] }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="p-3">
+            <small class="text-muted">Standard Deduction: ₹75,000 | Rebate u/s 87A: Tax-free up to ₹12 Lakh (with marginal relief up to ₹12.75L)</small>
+        </div>
+    </div>
+</div>
+
+<!-- Commodity Rates & FD Rates -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">diamond</span> Commodity Base Rates</h6></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Gold (24K/gram)</span>
+                    <strong style="color:#FFD700">₹{{ "{:,.0f}".format(rates.commodity.gold_24k_per_gram) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Gold (22K/gram)</span>
+                    <strong style="color:#DAA520">₹{{ "{:,.0f}".format(rates.commodity.gold_22k_per_gram) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Gold (18K/gram)</span>
+                    <strong style="color:#B8860B">₹{{ "{:,.0f}".format(rates.commodity.gold_18k_per_gram) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Silver (per gram)</span>
+                    <strong style="color:#C0C0C0">₹{{ "{:,.0f}".format(rates.commodity.silver_per_gram) }}</strong>
+                </div>
+                <hr>
+                <small class="text-muted">Gold 24K 10g: ₹{{ "{:,.0f}".format(rates.commodity.gold_24k_per_gram * 10) }} | Silver 1kg: ₹{{ "{:,.0f}".format(rates.commodity.silver_per_gram * 1000) }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">account_balance</span> Bank FD Rates (General Citizen)</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Bank</th><th>1 Year</th><th>3 Year</th><th>5 Year</th><th>Updated</th></tr></thead>
+                        <tbody>
+                        {% for bank, fd in rates.fd_rates.items() %}
+                        <tr>
+                            <td class="fw-medium">{{ bank }}</td>
+                            <td>{{ fd['1yr'] }}%</td>
+                            <td>{{ fd['3yr'] }}%</td>
+                            <td>{{ fd['5yr'] }}%</td>
+                            <td><small class="text-muted">{{ fd.last_updated }}</small></td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Important URLs -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">link</span> Important Government & Financial URLs</h6></div>
+    <div class="card-body">
+        <div class="row">
+            {% for key, url in rates.urls.items() %}
+            <div class="col-md-4 col-sm-6 mb-2">
+                <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="d-flex align-items-center text-decoration-none">
+                    <span class="material-icons-outlined text-primary me-2" style="font-size:18px">open_in_new</span>
+                    <small>{{ key.replace('_', ' ').title() }}</small>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">info</span>
+    <strong>Auto-Sync:</strong> All rates shown here are used across the app — AI Suggestions, Investment Analysis, Tax Planning, Gold/Silver rates, and Govt Schemes pages all read from this central monitor.
+    Rates are verified quarterly. Last update: <strong>Q1 FY2025-26</strong>.
+</div>
+{% endblock %}

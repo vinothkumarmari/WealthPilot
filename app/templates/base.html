@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6C5CE7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WealthPilot">
+    <meta name="description" content="AI-powered personal finance manager">
+    <title>{% block title %}WealthPilot{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="material-icons-outlined brand-icon">account_balance_wallet</span>
+            <span class="brand-text">Wealth<span class="text-accent">Pilot</span></span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+                <span class="material-icons-outlined">dashboard</span>
+                <span>{{ t('Dashboard') }}</span>
+            </a>
+
+            <div class="sidebar-divider"><small>{{ t('FINANCE') }}</small></div>
+            <a href="{{ url_for('main.income') }}" class="nav-link {% if request.endpoint == 'main.income' %}active{% endif %}">
+                <span class="material-icons-outlined">payments</span>
+                <span>{{ t('Income & Salary') }}</span>
+            </a>
+            <a href="{{ url_for('main.expenses') }}" class="nav-link {% if request.endpoint == 'main.expenses' %}active{% endif %}">
+                <span class="material-icons-outlined">receipt_long</span>
+                <span>{{ t('Expenses') }}</span>
+            </a>
+            <a href="{{ url_for('main.budget') }}" class="nav-link {% if request.endpoint == 'main.budget' %}active{% endif %}">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+                <span>{{ t('Budget Planner') }}</span>
+            </a>
+            <a href="{{ url_for('main.loans') }}" class="nav-link {% if request.endpoint == 'main.loans' %}active{% endif %}">
+                <span class="material-icons-outlined">credit_score</span>
+                <span>{{ t('Loans') }}</span>
+            </a>
+
+            <div class="sidebar-divider"><small>{{ t('INVESTMENTS') }}</small></div>
+            <a href="{{ url_for('main.investments') }}" class="nav-link {% if request.endpoint == 'main.investments' %}active{% endif %}">
+                <span class="material-icons-outlined">trending_up</span>
+                <span>{{ t('Investments') }}</span>
+            </a>
+            <a href="{{ url_for('main.policies') }}" class="nav-link {% if request.endpoint == 'main.policies' %}active{% endif %}">
+                <span class="material-icons-outlined">shield</span>
+                <span>{{ t('Policies') }}</span>
+            </a>
+            <a href="{{ url_for('main.schemes') }}" class="nav-link {% if request.endpoint == 'main.schemes' %}active{% endif %}">
+                <span class="material-icons-outlined">workspace_premium</span>
+                <span>{{ t('Schemes & Bonds') }}</span>
+            </a>
+            <a href="{{ url_for('main.sips') }}" class="nav-link {% if request.endpoint == 'main.sips' %}active{% endif %}">
+                <span class="material-icons-outlined">auto_graph</span>
+                <span>{{ t('SIP Tracker') }}</span>
+            </a>
+            <a href="{{ url_for('main.gold_silver') }}" class="nav-link {% if request.endpoint == 'main.gold_silver' %}active{% endif %}">
+                <span class="material-icons-outlined">diamond</span>
+                <span>{{ t('Gold & Silver') }}</span>
+            </a>
+            <a href="{{ url_for('main.assets') }}" class="nav-link {% if request.endpoint == 'main.assets' %}active{% endif %}">
+                <span class="material-icons-outlined">real_estate_agent</span>
+                <span>{{ t('Assets') }}</span>
+            </a>
+            <a href="{{ url_for('main.goals') }}" class="nav-link {% if request.endpoint == 'main.goals' %}active{% endif %}">
+                <span class="material-icons-outlined">flag</span>
+                <span>{{ t('Goals') }}</span>
+            </a>
+
+            <div class="sidebar-divider"><small>{{ t('TOOLS & INFO') }}</small></div>
+            <a href="{{ url_for('main.tax_planning') }}" class="nav-link {% if request.endpoint == 'main.tax_planning' %}active{% endif %}">
+                <span class="material-icons-outlined">receipt</span>
+                <span>{{ t('Tax Planning') }}</span>
+            </a>
+            <a href="{{ url_for('main.calculators') }}" class="nav-link {% if request.endpoint == 'main.calculators' %}active{% endif %}">
+                <span class="material-icons-outlined">calculate</span>
+                <span>{{ t('Calculators') }}</span>
+            </a>
+            <a href="{{ url_for('main.suggestions') }}" class="nav-link {% if request.endpoint == 'main.suggestions' %}active{% endif %}">
+                <span class="material-icons-outlined">psychology</span>
+                <span>{{ t('AI Suggestions') }}</span>
+            </a>
+            <a href="{{ url_for('main.business_ideas') }}" class="nav-link {% if request.endpoint == 'main.business_ideas' %}active{% endif %}">
+                <span class="material-icons-outlined">lightbulb</span>
+                <span>{{ t('Business Ideas') }}</span>
+            </a>
+            <a href="{{ url_for('main.reports') }}" class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}">
+                <span class="material-icons-outlined">assessment</span>
+                <span>{{ t('Reports') }}</span>
+            </a>
+            <a href="{{ url_for('main.rate_monitor') }}" class="nav-link {% if request.endpoint == 'main.rate_monitor' %}active{% endif %}">
+                <span class="material-icons-outlined">monitoring</span>
+                <span>{{ t('Rate Monitor') }}</span>
+            </a>
+            <a href="{{ url_for('main.govt_schemes') }}" class="nav-link {% if request.endpoint == 'main.govt_schemes' %}active{% endif %}">
+                <span class="material-icons-outlined">account_balance</span>
+                <span>{{ t('Govt Schemes') }}</span>
+            </a>
+            <a href="{{ url_for('main.indian_budget') }}" class="nav-link {% if request.endpoint == 'main.indian_budget' %}active{% endif %}">
+                <span class="material-icons-outlined">receipt_long</span>
+                <span>{{ t('Indian Budget') }}</span>
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('main.admin_panel') }}" class="nav-link {% if request.endpoint == 'main.admin_panel' %}active{% endif %}" style="color: #ff6b35;">
+                <span class="material-icons-outlined">admin_panel_settings</span>
+                <span>{{ t('Admin Panel') }}</span>
+            </a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('main.feedback') }}" class="nav-link {% if request.endpoint == 'main.feedback' %}active{% endif %}">
+                <span class="material-icons-outlined">rate_review</span>
+                <span>{{ t('Feedback') }}</span>
+            </a>
+            <a href="{{ url_for('main.help_guide') }}" class="nav-link {% if request.endpoint == 'main.help_guide' %}active{% endif %}">
+                <span class="material-icons-outlined">help_outline</span>
+                <span>{{ t('Help & Guide') }}</span>
+            </a>
+            <a href="{{ url_for('main.profile') }}" class="nav-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
+                <span class="material-icons-outlined">person</span>
+                <span>{{ t('Profile') }}</span>
+            </a>
+            <a href="{{ url_for('main.logout') }}" class="nav-link text-danger">
+                <span class="material-icons-outlined">logout</span>
+                <span>{{ t('Logout') }}</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <button class="btn btn-link sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+                <span class="material-icons-outlined">menu</span>
+            </button>
+            <div class="topbar-right">
+                <button class="btn btn-link" onclick="toggleTheme()" title="Toggle theme">
+                    <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
+                </button>
+                <div class="user-info">
+                    <span class="material-icons-outlined">account_circle</span>
+                    <span>{{ current_user.full_name or current_user.username }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container-fluid px-4 pt-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Page Content -->
+        <div class="container-fluid px-4 py-3">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Non-authenticated content -->
+    {% block public_content %}{% endblock %}
+    {% endif %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+                console.log('SW registered, scope:', reg.scope);
+            }).catch(err => {
+                console.log('SW registration failed:', err);
+            });
+        });
+    }
+    </script>
+</body>
+</html>

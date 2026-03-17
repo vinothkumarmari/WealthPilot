@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Tax Planning - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">receipt</span> {{ t('Tax Planning') }}</h4>
+    <p class="text-muted">{{ t('Track your tax-saving investments under Section 80C, 80D & 80CCD') }}</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="stat-card stat-income">
+            <span class="material-icons-outlined stat-icon">payments</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Annual Income') }}</span>
+                <span class="stat-value">₹{{ annual_income|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card stat-savings">
+            <span class="material-icons-outlined stat-icon">savings</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Est. Tax Saved') }}</span>
+                <span class="stat-value">₹{{ (tax_saved_80c + tax_saved_80d)|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card stat-invest">
+            <span class="material-icons-outlined stat-icon">trending_up</span>
+            <div class="stat-info">
+                <span class="stat-label">Total 80C Used</span>
+                <span class="stat-value">₹{{ total_80c|inr }} / ₹1,50,000</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section 80C -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">description</span> Section 80C — ₹1,50,000 Limit</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-medium">Total Claimed: ₹{{ total_80c|inr }}</span>
+                        <span class="{% if total_80c >= limit_80c %}text-success fw-bold{% else %}text-warning{% endif %}">
+                            {{ "{:.0f}".format(total_80c / limit_80c * 100 if limit_80c > 0 else 0) }}%
+                            {% if total_80c < limit_80c %}
+                            — ₹{{ (limit_80c - total_80c)|inr }} remaining
+                            {% else %}
+                            — Fully utilized!
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="progress" style="height: 12px;">
+                        <div class="progress-bar {% if total_80c >= limit_80c %}bg-success{% elif total_80c >= limit_80c * 0.7 %}bg-primary{% else %}bg-warning{% endif %}" style="width: {{ min(total_80c / limit_80c * 100 if limit_80c > 0 else 0, 100) }}%"></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>Investment</th><th class="text-end">Amount</th></tr></thead>
+                        <tbody>
+                        {% for item in breakdown_80c %}
+                        <tr>
+                            <td>
+                                <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle;color:#3498db;">check_circle</span>
+                                {{ item.item }}
+                            </td>
+                            <td class="text-end fw-medium">₹{{ item.amount|inr }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center text-muted py-3">No 80C investments found. Add PPF, ELSS, or Life Insurance to save tax!</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">health_and_safety</span> Section 80D — Health Insurance</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Health Premiums</span>
+                    <span class="fw-medium">₹{{ health_premiums|inr }} / ₹{{ limit_80d|inr }}</span>
+                </div>
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-info" style="width: {{ min(health_premiums / limit_80d * 100 if limit_80d > 0 else 0, 100) }}%"></div>
+                </div>
+                {% if health_premiums < limit_80d %}
+                <small class="text-muted">You can claim ₹{{ (limit_80d - health_premiums)|inr }} more under 80D</small>
+                {% else %}
+                <small class="text-success fw-medium">80D fully utilized!</small>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">elderly</span> Section 80CCD(1B) — NPS</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-1">
+                    <span>NPS Investment</span>
+                    <span class="fw-medium">₹{{ nps_inv|inr }} / ₹{{ limit_nps|inr }}</span>
+                </div>
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-primary" style="width: {{ min(nps_inv / limit_nps * 100 if limit_nps > 0 else 0, 100) }}%"></div>
+                </div>
+                {% if nps_inv < limit_nps %}
+                <small class="text-muted">Extra ₹{{ (limit_nps - nps_inv)|inr }} deduction available (over 80C)</small>
+                {% else %}
+                <small class="text-success fw-medium">80CCD(1B) fully utilized!</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Eligible investments guide -->
+<div class="card">
+    <div class="card-header"><h6><span class="material-icons-outlined">lightbulb</span> Tax-Saving Investment Options</h6></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <h6 class="text-primary">Section 80C (₹1.5L)</h6>
+                <ul class="list-unstyled">
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> PPF (7.1% p.a.)</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> ELSS Mutual Funds (12%+ p.a.)</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> EPF Contribution</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> Life Insurance Premiums</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> NSC &amp; KVP</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> Tax-Saver FD (5yr lock-in)</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#2ecc71;">fiber_manual_record</span> Sukanya Samriddhi (8%+ p.a.)</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-info">Section 80D (₹25K–₹1L)</h6>
+                <ul class="list-unstyled">
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#3498db;">fiber_manual_record</span> Health Insurance (Self/Family)</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#3498db;">fiber_manual_record</span> Critical Illness Cover</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#3498db;">fiber_manual_record</span> Preventive Health Checkup</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#3498db;">fiber_manual_record</span> Parents' Health Insurance</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-warning">Section 80CCD(1B) (₹50K)</h6>
+                <ul class="list-unstyled">
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#f39c12;">fiber_manual_record</span> NPS (Extra ₹50K over 80C)</li>
+                    <li><span class="material-icons-outlined" style="font-size:14px;color:#f39c12;">fiber_manual_record</span> Atal Pension Yojana</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}{{ t('Profile') }} - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">person</span> {{ t('Profile Settings') }}</h4>
+    <p class="text-muted">{{ t('Update your financial profile for better AI suggestions') }}</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h6>{{ t('Personal & Financial Information') }}</h6></div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Full Name') }}</label>
+                            <input type="text" name="full_name" class="form-control" value="{{ current_user.full_name or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Username') }}</label>
+                            <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Email') }}</label>
+                            <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Age') }}</label>
+                            <input type="number" name="age" class="form-control" value="{{ current_user.age or '' }}" min="18" max="100">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Monthly Salary') }} (₹)</label>
+                            <input type="number" name="monthly_salary" class="form-control" value="{{ current_user.monthly_salary }}" min="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Profession') }}</label>
+                            <select name="profession" class="form-select">
+                                <option value="" {% if not current_user.profession %}selected{% endif %}>-- Select --</option>
+                                {% for p in ['IT/Software', 'Doctor/Healthcare', 'Teacher/Education', 'Engineer', 'Business Owner', 'Farmer/Agriculture', 'Government Employee', 'Banking/Finance', 'Law/Legal', 'Chartered Accountant', 'Artisan/Craftsman', 'Freelancer', 'Student', 'Home Maker', 'Retired', 'Other'] %}
+                                <option value="{{ p }}" {% if current_user.profession == p %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('State') }}</label>
+                            <select name="state" class="form-select">
+                                <option value="" {% if not current_user.state %}selected{% endif %}>-- Select --</option>
+                                {% for s in ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi', 'Puducherry', 'Chandigarh', 'Jammu & Kashmir', 'Ladakh'] %}
+                                <option value="{{ s }}" {% if current_user.state == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Risk Appetite') }}</label>
+                            <select name="risk_appetite" class="form-select">
+                                <option value="low" {% if current_user.risk_appetite == 'low' %}selected{% endif %}>{{ t('Low - Safety First') }}</option>
+                                <option value="moderate" {% if current_user.risk_appetite == 'moderate' %}selected{% endif %}>{{ t('Moderate - Balanced') }}</option>
+                                <option value="high" {% if current_user.risk_appetite == 'high' %}selected{% endif %}>{{ t('High - Growth Focused') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="mb-3">{{ t('Language Preference') }}</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">translate</span> {{ t('Language') }}</label>
+                            <select name="language" class="form-select">
+                                {% for code, name in LANGUAGES.items() %}
+                                <option value="{{ code }}" {% if current_user.language == code or (not current_user.language and code == 'en') %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="mb-3">{{ t('Feature Preferences') }}</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="enable_grocery_offers" id="groceryToggle"
+                                       {% if current_user.enable_grocery_offers %}checked{% endif %}>
+                                <label class="form-check-label" for="groceryToggle">
+                                    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">local_grocery_store</span>
+                                    {{ t('Enable Online Grocery Offers') }}
+                                </label>
+                                <small class="d-block text-muted">Get notified about grocery deals from BigBasket, Blinkit, Zepto etc.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-accent">
+                        <span class="material-icons-outlined">save</span> {{ t('Update Profile') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6>{{ t('Account Summary') }}</h6></div>
+            <div class="card-body text-center">
+                <span class="material-icons-outlined" style="font-size:80px; color: var(--accent)">account_circle</span>
+                <h5 class="mt-2">{{ current_user.full_name or current_user.username }}</h5>
+                <p class="text-muted">{{ current_user.email }}</p>
+                <hr>
+                <div class="text-start">
+                    <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ t('Monthly Salary') }}</span><strong>₹{{ "{:,.0f}".format(current_user.monthly_salary) }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ t('Annual Salary') }}</span><strong>₹{{ "{:,.0f}".format(current_user.annual_salary) }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ t('Risk Level') }}</span><strong>{{ current_user.risk_appetite|title }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ t('Member Since') }}</span><strong>{{ current_user.created_at.strftime('%b %Y') }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

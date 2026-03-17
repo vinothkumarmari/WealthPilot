@@ -1,0 +1,551 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">dashboard</span> {{ t('Dashboard') }}</h4>
+    <p class="text-muted">{{ t('Welcome back') }}, {{ current_user.full_name or current_user.username }}!</p>
+</div>
+
+<!-- Financial Health Score -->
+<div class="row mb-4">
+    <div class="col-lg-4 mb-3">
+        <div class="card health-card">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-3">{{ t('Financial Health Score') }}</h6>
+                <div class="health-score-circle {% if health.score >= 75 %}score-excellent{% elif health.score >= 55 %}score-good{% elif health.score >= 35 %}score-fair{% else %}score-poor{% endif %}">
+                    <span class="score-value">{{ health.score }}</span>
+                    <span class="score-grade">{{ health.grade }}</span>
+                </div>
+                <p class="mt-3 mb-0">{{ health.message }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="row g-3">
+            <div class="col-sm-6 col-md-3">
+                <div class="stat-card stat-income">
+                    <span class="material-icons-outlined stat-icon">payments</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Total Income') }}</span>
+                        <span class="stat-value">₹{{ total_income|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="stat-card stat-expense">
+                    <span class="material-icons-outlined stat-icon">receipt_long</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Total Expenses') }}</span>
+                        <span class="stat-value">₹{{ total_expenses|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="stat-card stat-invest">
+                    <span class="material-icons-outlined stat-icon">trending_up</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Investments') }}</span>
+                        <span class="stat-value">₹{{ total_investments|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <div class="stat-card stat-networth">
+                    <span class="material-icons-outlined stat-icon">account_balance</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Net Worth') }}</span>
+                        <span class="stat-value">₹{{ net_worth|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card stat-assets">
+                    <span class="material-icons-outlined stat-icon">home</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Assets Value') }}</span>
+                        <span class="stat-value">₹{{ total_assets|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card stat-debt">
+                    <span class="material-icons-outlined stat-icon">credit_card</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Total Debts') }}</span>
+                        <span class="stat-value">₹{{ total_debts|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card stat-savings">
+                    <span class="material-icons-outlined stat-icon">savings</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Net Savings') }}</span>
+                        <span class="stat-value">₹{{ savings|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card" style="border-left: 4px solid #e67e22;">
+                    <span class="material-icons-outlined stat-icon" style="color:#e67e22;">event_repeat</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Monthly Commitments') }}</span>
+                        <span class="stat-value">₹{{ monthly_commitments|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card" style="border-left: 4px solid #1abc9c;">
+                    <span class="material-icons-outlined stat-icon" style="color:#1abc9c;">shield</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Insurance Cover') }}</span>
+                        <span class="stat-value">₹{{ total_sum_assured|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            {% if total_bank_balance > 0 %}
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card" style="border-left: 4px solid #2196F3;">
+                    <span class="material-icons-outlined stat-icon" style="color:#2196F3;">account_balance</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Bank Balance') }}</span>
+                        <span class="stat-value">₹{{ total_bank_balance|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% if total_pf_balance > 0 %}
+            <div class="col-sm-6 col-md-4">
+                <div class="stat-card" style="border-left: 4px solid #FF9800;">
+                    <span class="material-icons-outlined stat-icon" style="color:#FF9800;">savings</span>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ t('Provident Fund') }}</span>
+                        <span class="stat-value">₹{{ total_pf_balance|inr }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loan Summary -->
+{% if active_loans %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><span class="material-icons-outlined">credit_score</span> {{ t('Active Loans') }}</h6>
+                <a href="{{ url_for('main.loans') }}" class="btn btn-sm btn-outline-primary">{{ t('View All') }}</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr><th>{{ t('Loan') }}</th><th>{{ t('Lender') }}</th><th>{{ t('EMI') }}</th><th>{{ t('Outstanding') }}</th><th>{{ t('Progress') }}</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for loan in active_loans %}
+                            {% set pct = (loan.paid_months / loan.tenure_months * 100) if loan.tenure_months > 0 else 0 %}
+                            <tr>
+                                <td><strong>{{ loan.loan_name }}</strong><br><small class="text-muted">{{ loan.loan_type }}</small></td>
+                                <td>{{ loan.lender }}</td>
+                                <td class="text-danger">₹{{ loan.emi_amount|inr }}</td>
+                                <td>₹{{ (loan.outstanding_balance or 0)|inr }}</td>
+                                <td style="min-width:120px">
+                                    <div class="progress" style="height:6px">
+                                        <div class="progress-bar bg-{{ 'success' if pct >= 75 else 'primary' }}" style="width:{{ pct }}%"></div>
+                                    </div>
+                                    <small>{{ loan.paid_months }}/{{ loan.tenure_months }} EMIs</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold">
+                                <td colspan="2">{{ t('Total') }}</td>
+                                <td class="text-danger">₹{{ total_loan_emi|inr }}</td>
+                                <td>₹{{ total_loan_outstanding|inr }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">show_chart</span> {{ t('Monthly Cash Flow') }}</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyTrendChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">pie_chart</span> {{ t('Expense Breakdown') }}</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="expensePieChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Allocation & Upcoming Dues -->
+<div class="row mb-4">
+    <div class="col-lg-5 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">donut_large</span> {{ t('Investment Allocation') }}</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="allocationChart" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">notifications_active</span> {{ t('Upcoming Dues') }}</h6>
+                <button class="btn btn-sm btn-outline-warning" onclick="sendReminders()" title="Email reminders for dues in next 7 days">
+                    <span class="material-icons-outlined" style="font-size:16px">email</span> {{ t('Remind') }}
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr><th>{{ t('Name') }}</th><th>{{ t('Provider') }}</th><th>{{ t('Type') }}</th><th>{{ t('Amount') }}</th><th>{{ t('Due Date') }}</th><th>{{ t('Status') }}</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for due in upcoming_dues %}
+                        <tr>
+                            <td class="fw-medium">{{ due.name[:30] }}</td>
+                            <td><small class="text-muted">{{ due.provider }}</small></td>
+                            <td><span class="badge bg-{{ 'primary' if due.type == 'Premium' else 'info' }}-subtle text-{{ 'primary' if due.type == 'Premium' else 'info' }}">{{ due.type }}</span></td>
+                            <td class="fw-medium">₹{{ due.amount|inr }}</td>
+                            <td>{{ due.due_date.strftime('%d %b %Y') }}</td>
+                            <td>
+                                {% if due.days_left < 0 %}
+                                <span class="badge bg-danger">{{ t('Overdue') }}</span>
+                                {% elif due.days_left <= 7 %}
+                                <span class="badge bg-warning text-dark">{{ due.days_left }}d left</span>
+                                {% elif due.days_left <= 30 %}
+                                <span class="badge bg-info">{{ due.days_left }}d left</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ due.days_left }}d left</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td class="text-center text-muted py-3" colspan="6">{{ t('No upcoming dues') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Health Metrics & Goals -->
+<div class="row mb-4">
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">analytics</span> {{ t('Financial Metrics') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="metric-item">
+                    <span>{{ t('Savings Rate') }}</span>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" style="width: {{ health.savings_rate }}%">{{ health.savings_rate }}%</div>
+                    </div>
+                </div>
+                <div class="metric-item">
+                    <span>{{ t('Investment Rate') }}</span>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" style="width: {{ min(health.investment_rate, 100) }}%">{{ health.investment_rate }}%</div>
+                    </div>
+                </div>
+                <div class="metric-item">
+                    <span>{{ t('Expense Ratio') }}</span>
+                    <div class="progress">
+                        <div class="progress-bar {% if health.expense_ratio > 80 %}bg-danger{% elif health.expense_ratio > 60 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ min(health.expense_ratio, 100) }}%">{{ health.expense_ratio }}%</div>
+                    </div>
+                </div>
+                <div class="metric-item">
+                    <span>{{ t('Debt Ratio') }}</span>
+                    <div class="progress">
+                        <div class="progress-bar {% if health.debt_ratio > 50 %}bg-danger{% elif health.debt_ratio > 30 %}bg-warning{% else %}bg-info{% endif %}" style="width: {{ min(health.debt_ratio, 100) }}%">{{ health.debt_ratio }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">flag</span> {{ t('Goals Progress') }}</h6>
+                <a href="{{ url_for('main.goals') }}" class="btn btn-sm btn-outline-primary">{{ t('View All') }}</a>
+            </div>
+            <div class="card-body">
+                {% if goals %}
+                {% for goal in goals[:4] %}
+                <div class="goal-item mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-medium">{{ goal.goal_name }}</small>
+                        <small class="text-muted">{{ "{:.0f}".format(goal.current_saved / goal.target_amount * 100 if goal.target_amount > 0 else 0) }}%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-accent" style="width: {{ goal.current_saved / goal.target_amount * 100 if goal.target_amount > 0 else 0 }}%"></div>
+                    </div>
+                    <small class="text-muted">₹{{ goal.current_saved|inr }} / ₹{{ goal.target_amount|inr }}</small>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center py-3">No goals set yet. <a href="{{ url_for('main.goals') }}">Add a goal</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">account_balance_wallet</span> {{ t('Monthly Summary') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-muted"><span class="material-icons-outlined" style="font-size:18px;vertical-align:middle;">payments</span> {{ t('Monthly Income') }}</span>
+                    <span class="text-success fw-bold">₹{{ current_user.monthly_salary|inr }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">event_repeat</span> {{ t('Total Commitments') }}</small>
+                    <small class="text-danger">-₹{{ monthly_commitments|inr }}</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">shield</span> {{ t('Insurance Cover') }}</small>
+                    <small class="text-success">₹{{ total_sum_assured|inr }}</small>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-medium">{{ t('Available after commitments') }}</span>
+                    <span class="fw-bold {% if (current_user.monthly_salary - monthly_commitments) > 0 %}text-success{% else %}text-danger{% endif %}">₹{{ (current_user.monthly_salary - monthly_commitments)|inr }}</span>
+                </div>
+                <a href="{{ url_for('main.suggestions') }}" class="btn btn-outline-accent btn-sm w-100 mt-3">
+                    <span class="material-icons-outlined">psychology</span> {{ t('Get AI Suggestions') }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row">
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">arrow_downward</span> {{ t('Recent Income') }}</h6>
+                <a href="{{ url_for('main.income') }}" class="btn btn-sm btn-outline-success">{{ t('Add') }}</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                        {% for inc in recent_incomes %}
+                        <tr>
+                            <td><span class="badge bg-success-subtle text-success">{{ inc.income_type }}</span></td>
+                            <td>{{ inc.source }}</td>
+                            <td class="text-success fw-medium">+₹{{ inc.amount|inr }}</td>
+                            <td class="text-muted">{{ inc.date.strftime('%d %b') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td class="text-center text-muted py-3" colspan="4">{{ t('No income records yet') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">arrow_upward</span> {{ t('Recent Expenses') }}</h6>
+                <a href="{{ url_for('main.expenses') }}" class="btn btn-sm btn-outline-danger">{{ t('Add') }}</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <tbody>
+                        {% for exp in recent_expenses %}
+                        <tr>
+                            <td><span class="badge bg-danger-subtle text-danger">{{ exp.category }}</span></td>
+                            <td>{{ exp.description or '-' }}</td>
+                            <td class="text-danger fw-medium">-₹{{ exp.amount|inr }}</td>
+                            <td class="text-muted">{{ exp.date.strftime('%d %b') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td class="text-center text-muted py-3" colspan="4">{{ t('No expense records yet') }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maturity Tracker -->
+{% if maturing_soon %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">event_available</span> {{ t('Maturing Within 1 Year') }}</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Type') }}</th><th>{{ t('Maturity Date') }}</th><th>{{ t('Expected Value') }}</th><th>{{ t('Days Left') }}</th></tr></thead>
+                        <tbody>
+                        {% for m in maturing_soon %}
+                        <tr>
+                            <td class="fw-medium">{{ m.name[:35] }}</td>
+                            <td><span class="badge bg-success-subtle text-success">{{ m.type }}</span></td>
+                            <td>{{ m.maturity_date.strftime('%d %b %Y') }}</td>
+                            <td class="fw-medium">₹{{ m.value|inr }}</td>
+                            <td>
+                                {% if m.days_left <= 30 %}
+                                <span class="badge bg-warning text-dark">{{ m.days_left }}d</span>
+                                {% elif m.days_left <= 90 %}
+                                <span class="badge bg-info">{{ m.days_left }}d</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ m.days_left }}d</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const expenseData = {{ expense_by_cat|safe }};
+    const trendData = {{ monthly_trend|safe }};
+    const allocationData = {{ allocation|safe }};
+
+    // Monthly Cash Flow (Income vs Expenses)
+    if (trendData.length > 0) {
+        new Chart(document.getElementById('monthlyTrendChart'), {
+            type: 'line',
+            data: {
+                labels: trendData.map(d => d.month),
+                datasets: [{
+                    label: 'Income',
+                    data: trendData.map(d => d.income),
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.08)',
+                    fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 8
+                },{
+                    label: 'Expenses',
+                    data: trendData.map(d => d.expense),
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.08)',
+                    fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString() } } },
+                plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 15 } } }
+            }
+        });
+    }
+
+    // Expense Breakdown
+    if (expenseData.length > 0) {
+        new Chart(document.getElementById('expensePieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: expenseData.map(d => d.category),
+                datasets: [{
+                    data: expenseData.map(d => d.amount),
+                    backgroundColor: chartColors,
+                    borderWidth: 2,
+                    borderColor: getComputedStyle(document.body).getPropertyValue('--card-bg') || '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'right', labels: { padding: 15, usePointStyle: true } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                let val = ctx.parsed || 0;
+                                return ' ' + ctx.label + ': ₹' + val.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Investment Allocation
+    if (allocationData.length > 0) {
+        new Chart(document.getElementById('allocationChart'), {
+            type: 'doughnut',
+            data: {
+                labels: allocationData.map(d => d.type),
+                datasets: [{
+                    data: allocationData.map(d => d.amount),
+                    backgroundColor: ['#3498db','#2ecc71','#e74c3c','#f39c12','#9b59b6','#1abc9c','#e67e22','#34495e','#16a085','#c0392b'],
+                    borderWidth: 2,
+                    borderColor: getComputedStyle(document.body).getPropertyValue('--card-bg') || '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'right', labels: { padding: 15, usePointStyle: true } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                let val = ctx.parsed || 0;
+                                return ' ' + ctx.label + ': ₹' + val.toLocaleString('en-IN');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Send email reminders
+    function sendReminders() {
+        fetch('{{ url_for("main.send_reminders") }}', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
+        .then(r => r.json())
+        .then(d => alert(d.message))
+        .catch(() => alert('Failed to send reminders'));
+    }
+</script>
+{% endblock %}

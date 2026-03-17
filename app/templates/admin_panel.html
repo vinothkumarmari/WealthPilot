@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header mb-4">
+    <h2><span class="material-icons-outlined" style="vertical-align: middle;">admin_panel_settings</span> Admin Panel</h2>
+    <p class="text-muted">System administration & user management</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <span class="material-icons-outlined text-primary" style="font-size: 36px;">group</span>
+                <h3 class="mt-2 mb-0">{{ total_users }}</h3>
+                <p class="text-muted mb-0">Total Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <span class="material-icons-outlined text-success" style="font-size: 36px;">verified_user</span>
+                <h3 class="mt-2 mb-0">{{ verified_users }}</h3>
+                <p class="text-muted mb-0">Verified Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <span class="material-icons-outlined text-warning" style="font-size: 36px;">pending</span>
+                <h3 class="mt-2 mb-0">{{ unverified_users }}</h3>
+                <p class="text-muted mb-0">Unverified Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body text-center">
+                <span class="material-icons-outlined text-info" style="font-size: 36px;">savings</span>
+                <h3 class="mt-2 mb-0">₹{{ "{:,.0f}".format(total_investments) }}</h3>
+                <p class="text-muted mb-0">Total Investments</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Platform Financial Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5><span class="material-icons-outlined text-success">arrow_upward</span> Platform Total Income</h5>
+                <h3 class="text-success">₹{{ "{:,.0f}".format(total_income) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5><span class="material-icons-outlined text-danger">arrow_downward</span> Platform Total Expenses</h5>
+                <h3 class="text-danger">₹{{ "{:,.0f}".format(total_expenses) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DB Info -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><span class="material-icons-outlined">storage</span> Database & Server Info</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <p><strong>DB Name:</strong> {{ config.DB_NAME }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>App Port:</strong> {{ config.APP_PORT }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>Mail Server:</strong> {{ config.MAIL_SERVER }}:{{ config.MAIL_PORT }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Management Table -->
+<div class="card mb-4">
+
+<!-- Mail / SMTP Configuration -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><span class="material-icons-outlined">email</span> Mail / SMTP Configuration</h5>
+        {% if mail_cfg.get('mail_username') %}
+        <span class="badge bg-success">Configured</span>
+        {% else %}
+        <span class="badge bg-warning text-dark">Not Configured</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <form action="{{ url_for('main.admin_mail_settings') }}" method="POST">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">SMTP Server</label>
+                    <input type="text" name="mail_server" class="form-control form-control-sm"
+                           value="{{ mail_cfg.get('mail_server', 'smtp.gmail.com') }}" placeholder="smtp.gmail.com">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Port</label>
+                    <input type="number" name="mail_port" class="form-control form-control-sm"
+                           value="{{ mail_cfg.get('mail_port', 587) }}" placeholder="587">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-bold">Username (Email)</label>
+                    <input type="email" name="mail_username" class="form-control form-control-sm"
+                           value="{{ mail_cfg.get('mail_username', '') }}" placeholder="your-email@gmail.com">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Password / App Password</label>
+                    <input type="password" name="mail_password" class="form-control form-control-sm"
+                           value="{{ '********' if mail_cfg.get('mail_password') else '' }}" placeholder="App password">
+                    <small class="text-muted">For Gmail, use an <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">App Password</a></small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Default Sender</label>
+                    <input type="email" name="mail_default_sender" class="form-control form-control-sm"
+                           value="{{ mail_cfg.get('mail_default_sender', '') }}" placeholder="Same as username if blank">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                        <span class="material-icons-outlined" style="font-size:16px; vertical-align:middle">save</span> Save Settings
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if mail_cfg.get('mail_username') %}
+        <hr>
+        <form action="{{ url_for('main.admin_test_mail') }}" method="POST" class="d-flex gap-2 align-items-end">
+            <div class="flex-grow-1">
+                <label class="form-label small fw-bold">Send Test Email</label>
+                <input type="email" name="test_email" class="form-control form-control-sm"
+                       placeholder="Enter email to test" value="{{ mail_cfg.get('mail_username', '') }}">
+            </div>
+            <button type="submit" class="btn btn-outline-success btn-sm">
+                <span class="material-icons-outlined" style="font-size:16px; vertical-align:middle">send</span> Send Test
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- User Management Table -->
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><span class="material-icons-outlined">manage_accounts</span> User Management</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Status</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td><strong>{{ user.username }}</strong></td>
+                        <td>{{ user.full_name or '-' }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>{{ user.mobile or '-' }}</td>
+                        <td>
+                            {% if user.is_verified %}
+                            <span class="badge bg-success">Verified</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Unverified</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_admin %}
+                            <span class="badge bg-danger">Admin</span>
+                            {% else %}
+                            <span class="badge bg-secondary">User</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '-' }}</td>
+                        <td>
+                            {% if not user.is_admin %}
+                            <a href="{{ url_for('main.admin_toggle_verify', id=user.id) }}" 
+                               class="btn btn-sm btn-outline-{{ 'warning' if user.is_verified else 'success' }}" 
+                               title="{{ 'Unverify' if user.is_verified else 'Verify' }}">
+                                <span class="material-icons-outlined" style="font-size: 16px;">{{ 'unpublished' if user.is_verified else 'check_circle' }}</span>
+                            </a>
+                            <a href="{{ url_for('main.admin_delete_user', id=user.id) }}" 
+                               class="btn btn-sm btn-outline-danger" 
+                               onclick="return confirm('Delete user {{ user.username }}?')"
+                               title="Delete User">
+                                <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
+                            </a>
+                            {% else %}
+                            <span class="text-muted">Owner</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- User Feedback -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><span class="material-icons-outlined">rate_review</span> User Feedback</h5>
+        <span class="badge bg-accent">Avg Rating: {{ avg_rating }}/5 &#9733;</span>
+    </div>
+    <div class="card-body">
+        {% if feedbacks %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr><th>Date</th><th>User</th><th>Rating</th><th>Category</th><th>Feedback</th></tr>
+                </thead>
+                <tbody>
+                    {% for fb in feedbacks %}
+                    <tr>
+                        <td class="small text-nowrap">{{ fb.created_at.strftime('%d %b %Y') }}</td>
+                        <td class="small">{{ fb.user.full_name or fb.user.username }}</td>
+                        <td>
+                            {% for i in range(1, 6) %}
+                            <span style="color: {{ '#f1c40f' if i <= fb.rating else '#ccc' }}; font-size: 12px;">&#9733;</span>
+                            {% endfor %}
+                        </td>
+                        <td><span class="badge bg-secondary" style="font-size:10px">{{ fb.category }}</span></td>
+                        <td class="small">{{ fb.message[:120] }}{{ '...' if fb.message|length > 120 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center mb-0">No feedback submitted yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

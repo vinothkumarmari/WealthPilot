@@ -1,0 +1,1003 @@
+{% extends 'base.html' %}
+{% block title %}Government Schemes - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">account_balance</span> Government Investment Schemes</h4>
+    <p class="text-muted">Central & State Government savings and investment schemes</p>
+</div>
+
+<!-- Filter -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <select class="form-select" id="schemeFilter" onchange="filterSchemes()">
+            <option value="all">All Schemes</option>
+            <option value="central">Central Government</option>
+            <option value="state">State Government</option>
+            <option value="subsidies">Subsidies & Benefits</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <select class="form-select" id="stateFilter" onchange="filterSchemes()" disabled>
+            <option value="all">Select State</option>
+            <option value="TN">Tamil Nadu</option>
+            <option value="KA">Karnataka</option>
+            <option value="KL">Kerala</option>
+            <option value="AP">Andhra Pradesh</option>
+            <option value="TS">Telangana</option>
+            <option value="MH">Maharashtra</option>
+            <option value="GJ">Gujarat</option>
+            <option value="RJ">Rajasthan</option>
+            <option value="UP">Uttar Pradesh</option>
+            <option value="MP">Madhya Pradesh</option>
+            <option value="WB">West Bengal</option>
+            <option value="DL">Delhi</option>
+            <option value="HR">Haryana</option>
+            <option value="PB">Punjab</option>
+            <option value="BR">Bihar</option>
+            <option value="OR">Odisha</option>
+            <option value="JH">Jharkhand</option>
+            <option value="CG">Chhattisgarh</option>
+            <option value="AS">Assam</option>
+            <option value="GA">Goa</option>
+            <option value="HP">Himachal Pradesh</option>
+            <option value="UK">Uttarakhand</option>
+            <option value="JK">Jammu & Kashmir</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <input type="text" class="form-control" id="searchScheme" placeholder="Search schemes..." oninput="filterSchemes()">
+    </div>
+</div>
+
+<!-- Central Government Schemes -->
+<div class="scheme-section" data-type="central">
+    <h5 class="mb-3"><span class="material-icons-outlined">flag</span> Central Government Schemes</h5>
+
+    <div class="row">
+        <div class="col-md-6 mb-3 scheme-card" data-name="Public Provident Fund" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Public Provident Fund (PPF)</h6>
+                        <span class="badge bg-success">Tax-Free</span>
+                    </div>
+                    <p class="text-muted small">Long-term savings with guaranteed returns and tax benefits under 80C.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 7.1% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 15 years</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹500/year</div>
+                        <div class="col-6"><strong>Max Deposit:</strong> ₹1,50,000/year</div>
+                        <div class="col-6"><strong>Tax:</strong> EEE (Exempt-Exempt-Exempt)</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero (Govt backed)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="National Savings Certificate" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">National Savings Certificate (NSC)</h6>
+                        <span class="badge bg-primary">80C Eligible</span>
+                    </div>
+                    <p class="text-muted small">Fixed income investment backed by Government of India. Available at post offices.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 7.7% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 5 years</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹1,000</div>
+                        <div class="col-6"><strong>Max Deposit:</strong> No limit</div>
+                        <div class="col-6"><strong>Tax:</strong> Interest taxable</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero (Govt backed)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Sukanya Samriddhi Yojana" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Sukanya Samriddhi Yojana (SSY)</h6>
+                        <span class="badge bg-success">Tax-Free</span>
+                    </div>
+                    <p class="text-muted small">Girl child savings scheme with highest interest among small savings. EEE tax status.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 8.2% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 21 years</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹250/year</div>
+                        <div class="col-6"><strong>Max Deposit:</strong> ₹1,50,000/year</div>
+                        <div class="col-6"><strong>Eligibility:</strong> Girl below 10 yrs</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero (Govt backed)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Senior Citizens Savings Scheme" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Senior Citizens Savings Scheme (SCSS)</h6>
+                        <span class="badge bg-primary">80C Eligible</span>
+                    </div>
+                    <p class="text-muted small">High-interest regular income scheme for senior citizens (60+ years).</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 8.2% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 5 years</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹1,000</div>
+                        <div class="col-6"><strong>Max Deposit:</strong> ₹30,00,000</div>
+                        <div class="col-6"><strong>Payout:</strong> Quarterly</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero (Govt backed)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office/Bank</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Post Office Monthly Income Scheme" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Post Office Monthly Income Scheme (POMIS)</h6>
+                        <span class="badge bg-info">Monthly Income</span>
+                    </div>
+                    <p class="text-muted small">Monthly interest payout scheme. Ideal for regular income needs.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 7.4% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 5 years</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹1,000</div>
+                        <div class="col-6"><strong>Max Deposit:</strong> ₹9,00,000 (single)</div>
+                        <div class="col-6"><strong>Payout:</strong> Monthly</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero (Govt backed)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Kisan Vikas Patra" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Kisan Vikas Patra (KVP)</h6>
+                        <span class="badge bg-warning text-dark">Doubles Money</span>
+                    </div>
+                    <p class="text-muted small">Investment doubles in ~115 months. Available at post offices and banks.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 7.5% p.a.</div>
+                        <div class="col-6"><strong>Doubles in:</strong> 115 months</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹1,000</div>
+                        <div class="col-6"><strong>Max Deposit:</strong> No limit</div>
+                        <div class="col-6"><strong>Lock-in:</strong> 2.5 years</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero (Govt backed)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="National Pension System" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">National Pension System (NPS)</h6>
+                        <span class="badge bg-primary">80CCD</span>
+                    </div>
+                    <p class="text-muted small">Retirement savings with market-linked returns. Extra ₹50,000 deduction under 80CCD(1B).</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Returns:</strong> 9-12% (market)</div>
+                        <div class="col-6"><strong>Lock-in:</strong> Till 60 yrs</div>
+                        <div class="col-6"><strong>Min Deposit:</strong> ₹500/month</div>
+                        <div class="col-6"><strong>Tax:</strong> 80C + 80CCD(1B)</div>
+                        <div class="col-6"><strong>60% lumpsum:</strong> Tax-free</div>
+                        <div class="col-6"><strong>Risk:</strong> Low-Medium</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://enps.nsdl.com/eNPS/NationalPensionSystem.html" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online (eNPS)</a>
+                    <a href="https://www.npscra.nsdl.co.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>NPS Trust</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Atal Pension Yojana" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Atal Pension Yojana (APY)</h6>
+                        <span class="badge bg-success">Guaranteed Pension</span>
+                    </div>
+                    <p class="text-muted small">Guaranteed monthly pension of ₹1,000-₹5,000 after 60 years. For unorganised sector.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Pension:</strong> ₹1,000-₹5,000/month</div>
+                        <div class="col-6"><strong>Age:</strong> 18-40 years</div>
+                        <div class="col-6"><strong>Contribution:</strong> ₹42-₹1,454/month</div>
+                        <div class="col-6"><strong>Tax:</strong> 80CCD eligible</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://enps.nsdl.com/eNPS/NationalPensionSystem.html" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online (eNPS)</a>
+                    <a href="https://www.jansuraksha.gov.in/Forms-APY.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Sovereign Gold Bond" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Sovereign Gold Bond (SGB)</h6>
+                        <span class="badge bg-warning text-dark">Gold + Interest</span>
+                    </div>
+                    <p class="text-muted small">Digital gold with 2.5% annual interest. No capital gains tax if held till maturity.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 2.5% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 8 years</div>
+                        <div class="col-6"><strong>Min:</strong> 1 gram</div>
+                        <div class="col-6"><strong>Max:</strong> 4 kg/year</div>
+                        <div class="col-6"><strong>Tax:</strong> LTCG exempt at maturity</div>
+                        <div class="col-6"><strong>Risk:</strong> Gold price risk</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=57413" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply via Bank/Broker</a>
+                    <a href="https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12073" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>RBI FAQ</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Post Office Time Deposit" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Post Office Time Deposit (POTD)</h6>
+                        <span class="badge bg-primary">80C (5yr)</span>
+                    </div>
+                    <p class="text-muted small">Fixed deposit at post office. 5-year TD qualifies for Section 80C.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>1 yr:</strong> 6.9%</div>
+                        <div class="col-6"><strong>2 yr:</strong> 7.0%</div>
+                        <div class="col-6"><strong>3 yr:</strong> 7.1%</div>
+                        <div class="col-6"><strong>5 yr:</strong> 7.5%</div>
+                        <div class="col-6"><strong>Min:</strong> ₹1,000</div>
+                        <div class="col-6"><strong>Max:</strong> No limit</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Post Office Recurring Deposit" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Post Office Recurring Deposit (RD)</h6>
+                        <span class="badge bg-info">Monthly Savings</span>
+                    </div>
+                    <p class="text-muted small">Monthly savings scheme at post office with quarterly compounding.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 6.7% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 5 years</div>
+                        <div class="col-6"><strong>Min:</strong> ₹100/month</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Mahila Samman Savings Certificate" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Mahila Samman Savings Certificate</h6>
+                        <span class="badge bg-success">Women Only</span>
+                    </div>
+                    <p class="text-muted small">Special scheme for women and girls with attractive interest rate.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 7.5% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 2 years</div>
+                        <div class="col-6"><strong>Min:</strong> ₹1,000</div>
+                        <div class="col-6"><strong>Max:</strong> ₹2,00,000</div>
+                        <div class="col-6"><strong>Partial withdrawal:</strong> Allowed</div>
+                        <div class="col-6"><strong>Risk:</strong> Zero</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at Post Office</a>
+                    <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Vaya Vandana Yojana" data-type="central">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Vaya Vandana Yojana (PMVVY)</h6>
+                        <span class="badge bg-info">Senior Citizens</span>
+                    </div>
+                    <p class="text-muted small">Pension scheme for senior citizens by LIC with guaranteed returns.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Interest:</strong> 7.4% p.a.</div>
+                        <div class="col-6"><strong>Tenure:</strong> 10 years</div>
+                        <div class="col-6"><strong>Max:</strong> ₹15,00,000</div>
+                        <div class="col-6"><strong>Payout:</strong> Monthly/Quarterly</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://licindia.in/web/guest/pradhan-mantri-vaya-vandana-yojana" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply via LIC</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmvvy" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- State Government Schemes -->
+<div class="scheme-section mt-4" data-type="state">
+    <h5 class="mb-3"><span class="material-icons-outlined">location_on</span> State Government Schemes</h5>
+
+    <div class="row">
+        <div class="col-md-6 mb-3 scheme-card" data-name="Tamil Nadu Chief Minister Comprehensive Health Insurance" data-type="state" data-state="TN">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">TN - CM Comprehensive Health Insurance</h6>
+                        <span class="badge bg-danger">Tamil Nadu</span>
+                    </div>
+                    <p class="text-muted small">Free health insurance cover up to ₹5,00,000 for BPL families. Covers 1,027 procedures.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Cover:</strong> ₹5,00,000</div>
+                        <div class="col-6"><strong>Premium:</strong> Free (Govt)</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/schemes/cmchis" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/cmchis" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Tamil Nadu Amma Two Wheeler Scheme" data-type="state" data-state="TN">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">TN - Amma Two Wheeler Scheme</h6>
+                        <span class="badge bg-danger">Tamil Nadu</span>
+                    </div>
+                    <p class="text-muted small">50% subsidy on two-wheelers for working women. Max subsidy ₹25,000.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Subsidy:</strong> 50%</div>
+                        <div class="col-6"><strong>Max:</strong> ₹25,000</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Karnataka Yashasvini Health Insurance" data-type="state" data-state="KA">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">KA - Yashasvini Co-operative Health</h6>
+                        <span class="badge bg-warning text-dark">Karnataka</span>
+                    </div>
+                    <p class="text-muted small">Health insurance for cooperative society members. Covers surgeries up to ₹2,50,000.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Premium:</strong> ₹710/year</div>
+                        <div class="col-6"><strong>Cover:</strong> ₹2,50,000</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Kerala KSFE Chitty" data-type="state" data-state="KL">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">KL - KSFE Chitty (Chit Fund)</h6>
+                        <span class="badge bg-success">Kerala</span>
+                    </div>
+                    <p class="text-muted small">Government-run chit fund scheme by Kerala State Financial Enterprises. Safe savings option.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Amounts:</strong> ₹1L - ₹50L</div>
+                        <div class="col-6"><strong>Duration:</strong> 30-50 months</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.ksfe.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.ksfe.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>KSFE Site</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Maharashtra Majhi Kanya Bhagyashree" data-type="state" data-state="MH">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">MH - Majhi Kanya Bhagyashree</h6>
+                        <span class="badge bg-info">Maharashtra</span>
+                    </div>
+                    <p class="text-muted small">₹50,000 in bank account for girl child. Insurance cover for mother. Father must undergo sterilization.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Benefit:</strong> ₹50,000</div>
+                        <div class="col-6"><strong>Insurance:</strong> ₹1,00,000</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/schemes/mkby" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/mkby" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="AP YSR Pension Kanuka" data-type="state" data-state="AP">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">AP - YSR Pension Kanuka</h6>
+                        <span class="badge bg-primary">Andhra Pradesh</span>
+                    </div>
+                    <p class="text-muted small">Monthly pension of ₹2,750 for elderly, widows, disabled, weavers, toddy tappers, fishermen.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Pension:</strong> ₹2,750/month</div>
+                        <div class="col-6"><strong>Delivered:</strong> Door-step</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Telangana Kalyana Lakshmi" data-type="state" data-state="TS">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">TS - Kalyana Lakshmi / Shaadi Mubarak</h6>
+                        <span class="badge bg-danger">Telangana</span>
+                    </div>
+                    <p class="text-muted small">₹1,00,116 marriage assistance for girls from BPL families at the time of marriage.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Benefit:</strong> ₹1,00,116</div>
+                        <div class="col-6"><strong>Eligibility:</strong> BPL families</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Gujarat Vhali Dikri Yojana" data-type="state" data-state="GJ">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">GJ - Vhali Dikri Yojana</h6>
+                        <span class="badge bg-warning text-dark">Gujarat</span>
+                    </div>
+                    <p class="text-muted small">Financial aid for girls: ₹4,000 (Class 1), ₹6,000 (Class 9), ₹1,00,000 (at marriage/18 yrs).</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Total:</strong> ₹1,10,000</div>
+                        <div class="col-6"><strong>Eligibility:</strong> Family &lt; ₹2L income</div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ SUBSIDIES & BENEFITS ============ -->
+<div class="scheme-section mt-4" data-type="subsidies">
+    <h5 class="mb-3"><span class="material-icons-outlined">volunteer_activism</span> Government Subsidies & Benefits</h5>
+
+    <h6 class="text-primary mb-3"><span class="material-icons-outlined" style="font-size:18px">flag</span> Central Government Subsidies</h6>
+    <div class="row">
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Awas Yojana Housing Subsidy" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Awas Yojana (PMAY) — Housing Subsidy</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Interest subsidy on home loans for EWS/LIG/MIG categories. Up to ₹2.67 lakh subsidy on home loan interest.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>EWS/LIG:</strong> 6.5% subsidy on ₹6L</div>
+                        <div class="col-6"><strong>MIG-I:</strong> 4% subsidy on ₹9L</div>
+                        <div class="col-6"><strong>MIG-II:</strong> 3% subsidy on ₹12L</div>
+                        <div class="col-6"><strong>Max Subsidy:</strong> ₹2.67 lakh</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Reduced EMI, affordable housing, first-time home buyer support</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://pmaymis.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmay-u" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Ujjwala Yojana LPG Subsidy" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Ujjwala Yojana — LPG Subsidy</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Free LPG connection + subsidized refills for BPL households. ₹300 subsidy per refill (up to 12/year).</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Free Connection:</strong> Yes</div>
+                        <div class="col-6"><strong>Refill Subsidy:</strong> ₹300/refill</div>
+                        <div class="col-6"><strong>Refills/Year:</strong> Up to 12</div>
+                        <div class="col-6"><strong>Eligibility:</strong> BPL families</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Clean cooking fuel, health improvement, women empowerment</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.pmuy.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmuy" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Kisan Samman Nidhi" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Kisan Samman Nidhi</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">₹6,000/year direct income support to farmer families. Paid in 3 installments of ₹2,000 via DBT.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Amount:</strong> ₹6,000/year</div>
+                        <div class="col-6"><strong>Installments:</strong> 3 × ₹2,000</div>
+                        <div class="col-6"><strong>Mode:</strong> Direct Bank Transfer</div>
+                        <div class="col-6"><strong>Eligibility:</strong> All farmer families</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Direct income support, no middlemen, supplements farm income</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://pmkisan.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Check Status</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pm-kisan" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Mudra Yojana Loan Subsidy" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Mudra Yojana — Business Loan</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Collateral-free business loans for micro/small enterprises. 3 categories: Shishu, Kishore, Tarun.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Shishu:</strong> Up to ₹50,000</div>
+                        <div class="col-6"><strong>Kishore:</strong> ₹50,001 – ₹5 lakh</div>
+                        <div class="col-6"><strong>Tarun:</strong> ₹5 – ₹10 lakh</div>
+                        <div class="col-6"><strong>Collateral:</strong> Not required</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> No collateral, low interest, supports startups & small business</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.mudra.org.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply via Bank</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmmy" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Ayushman Bharat PMJAY Health Insurance" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">Ayushman Bharat (PM-JAY) — Health Cover</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">₹5 lakh free health insurance per family per year. Covers hospitalization, surgery, and day care procedures.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Cover:</strong> ₹5,00,000/family/year</div>
+                        <div class="col-6"><strong>Premium:</strong> Free (Govt funded)</div>
+                        <div class="col-6"><strong>Hospitals:</strong> 25,000+ empanelled</div>
+                        <div class="col-6"><strong>Procedures:</strong> 1,900+ covered</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Cashless treatment, no age limit, covers pre-existing diseases</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://pmjay.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Check Eligibility</a>
+                    <a href="https://www.myscheme.gov.in/schemes/ab-pmjay" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Fasal Bima Yojana Crop Insurance" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Fasal Bima Yojana — Crop Insurance</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Subsidized crop insurance at 1.5–5% premium. Covers yield loss from natural calamities, pests, diseases.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Kharif Premium:</strong> 2% of sum</div>
+                        <div class="col-6"><strong>Rabi Premium:</strong> 1.5% of sum</div>
+                        <div class="col-6"><strong>Horticulture:</strong> 5% of sum</div>
+                        <div class="col-6"><strong>Govt Subsidy:</strong> 95–98.5%</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Protects farm income, affordable premium, quick claim settlement</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://pmfby.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmfby" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Jeevan Jyoti Bima Life Insurance" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Jeevan Jyoti Bima (PMJJBY) — Life Insurance</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">₹2 lakh life insurance cover at just ₹436/year. Auto-debit from bank account. Ages 18–50.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Premium:</strong> ₹436/year</div>
+                        <div class="col-6"><strong>Cover:</strong> ₹2,00,000</div>
+                        <div class="col-6"><strong>Age:</strong> 18–50 years</div>
+                        <div class="col-6"><strong>Covers:</strong> Death (any cause)</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Cheapest life insurance, auto-renewal, no medical exam</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.jansuraksha.gov.in/Forms-PMJJBY.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply via Bank</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmjjby" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM Suraksha Bima Accident Insurance" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Suraksha Bima (PMSBY) — Accident Cover</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">₹2 lakh accidental death/disability cover at just ₹20/year. India's cheapest accident insurance.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Premium:</strong> ₹20/year</div>
+                        <div class="col-6"><strong>Death Cover:</strong> ₹2,00,000</div>
+                        <div class="col-6"><strong>Partial Disability:</strong> ₹1,00,000</div>
+                        <div class="col-6"><strong>Age:</strong> 18–70 years</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Just ₹20/year, accidental death + disability, auto-renewal</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.jansuraksha.gov.in/Forms-PMSBY.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply via Bank</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmsby" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="PM SVANidhi Street Vendor Loan" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM SVANidhi — Street Vendor Loan</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Working capital loan for street vendors. 7% interest subsidy. Digital payment incentive of ₹1,200/year.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>1st Loan:</strong> ₹10,000</div>
+                        <div class="col-6"><strong>2nd Loan:</strong> ₹20,000</div>
+                        <div class="col-6"><strong>3rd Loan:</strong> ₹50,000</div>
+                        <div class="col-6"><strong>Interest Subsidy:</strong> 7%</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Collateral-free, interest subsidy, digital payment reward</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://pmsvanidhi.mohua.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pmsvanidhi" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Rooftop Solar Subsidy Surya Ghar" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM Surya Ghar — Rooftop Solar Subsidy</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Subsidy for rooftop solar panels. Get up to ₹78,000 subsidy for 3kW system. Save ₹15,000-₹18,000/year on electricity.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>1kW:</strong> ₹30,000 subsidy</div>
+                        <div class="col-6"><strong>2kW:</strong> ₹60,000 subsidy</div>
+                        <div class="col-6"><strong>3kW:</strong> ₹78,000 subsidy</div>
+                        <div class="col-6"><strong>Savings:</strong> ₹15K–₹18K/year</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Reduced electricity bills, 25-year panel life, green energy, net metering income</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://pmsuryaghar.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                    <a href="https://www.myscheme.gov.in/schemes/pm-surya-ghar" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="FAME EV Electric Vehicle Subsidy" data-type="subsidies">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">PM E-DRIVE / FAME III — EV Subsidy</h6>
+                        <span class="badge bg-success">Central</span>
+                    </div>
+                    <p class="text-muted small">Subsidy on electric vehicles. Up to ₹10,000/kWh for 2-wheelers, ₹10,000/kWh for 4-wheelers (capped).</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>2-Wheeler:</strong> Up to ₹30,000</div>
+                        <div class="col-6"><strong>3-Wheeler:</strong> Up to ₹50,000</div>
+                        <div class="col-6"><strong>e-Bus:</strong> Up to ₹55 lakh</div>
+                        <div class="col-6"><strong>State Bonus:</strong> Additional</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Lower vehicle cost, zero fuel cost, state-level additional subsidies</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://fame2.heavyindustries.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Check Eligibility</a>
+                    <a href="https://www.myscheme.gov.in/schemes/fame-india" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">description</span>Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="text-primary mb-3 mt-4"><span class="material-icons-outlined" style="font-size:18px">location_on</span> State Government Subsidies (Select States)</h6>
+    <div class="row">
+        <div class="col-md-6 mb-3 scheme-card" data-name="Tamil Nadu Free Electricity Agriculture" data-type="subsidies" data-state="TN">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">TN — Free Electricity for Agriculture</h6>
+                        <span class="badge bg-danger">Tamil Nadu</span>
+                    </div>
+                    <p class="text-muted small">Free electricity for agricultural pumpsets. Saves ₹15,000–₹30,000/year for farmers.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Subsidy:</strong> 100% free power</div>
+                        <div class="col-6"><strong>Eligibility:</strong> Farmers with pumpsets</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Zero electricity cost, supports irrigation, applicable year-round</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply at TANGEDCO</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Tamil Nadu Laptop Subsidy Students" data-type="subsidies" data-state="TN">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">TN — Free Laptop for Students</h6>
+                        <span class="badge bg-danger">Tamil Nadu</span>
+                    </div>
+                    <p class="text-muted small">Free laptops for government school students entering college. Worth ₹25,000–₹30,000.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Value:</strong> ~₹25,000–₹30,000</div>
+                        <div class="col-6"><strong>Eligibility:</strong> Govt school students</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Digital literacy, supports higher education, bridge digital divide</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Details</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Karnataka Gruha Jyothi Free Electricity" data-type="subsidies" data-state="KA">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">KA — Gruha Jyothi (Free Electricity)</h6>
+                        <span class="badge bg-warning text-dark">Karnataka</span>
+                    </div>
+                    <p class="text-muted small">200 units free electricity per month for every household. Saves ₹1,000–₹1,500/month.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Free Units:</strong> 200/month</div>
+                        <div class="col-6"><strong>Savings:</strong> ~₹1,000–₹1,500/mo</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Reduced electricity bills, applicable to all households</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://grantsonline.karnataka.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Karnataka Gruha Lakshmi Women Cash Transfer" data-type="subsidies" data-state="KA">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">KA — Gruha Lakshmi (₹2,000/month for Women)</h6>
+                        <span class="badge bg-warning text-dark">Karnataka</span>
+                    </div>
+                    <p class="text-muted small">₹2,000/month cash transfer to woman head of family. Direct benefit to working and non-working women.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Amount:</strong> ₹2,000/month</div>
+                        <div class="col-6"><strong>Annual:</strong> ₹24,000</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Direct income support for women, financial independence</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://sevasindhuservices.karnataka.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Maharashtra Ladki Bahin Yojana" data-type="subsidies" data-state="MH">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">MH — Ladki Bahin Yojana (₹1,500/month)</h6>
+                        <span class="badge bg-info">Maharashtra</span>
+                    </div>
+                    <p class="text-muted small">₹1,500/month cash transfer to women aged 21–65 with family income below ₹2.5 lakh/year.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Amount:</strong> ₹1,500/month</div>
+                        <div class="col-6"><strong>Annual:</strong> ₹18,000</div>
+                        <div class="col-6"><strong>Age:</strong> 21–65 years</div>
+                        <div class="col-6"><strong>Income Limit:</strong> ₹2.5L/year</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Women empowerment, direct income transfer, nutrition support</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="AP YSR Cheyutha Women Support" data-type="subsidies" data-state="AP">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">AP — YSR Cheyutha (₹18,750/year for Women)</h6>
+                        <span class="badge bg-primary">Andhra Pradesh</span>
+                    </div>
+                    <p class="text-muted small">Annual financial assistance of ₹18,750 to women aged 45–60 from SC/ST/BC/Minority communities.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Amount:</strong> ₹18,750/year</div>
+                        <div class="col-6"><strong>Age:</strong> 45–60 years</div>
+                        <div class="col-6"><strong>Eligibility:</strong> SC/ST/BC/Minority</div>
+                        <div class="col-6"><strong>Mode:</strong> Direct Bank Transfer</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Financial support for middle-aged women, covers livelihood needs</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.myscheme.gov.in/search" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Apply Online</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Telangana Rythu Bandhu Farmer Investment" data-type="subsidies" data-state="TS">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">TS — Rythu Bandhu (₹10,000/acre/season)</h6>
+                        <span class="badge bg-danger">Telangana</span>
+                    </div>
+                    <p class="text-muted small">₹10,000 per acre per season for farmers. Covers Kharif and Rabi seasons. Direct bank transfer.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>Amount:</strong> ₹10,000/acre/season</div>
+                        <div class="col-6"><strong>Annual:</strong> ₹20,000/acre</div>
+                        <div class="col-6"><strong>Seasons:</strong> Kharif + Rabi</div>
+                        <div class="col-6"><strong>Mode:</strong> Direct Bank Transfer</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Investment support for farming, no loan dependency, timely disbursement</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://rythubandhu.telangana.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Check Status</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3 scheme-card" data-name="Kerala KSEB Electricity Subsidy" data-type="subsidies" data-state="KL">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title">KL — KSEB Electricity Subsidy (BPL)</h6>
+                        <span class="badge bg-success">Kerala</span>
+                    </div>
+                    <p class="text-muted small">Free electricity for BPL families (up to 40 units/month). Additional subsidized slab rates for APL families.</p>
+                    <div class="row small">
+                        <div class="col-6"><strong>BPL:</strong> 40 units free</div>
+                        <div class="col-6"><strong>Savings:</strong> ~₹250–₹400/month</div>
+                    </div>
+                    <div class="mt-2"><small class="text-success"><strong>Benefits:</strong> Free power for poor families, ensures basic electricity access</small></div>
+                </div>
+                <div class="card-footer bg-transparent d-flex gap-2">
+                    <a href="https://www.kseb.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary flex-fill"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>KSEB Portal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info mt-3">
+        <span class="material-icons-outlined me-1">lightbulb</span>
+        <strong>Subsidy Tips:</strong> Visit <a href="https://www.myscheme.gov.in/" target="_blank" rel="noopener noreferrer">myscheme.gov.in</a> to search 2,000+ central & state schemes based on your eligibility. Ensure your Aadhaar is linked to your bank account for Direct Benefit Transfer (DBT).
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterSchemes() {
+    const type = document.getElementById('schemeFilter').value;
+    const state = document.getElementById('stateFilter').value;
+    const search = document.getElementById('searchScheme').value.toLowerCase();
+    const stateSelect = document.getElementById('stateFilter');
+
+    stateSelect.disabled = (type !== 'state' && type !== 'subsidies');
+
+    document.querySelectorAll('.scheme-card').forEach(card => {
+        const cardType = card.dataset.type;
+        const cardState = card.dataset.state || '';
+        const cardName = card.dataset.name.toLowerCase();
+        let show = true;
+
+        if (type !== 'all' && cardType !== type) show = false;
+        if ((type === 'state' || type === 'subsidies') && state !== 'all' && cardState && cardState !== state) show = false;
+        if (search && !cardName.includes(search)) show = false;
+
+        card.style.display = show ? '' : 'none';
+    });
+
+    document.querySelectorAll('.scheme-section').forEach(sec => {
+        const secType = sec.dataset.type;
+        if (type !== 'all' && secType !== type) {
+            sec.style.display = 'none';
+        } else {
+            sec.style.display = '';
+        }
+    });
+}
+</script>
+{% endblock %}
+

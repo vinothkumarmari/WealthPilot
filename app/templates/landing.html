@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}WealthPilot - Smart Finance{% endblock %}
+{% block public_content %}
+<div class="landing-page">
+    <nav class="navbar navbar-expand-lg navbar-dark landing-nav">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+                Wealth<span class="text-accent">Pilot</span>
+            </a>
+            <div>
+                <a href="{{ url_for('main.login') }}" class="btn btn-outline-light me-2">Login</a>
+                <a href="{{ url_for('main.register') }}" class="btn btn-accent">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="hero-title">Smart Money Management<br>Powered by <span class="text-accent">AI</span></h1>
+            <p class="hero-subtitle">Track income, expenses, investments. Get AI-powered suggestions for gold, silver, real estate, and asset planning tailored to your salary.</p>
+            <a href="{{ url_for('main.register') }}" class="btn btn-accent btn-lg mt-4 px-5">
+                <span class="material-icons-outlined me-2">rocket_launch</span>Start Free
+            </a>
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="container">
+            <h2 class="text-center mb-5">Everything You Need to Manage Your Finances</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <span class="material-icons-outlined feature-icon">dashboard</span>
+                        <h5>Smart Dashboard</h5>
+                        <p>Real-time overview of your finances with beautiful charts and health score.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <span class="material-icons-outlined feature-icon">psychology</span>
+                        <h5>AI Suggestions</h5>
+                        <p>ML-powered investment recommendations for Gold, Silver, Stocks, Mutual Funds & more.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <span class="material-icons-outlined feature-icon">real_estate_agent</span>
+                        <h5>Asset Planning</h5>
+                        <p>Car, House, Land, Farming — personalized buying plans based on your salary.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <span class="material-icons-outlined feature-icon">calculate</span>
+                        <h5>Investment Calculators</h5>
+                        <p>SIP, Lumpsum, EMI, FD, Retirement — all calculators in one place.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <span class="material-icons-outlined feature-icon">trending_up</span>
+                        <h5>Expense Prediction</h5>
+                        <p>ML algorithms predict your spending trends and help you save more.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <span class="material-icons-outlined feature-icon">assessment</span>
+                        <h5>Reports & Analytics</h5>
+                        <p>Detailed monthly reports, turnover analysis, and budget tracking.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer text-center py-4">
+        <p class="mb-0">&copy; 2026 WealthPilot — Built with AI for smarter finances.</p>
+    </footer>
+</div>
+{% endblock %}

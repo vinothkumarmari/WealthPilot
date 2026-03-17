@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% block title %}Gold & Silver Rates - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">diamond</span> {{ t('Gold & Silver Live Rates') }}</h4>
+    <small class="text-muted">Last updated: {{ analysis.last_updated }} &nbsp;|&nbsp; Source: bullions.co.in</small>
+</div>
+
+<!-- ============ GOLD PRICE CARDS — 24K / 22K / 18K ============ -->
+<h5 class="mb-3"><span class="material-icons-outlined" style="color:#FFD700; vertical-align:middle">star</span> {{ t('Gold Rates (per gram)') }}</h5>
+<div class="row mb-4">
+{% for karat in ['24K', '22K', '18K'] %}
+{% set g = analysis.gold[karat] %}
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">Gold {{ karat }}</h6>
+                    <h3 class="mb-0" style="color: {{ '#FFD700' if karat == '24K' else ('#DAA520' if karat == '22K' else '#B8860B') }};">
+                        ₹{{ "{:,.2f}".format(g.current_price) }}
+                    </h3>
+                    <small class="text-muted">per gram</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{{ 'success' if g.change >= 0 else 'danger' }}">
+                        {{ '+' if g.change >= 0 else '' }}₹{{ "{:,.2f}".format(g.change) }}
+                        ({{ '{:+.2f}'.format(g.change_pct) }}%)
+                    </span>
+                    <div class="mt-1">
+                        <span class="material-icons-outlined text-{{ 'success' if g.change >= 0 else 'danger' }}" style="font-size:24px">
+                            {{ 'trending_up' if g.change >= 0 else 'trending_down' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between small">
+                <div><span class="text-muted">{{ t('10 Gram') }}</span><br><strong>₹{{ "{:,.0f}".format(g.price_10g) }}</strong></div>
+                <div class="text-end">
+                    <span class="text-muted">{{ t('Trend') }}</span><br>
+                    <span class="badge bg-{{ 'success' if g.trend == 'Bullish' else 'danger' }}">{{ g.trend }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+
+<!-- ============ SILVER PRICE CARD ============ -->
+<h5 class="mb-3"><span class="material-icons-outlined" style="color:#C0C0C0; vertical-align:middle">hexagon</span> {{ t('Silver Rate') }}</h5>
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">{{ t('Silver (per gram)') }}</h6>
+                    <h3 class="mb-0" style="color: #C0C0C0;">₹{{ "{:,.2f}".format(analysis.silver.current_price) }}</h3>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{{ 'success' if analysis.silver.change >= 0 else 'danger' }}">
+                        {{ '+' if analysis.silver.change >= 0 else '' }}₹{{ "{:,.2f}".format(analysis.silver.change) }}
+                        ({{ '{:+.2f}'.format(analysis.silver.change_pct) }}%)
+                    </span>
+                    <div class="mt-1">
+                        <span class="material-icons-outlined text-{{ 'success' if analysis.silver.change >= 0 else 'danger' }}" style="font-size:24px">
+                            {{ 'trending_up' if analysis.silver.change >= 0 else 'trending_down' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-2">
+            <div class="d-flex justify-content-between small">
+                <div><span class="text-muted">{{ t('1 Kg') }}</span><br><strong>₹{{ "{:,.0f}".format(analysis.silver.price_kg) }}</strong></div>
+                <div class="text-end">
+                    <span class="text-muted">{{ t('Trend') }}</span><br>
+                    <span class="badge bg-{{ 'success' if analysis.silver.trend == 'Bullish' else 'danger' }}">{{ analysis.silver.trend }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ GOLD CHARTS — Day / Month / Year ============ -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0"><span class="material-icons-outlined" style="font-size:18px; color:#FFD700">show_chart</span> {{ t('Gold Price Trend') }}</h6>
+            <div class="btn-group btn-group-sm" id="goldRangeGroup">
+                <button class="btn btn-outline-warning active" data-range="day" onclick="switchGoldRange('day')">{{ t('30 Days') }}</button>
+                <button class="btn btn-outline-warning" data-range="month" onclick="switchGoldRange('month')">{{ t('12 Months') }}</button>
+                <button class="btn btn-outline-warning" data-range="year" onclick="switchGoldRange('year')">{{ t('5 Years') }}</button>
+            </div>
+        </div>
+        <canvas id="goldChart" height="180"></canvas>
+    </div>
+</div>
+
+<!-- ============ SILVER CHARTS — Day / Month / Year ============ -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0"><span class="material-icons-outlined" style="font-size:18px; color:#C0C0C0">show_chart</span> {{ t('Silver Price Trend') }}</h6>
+            <div class="btn-group btn-group-sm" id="silverRangeGroup">
+                <button class="btn btn-outline-secondary active" data-range="day" onclick="switchSilverRange('day')">{{ t('30 Days') }}</button>
+                <button class="btn btn-outline-secondary" data-range="month" onclick="switchSilverRange('month')">{{ t('12 Months') }}</button>
+                <button class="btn btn-outline-secondary" data-range="year" onclick="switchSilverRange('year')">{{ t('5 Years') }}</button>
+            </div>
+        </div>
+        <canvas id="silverChart" height="180"></canvas>
+    </div>
+</div>
+
+<!-- ============ AI INSIGHTS ============ -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <h6><span class="material-icons-outlined" style="font-size:18px">psychology</span> {{ t('Gold — AI Insights') }}</h6>
+            {% for tip in analysis.gold_tips %}
+            <div class="d-flex align-items-start mb-2">
+                <span class="material-icons-outlined text-warning me-2" style="font-size:18px">lightbulb</span>
+                <small>{{ tip }}</small>
+            </div>
+            {% endfor %}
+            <hr>
+            <small class="text-muted">{{ t('Investment Options') }}:</small>
+            <div class="mt-2 d-flex flex-wrap gap-2">
+                <a href="https://www.rbi.org.in/Scripts/BS_ViewSGBDetail.aspx" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-sm btn-outline-warning">{{ t('Sovereign Gold Bond') }}</a>
+                <a href="https://www.amfiindia.com/investor-corner/knowledge-center/gold-etf.html" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-sm btn-outline-warning">{{ t('Gold ETF') }}</a>
+                <a href="https://www.mutualfundssahihai.com/" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-sm btn-outline-warning">Gold MF</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <h6><span class="material-icons-outlined" style="font-size:18px">psychology</span> {{ t('Silver — AI Insights') }}</h6>
+            {% for tip in analysis.silver.tips %}
+            <div class="d-flex align-items-start mb-2">
+                <span class="material-icons-outlined text-info me-2" style="font-size:18px">lightbulb</span>
+                <small>{{ tip }}</small>
+            </div>
+            {% endfor %}
+            <hr>
+            <small class="text-muted">{{ t('Investment Options') }}:</small>
+            <div class="mt-2 d-flex flex-wrap gap-2">
+                <a href="https://www.mutualfundssahihai.com/" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-sm btn-outline-secondary">{{ t('Silver ETF') }}</a>
+                <a href="https://www.nsiindia.gov.in/" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-sm btn-outline-secondary">Silver Coins (Bank)</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ CHARTS JS ============ -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+// Gold data per karat and per range
+const goldHistories = {
+    '24K': { day: {{ analysis.gold['24K'].history_day | tojson }}, month: {{ analysis.gold['24K'].history_month | tojson }}, year: {{ analysis.gold['24K'].history_year | tojson }} },
+    '22K': { day: {{ analysis.gold['22K'].history_day | tojson }}, month: {{ analysis.gold['22K'].history_month | tojson }}, year: {{ analysis.gold['22K'].history_year | tojson }} },
+    '18K': { day: {{ analysis.gold['18K'].history_day | tojson }}, month: {{ analysis.gold['18K'].history_month | tojson }}, year: {{ analysis.gold['18K'].history_year | tojson }} },
+};
+const silverHistories = {
+    day: {{ analysis.silver.history_day | tojson }},
+    month: {{ analysis.silver.history_month | tojson }},
+    year: {{ analysis.silver.history_year | tojson }},
+};
+
+const goldColors = { '24K': '#FFD700', '22K': '#DAA520', '18K': '#B8860B' };
+let currentGoldRange = 'day';
+let currentSilverRange = 'day';
+
+function buildGoldDatasets(range) {
+    return ['24K', '22K', '18K'].map(k => ({
+        label: k + ' ₹/g',
+        data: goldHistories[k][range].map(d => d.price),
+        borderColor: goldColors[k],
+        backgroundColor: goldColors[k] + '18',
+        fill: k === '24K',
+        tension: 0.3,
+        pointRadius: range === 'year' ? 4 : 2,
+        borderWidth: k === '24K' ? 2.5 : 1.5,
+    }));
+}
+
+// Gold chart
+const goldCtx = document.getElementById('goldChart');
+let goldChart = new Chart(goldCtx, {
+    type: 'line',
+    data: {
+        labels: goldHistories['24K'].day.map(d => d.date),
+        datasets: buildGoldDatasets('day')
+    },
+    options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { display: true, position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8 } } },
+        scales: {
+            x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+            y: { ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
+        }
+    }
+});
+
+function switchGoldRange(range) {
+    currentGoldRange = range;
+    goldChart.data.labels = goldHistories['24K'][range].map(d => d.date);
+    goldChart.data.datasets = buildGoldDatasets(range);
+    goldChart.update();
+    document.querySelectorAll('#goldRangeGroup button').forEach(b => {
+        b.classList.toggle('active', b.dataset.range === range);
+    });
+}
+
+// Silver chart
+const silverCtx = document.getElementById('silverChart');
+let silverChart = new Chart(silverCtx, {
+    type: 'line',
+    data: {
+        labels: silverHistories.day.map(d => d.date),
+        datasets: [{
+            label: 'Silver ₹/g',
+            data: silverHistories.day.map(d => d.price),
+            borderColor: '#C0C0C0',
+            backgroundColor: 'rgba(192,192,192,0.12)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+            y: { ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
+        }
+    }
+});
+
+function switchSilverRange(range) {
+    currentSilverRange = range;
+    const data = silverHistories[range];
+    silverChart.data.labels = data.map(d => d.date);
+    silverChart.data.datasets[0].data = data.map(d => d.price);
+    silverChart.data.datasets[0].pointRadius = range === 'year' ? 4 : 2;
+    silverChart.update();
+    document.querySelectorAll('#silverRangeGroup button').forEach(b => {
+        b.classList.toggle('active', b.dataset.range === range);
+    });
+}
+</script>
+{% endblock %}

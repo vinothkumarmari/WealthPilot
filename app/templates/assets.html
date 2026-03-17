@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Assets - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">real_estate_agent</span> {{ t('Asset Manager') }}</h4>
+        <p class="text-muted">{{ t('Track your properties, vehicles, and valuables') }}</p>
+    </div>
+    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addAssetModal">
+        <span class="material-icons-outlined">add</span> {{ t('Add Asset') }}
+    </button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-assets">
+            <span class="material-icons-outlined stat-icon">home</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Total Asset Value') }}</span><span class="stat-value">₹{{ total_value|inr }}</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-debt">
+            <span class="material-icons-outlined stat-icon">credit_card</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Total Loans') }}</span><span class="stat-value">₹{{ total_loans|inr }}</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-expense">
+            <span class="material-icons-outlined stat-icon">event_repeat</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Monthly EMI') }}</span><span class="stat-value">₹{{ total_emi|inr }}</span></div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-networth">
+            <span class="material-icons-outlined stat-icon">account_balance</span>
+            <div class="stat-info"><span class="stat-label">{{ t('Net Equity') }}</span><span class="stat-value">₹{{ (total_value - total_loans)|inr }}</span></div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">pie_chart</span> {{ t('Asset Distribution') }}</h6></div>
+            <div class="card-body"><canvas id="assetChart" height="300"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">list</span> {{ t('All Assets') }}</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Type') }}</th><th>{{ t('Purchase') }}</th><th>{{ t('Current') }}</th><th>{{ t('EMI') }}</th><th>{{ t('Loan') }}</th><th>{{ t('Action') }}</th></tr></thead>
+                        <tbody>
+                        {% for a in assets %}
+                        <tr>
+                            <td class="fw-medium">{{ a.name }}</td>
+                            <td><span class="badge bg-info-subtle text-info">{{ a.asset_type }}</span></td>
+                            <td>₹{{ a.purchase_price|inr }}</td>
+                            <td class="fw-bold">₹{{ a.current_value|inr }}</td>
+                            <td>₹{{ a.emi_amount|inr }}</td>
+                            <td>₹{{ a.loan_amount|inr }}</td>
+                            <td>
+                                <a href="{{ url_for('main.delete_asset', id=a.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
+                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">No assets added yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Asset Modal -->
+<div class="modal fade" id="addAssetModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">add_circle</span> {{ t('Add Asset') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('main.add_asset') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Asset Name') }}</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Type</label>
+                            <select name="asset_type" class="form-select" required>
+                                {% for cat in categories %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Purchase Price') }} (₹)</label>
+                            <input type="number" name="purchase_price" class="form-control" min="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Current Value') }} (₹)</label>
+                            <input type="number" name="current_value" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Purchase Date') }}</label>
+                            <input type="date" name="purchase_date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Loan Amount') }} (₹)</label>
+                            <input type="number" name="loan_amount" class="form-control" min="0" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('EMI Amount') }} (₹)</label>
+                            <input type="number" name="emi_amount" class="form-control" min="0" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">EMI Remaining (Months)</label>
+                            <input type="number" name="emi_remaining_months" class="form-control" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <input type="text" name="notes" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Add Asset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const assetData = {{ asset_by_type|safe }};
+    if (assetData.length > 0) {
+        new Chart(document.getElementById('assetChart'), {
+            type: 'doughnut',
+            data: { labels: assetData.map(d => d.type), datasets: [{ data: assetData.map(d => d.value), backgroundColor: chartColors }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
+        });
+    }
+</script>
+{% endblock %}

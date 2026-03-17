@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Login - WealthPilot{% endblock %}
+{% block public_content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <span class="material-icons-outlined brand-icon">account_balance_wallet</span>
+                <h3>Welcome Back</h3>
+                <p class="text-muted">Login to WealthPilot</p>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-sm">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="material-icons-outlined">person</span></span>
+                        <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><span class="material-icons-outlined">lock</span></span>
+                        <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                    </div>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                    <label class="form-check-label" for="remember">Remember me</label>
+                </div>
+                <button type="submit" class="btn btn-accent w-100 btn-lg">Login</button>
+            </form>
+            <p class="text-center mt-2"><a id="forgotLink" href="{{ url_for('main.forgot_password') }}" class="text-muted" style="font-size: 0.9rem;">Forgot Password?</a></p>
+            <p class="text-center mt-2">Don't have an account? <a href="{{ url_for('main.register') }}">Register</a></p>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    var uField = document.querySelector('input[name="username"]');
+    var link = document.getElementById('forgotLink');
+    var base = link.href;
+    uField.addEventListener('input', function(){
+        var u = uField.value.trim();
+        link.href = u ? base + '?username=' + encodeURIComponent(u) : base;
+    });
+})();
+</script>
+{% endblock %}

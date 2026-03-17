@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <text x="32" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="20" fill="#fff">₹</text>
+  <rect x="16" y="36" width="32" height="3" rx="1.5" fill="rgba(255,255,255,0.6)"/>
+  <rect x="16" y="42" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/>
+  <rect x="16" y="48" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.3)"/>
+</svg>

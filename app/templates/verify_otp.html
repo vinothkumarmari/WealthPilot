@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Verify Email - WealthPilot{% endblock %}
+{% block public_content %}
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <span class="material-icons-outlined brand-icon" style="font-size: 48px; color: var(--accent);">verified</span>
+                <h3>Verify Your Email</h3>
+                <p class="text-muted">Enter the {{ config.OTP_LENGTH }}-digit OTP sent to<br><strong>{{ email }}</strong></p>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-sm">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <form method="POST">
+                <div class="mb-4">
+                    <label class="form-label">Enter OTP</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><span class="material-icons-outlined">pin</span></span>
+                        <input type="text" name="otp" class="form-control text-center"
+                               placeholder="Enter {{ config.OTP_LENGTH }}-digit OTP"
+                               maxlength="{{ config.OTP_LENGTH }}"
+                               style="font-size: 1.5rem; letter-spacing: 0.5rem; font-weight: 700;"
+                               required autofocus>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-accent w-100 btn-lg">Verify Email</button>
+            </form>
+            <div class="text-center mt-3">
+                <p class="text-muted mb-1">Didn't receive the OTP?</p>
+                <a href="{{ url_for('main.resend_otp') }}" class="btn btn-outline-secondary btn-sm">
+                    <span class="material-icons-outlined" style="font-size: 16px; vertical-align: middle;">refresh</span>
+                    Resend OTP
+                </a>
+            </div>
+            <p class="text-center mt-3" style="font-size: 0.85rem;">
+                <span class="text-muted">OTP expires in </span>
+                <strong id="otpTimer" style="color: var(--accent);">{{ config.OTP_EXPIRY_MINUTES }}:00</strong>
+            </p>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    let total = {{ config.OTP_EXPIRY_MINUTES }} * 60;
+    const el = document.getElementById('otpTimer');
+    const tick = setInterval(function(){
+        total--;
+        if(total <= 0){ clearInterval(tick); el.textContent = 'Expired'; el.style.color = '#e74c3c'; return; }
+        let m = Math.floor(total / 60);
+        let s = total % 60;
+        el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        if(total <= 30) el.style.color = '#e74c3c';
+        else if(total <= 60) el.style.color = '#f39c12';
+    }, 1000);
+})();
+</script>
+{% endblock %}

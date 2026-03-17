@@ -1,0 +1,338 @@
+{% extends 'base.html' %}
+{% block title %}Expenses - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">receipt_long</span> Expense Tracker</h4>
+        <p class="text-muted">Track and analyze your spending</p>
+    </div>
+    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+        <span class="material-icons-outlined">add</span> Add Expense
+    </button>
+</div>
+
+<!-- Summary -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-expense">
+            <span class="material-icons-outlined stat-icon">receipt_long</span>
+            <div class="stat-info">
+                <span class="stat-label">Total Expenses</span>
+                <span class="stat-value">₹{{ total|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-savings">
+            <span class="material-icons-outlined stat-icon">savings</span>
+            <div class="stat-info">
+                <span class="stat-label">Monthly Savings</span>
+                <span class="stat-value">₹{{ (current_user.monthly_salary - total)|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card {% if trend.trend == 'increasing' %}stat-expense{% elif trend.trend == 'decreasing' %}stat-income{% else %}stat-invest{% endif %}">
+            <span class="material-icons-outlined stat-icon">{{ trend.trend_icon|default('trending_flat') }}</span>
+            <div class="stat-info">
+                <span class="stat-label">Spending Trend</span>
+                <span class="stat-value" style="font-size: 1rem;">{{ trend.trend|title }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-networth">
+            <span class="material-icons-outlined stat-icon">auto_graph</span>
+            <div class="stat-info">
+                <span class="stat-label">AI Predicted Next</span>
+                <span class="stat-value">₹{{ trend.prediction|inr if trend.prediction else 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Analysis (50/30/20 Rule) -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">auto_awesome</span> Budget Analysis (50/30/20 Rule)</h6>
+            </div>
+            <div class="card-body">
+                <!-- Actual % bars -->
+                <div class="row mb-3">
+                    <div class="col-md-4 mb-3">
+                        <div class="budget-box {% if actual_pct.needs > 50 %}budget-over{% else %}budget-under{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0">Needs</h6>
+                                <span class="badge {% if actual_pct.needs > 50 %}bg-danger{% else %}bg-success{% endif %}">{{ actual_pct.needs }}%</span>
+                            </div>
+                            <small class="text-muted d-block mb-2">₹{{ needs_total|inr }} of ₹{{ current_user.monthly_salary|inr }}</small>
+                            <div class="progress" style="height: 12px;">
+                                <div class="progress-bar {% if actual_pct.needs > 50 %}bg-danger{% elif actual_pct.needs > 40 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ [actual_pct.needs, 100]|min }}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Benchmark: 50%</small>
+                                <small class="{% if actual_pct.needs > 50 %}text-danger{% else %}text-success{% endif %}">
+                                    {% if actual_pct.needs > 50 %}▲ {{ (actual_pct.needs - 50)|round(1) }}% over{% else %}✓ Within limit{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="budget-box {% if actual_pct.wants > 30 %}budget-over{% else %}budget-under{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0">Wants</h6>
+                                <span class="badge {% if actual_pct.wants > 30 %}bg-danger{% else %}bg-success{% endif %}">{{ actual_pct.wants }}%</span>
+                            </div>
+                            <small class="text-muted d-block mb-2">₹{{ wants_total|inr }} of ₹{{ current_user.monthly_salary|inr }}</small>
+                            <div class="progress" style="height: 12px;">
+                                <div class="progress-bar {% if actual_pct.wants > 30 %}bg-danger{% elif actual_pct.wants > 20 %}bg-warning{% else %}bg-info{% endif %}" style="width: {{ [actual_pct.wants, 100]|min }}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Benchmark: 30%</small>
+                                <small class="{% if actual_pct.wants > 30 %}text-danger{% else %}text-success{% endif %}">
+                                    {% if actual_pct.wants > 30 %}▲ {{ (actual_pct.wants - 30)|round(1) }}% over{% else %}✓ Within limit{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="budget-box {% if actual_pct.savings < 20 %}budget-over{% else %}budget-under{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0">Savings & Investments</h6>
+                                <span class="badge {% if actual_pct.savings < 20 %}bg-danger{% else %}bg-success{% endif %}">{{ actual_pct.savings }}%</span>
+                            </div>
+                            <small class="text-muted d-block mb-2">₹{{ actual_savings|inr }} of ₹{{ current_user.monthly_salary|inr }}</small>
+                            <div class="progress" style="height: 12px;">
+                                <div class="progress-bar {% if actual_pct.savings < 20 %}bg-danger{% elif actual_pct.savings < 25 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ [actual_pct.savings, 100]|min }}%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-muted">Benchmark: 20%</small>
+                                <small class="{% if actual_pct.savings < 20 %}text-danger{% else %}text-success{% endif %}">
+                                    {% if actual_pct.savings < 20 %}▼ {{ (20 - actual_pct.savings)|round(1) }}% below{% else %}✓ Above target{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warnings -->
+                {% for w in warnings %}
+                <div class="alert alert-{{ w.type }} alert-sm d-flex align-items-center mb-2">
+                    <span class="material-icons-outlined me-2">{{ w.icon }}</span> {{ w.msg }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">account_balance</span> Monthly Commitments</h6>
+            </div>
+            <div class="card-body">
+                {% if commitments.insurance > 0 %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="material-icons-outlined" style="font-size:16px">security</span> Insurance</span>
+                    <span class="fw-bold">₹{{ commitments.insurance|inr }}</span>
+                </div>
+                {% endif %}
+                {% if commitments.schemes > 0 %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="material-icons-outlined" style="font-size:16px">account_balance</span> Schemes</span>
+                    <span class="fw-bold">₹{{ commitments.schemes|inr }}</span>
+                </div>
+                {% endif %}
+                {% if commitments.sips > 0 %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="material-icons-outlined" style="font-size:16px">trending_up</span> SIPs</span>
+                    <span class="fw-bold">₹{{ commitments.sips|inr }}</span>
+                </div>
+                {% endif %}
+                {% if commitments.emi > 0 %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="material-icons-outlined" style="font-size:16px">home</span> EMI</span>
+                    <span class="fw-bold">₹{{ commitments.emi|inr }}</span>
+                </div>
+                {% endif %}
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="fw-bold">Total Commitments</span>
+                    <span class="fw-bold text-primary">₹{{ commitments.total|inr }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Expenses</span>
+                    <span class="text-danger fw-bold">₹{{ total|inr }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">Remaining</span>
+                    <span class="fw-bold {% if remaining_after >= 0 %}text-success{% else %}text-danger{% endif %}">₹{{ remaining_after|inr }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Budget Trend -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">bar_chart</span> Monthly Budget Trend (50/30/20)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="budgetTrendChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart & Table -->
+<div class="row">
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">pie_chart</span> By Category</h6></div>
+            <div class="card-body">
+                <canvas id="expCatChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">list</span> All Expenses</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Recurring</th><th>Action</th></tr></thead>
+                        <tbody>
+                        {% for exp in expenses %}
+                        <tr>
+                            <td>{{ exp.date.strftime('%d %b %Y') }}</td>
+                            <td><span class="badge bg-danger-subtle text-danger">{{ exp.category }}</span></td>
+                            <td>{{ exp.description or '-' }}</td>
+                            <td class="text-danger fw-bold">₹{{ exp.amount|inr }}</td>
+                            <td>{% if exp.is_recurring %}<span class="badge bg-info">Yes</span>{% else %}-{% endif %}</td>
+                            <td>
+                                <a href="{{ url_for('main.delete_expense', id=exp.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
+                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">No expenses recorded yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal fade" id="addExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">add_circle</span> Add Expense</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('main.add_expense') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select name="category" class="form-select" required>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Amount (₹)</label>
+                            <input type="number" name="amount" class="form-control" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_recurring" id="recurring">
+                                <label class="form-check-label" for="recurring">Recurring Expense</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="What was this for?">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Category chart
+    const catData = {{ expense_by_cat|safe }};
+    if (catData.length > 0) {
+        new Chart(document.getElementById('expCatChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catData.map(d => d.category),
+                datasets: [{ data: catData.map(d => d.amount), backgroundColor: chartColors, borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
+        });
+    }
+
+    // Monthly Budget Trend (stacked bar)
+    const history = {{ monthly_history|safe }};
+    if (history.length > 0) {
+        new Chart(document.getElementById('budgetTrendChart'), {
+            type: 'bar',
+            data: {
+                labels: history.map(h => h.month),
+                datasets: [
+                    { label: 'Needs %', data: history.map(h => h.needs_pct), backgroundColor: '#3b82f6', stack: 'pct' },
+                    { label: 'Wants %', data: history.map(h => h.wants_pct), backgroundColor: '#f59e0b', stack: 'pct' },
+                    { label: 'Savings %', data: history.map(h => h.savings_pct), backgroundColor: '#10b981', stack: 'pct' }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { stacked: true },
+                    y: {
+                        stacked: true,
+                        max: 100,
+                        ticks: { callback: v => v + '%' },
+                        title: { display: true, text: '% of Salary' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true } },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw + '%' } },
+                    annotation: {
+                        annotations: {
+                            line50: { type: 'line', yMin: 50, yMax: 50, borderColor: '#3b82f6', borderWidth: 1, borderDash: [4,4], label: { display: true, content: '50%', position: 'start', font: { size: 9 } } },
+                            line80: { type: 'line', yMin: 80, yMax: 80, borderColor: '#f59e0b', borderWidth: 1, borderDash: [4,4], label: { display: true, content: '80%', position: 'start', font: { size: 9 } } }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

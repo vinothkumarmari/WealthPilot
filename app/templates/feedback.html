@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Feedback & Rating - WealthPilot{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0"><span class="material-icons-outlined me-2">rate_review</span>{{ t('Feedback & Rating') }}</h4>
+</div>
+
+<div class="row">
+    <!-- Submit Feedback -->
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-1">edit_note</span> {{ t('Share Your Feedback') }}</h6></div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('Rating') }}</label>
+                        <div class="star-rating" id="starRating">
+                            {% for i in range(1, 6) %}
+                            <span class="star" data-value="{{ i }}" style="font-size: 2rem; cursor: pointer; color: #ccc; transition: color 0.2s;" 
+                                  onmouseover="highlightStars({{ i }})" onmouseout="resetStars()" onclick="setRating({{ i }})">&#9733;</span>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="rating" id="ratingInput" required>
+                        <small class="text-muted" id="ratingText">{{ t('Click a star to rate') }}</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="General">General</option>
+                            <option value="UI/Design">UI / Design</option>
+                            <option value="Features">Features</option>
+                            <option value="Bug Report">Bug Report</option>
+                            <option value="Suggestion">Suggestion</option>
+                            <option value="Performance">Performance</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('Your feedback') }}</label>
+                        <textarea name="message" class="form-control" rows="4" placeholder="Tell us what you think..." required maxlength="1000"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100"><span class="material-icons-outlined me-1">send</span>{{ t('Submit Feedback') }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Feedback History -->
+    <div class="col-lg-7 mb-4">
+        <div class="card">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-1">history</span> {{ t('Your Feedback History') }}</h6></div>
+            <div class="card-body">
+                {% if feedbacks %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>{{ t('Date') }}</th>
+                                <th>{{ t('Rating') }}</th>
+                                <th>{{ t('Category') }}</th>
+                                <th>{{ t('Feedback') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fb in feedbacks %}
+                            <tr>
+                                <td class="small text-nowrap">{{ fb.created_at.strftime('%d %b %Y') }}</td>
+                                <td>
+                                    {% for i in range(1, 6) %}
+                                    <span style="color: {{ '#f1c40f' if i <= fb.rating else '#ccc' }}; font-size: 14px;">&#9733;</span>
+                                    {% endfor %}
+                                </td>
+                                <td><span class="badge bg-secondary">{{ fb.category }}</span></td>
+                                <td class="small">{{ fb.message[:100] }}{{ '...' if fb.message|length > 100 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <span class="material-icons-outlined" style="font-size: 48px;">sentiment_satisfied</span>
+                    <p class="mt-2">No feedback submitted yet. Share your thoughts!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedRating = 0;
+const ratingLabels = ['', 'Very Poor', 'Poor', 'Average', 'Good', 'Excellent'];
+function highlightStars(n) {
+    document.querySelectorAll('.star').forEach(s => {
+        s.style.color = parseInt(s.dataset.value) <= n ? '#f1c40f' : '#ccc';
+    });
+}
+function resetStars() {
+    document.querySelectorAll('.star').forEach(s => {
+        s.style.color = parseInt(s.dataset.value) <= selectedRating ? '#f1c40f' : '#ccc';
+    });
+}
+function setRating(n) {
+    selectedRating = n;
+    document.getElementById('ratingInput').value = n;
+    document.getElementById('ratingText').textContent = ratingLabels[n] + ' (' + n + '/5)';
+    resetStars();
+}
+</script>
+{% endblock %}

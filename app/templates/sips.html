@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block title %}SIP Tracker - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">auto_graph</span> {{ t('SIP Tracker') }}</h4>
+        <p class="text-muted">{{ t('Track your Systematic Investment Plans') }}</p>
+    </div>
+    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addSipModal">
+        <span class="material-icons-outlined">add</span> {{ t('Add SIP') }}
+    </button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-invest">
+            <span class="material-icons-outlined stat-icon">event_repeat</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Active SIPs') }}</span>
+                <span class="stat-value">{{ active_count }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-expense">
+            <span class="material-icons-outlined stat-icon">calendar_month</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Monthly SIP') }}</span>
+                <span class="stat-value">₹{{ total_monthly|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-networth">
+            <span class="material-icons-outlined stat-icon">account_balance</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Total Invested') }}</span>
+                <span class="stat-value">₹{{ total_invested|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card {% if total_returns >= 0 %}stat-income{% else %}stat-expense{% endif %}">
+            <span class="material-icons-outlined stat-icon">{% if total_returns >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Returns') }}</span>
+                <span class="stat-value">₹{{ total_returns|inr }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">pie_chart</span> {{ t('SIP Allocation') }}</h6></div>
+            <div class="card-body"><canvas id="sipChart" height="300"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">list</span> {{ t('All SIPs') }}</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>{{ t('Fund Name') }}</th><th>{{ t('Platform') }}</th><th>SIP/{{ t('Monthly') }}</th><th>{{ t('Invested') }}</th><th>{{ t('Current') }}</th><th>{{ t('Return') }}</th><th>{{ t('Member') }}</th><th>{{ t('Actions') }}</th></tr></thead>
+                        <tbody>
+                        {% for sip in sips %}
+                        {% set ret = (sip.current_value or 0) - (sip.total_invested or 0) %}
+                        <tr>
+                            <td class="fw-medium">{{ sip.fund_name }}</td>
+                            <td>{{ sip.platform or '-' }}</td>
+                            <td>₹{{ sip.sip_amount|inr }}</td>
+                            <td>₹{{ (sip.total_invested or 0)|inr }}</td>
+                            <td>₹{{ (sip.current_value or 0)|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ sip.member or 'Self' }}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateSip{{ sip.id }}">
+                                    <span class="material-icons-outlined" style="font-size:16px">edit</span>
+                                </button>
+                                <a href="{{ url_for('main.delete_sip', id=sip.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this SIP?')">
+                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% for p in policies %}
+                        {% set fm = {'monthly': 1, 'quarterly': 3, 'half-yearly': 6, 'yearly': 12} %}
+                        {% set monthly_amt = p.premium_amount / fm.get(p.premium_frequency|lower, 12) %}
+                        {% set ret = (p.maturity_value or p.total_paid or 0) - (p.total_paid or 0) %}
+                        <tr class="table-active">
+                            <td class="fw-medium">{{ p.policy_name }} <span class="badge bg-info-subtle text-info">Policy</span></td>
+                            <td>{{ p.provider or '-' }}</td>
+                            <td>₹{{ monthly_amt|int|inr }}</td>
+                            <td>₹{{ (p.total_paid or 0)|inr }}</td>
+                            <td>₹{{ (p.maturity_value or p.total_paid or 0)|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ p.member or 'Self' }}</span></td>
+                            <td><span class="badge bg-info">{{ p.premium_frequency }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% for s in schemes %}
+                        {% set fm = {'monthly': 1, 'quarterly': 3, 'half-yearly': 6, 'yearly': 12} %}
+                        {% set monthly_amt = s.installment_amount / fm.get(s.installment_frequency|lower, 12) %}
+                        {% set ret = (s.maturity_value or s.total_paid or 0) - (s.total_paid or 0) %}
+                        <tr class="table-active">
+                            <td class="fw-medium">{{ s.scheme_name }} <span class="badge bg-success-subtle text-success">Scheme</span></td>
+                            <td>{{ s.provider or '-' }}</td>
+                            <td>₹{{ monthly_amt|int|inr }}</td>
+                            <td>₹{{ (s.total_paid or 0)|inr }}</td>
+                            <td>₹{{ (s.maturity_value or s.total_paid or 0)|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ s.member or 'Self' }}</span></td>
+                            <td><span class="badge bg-success">{{ s.installment_frequency }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not sips and not policies and not schemes %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">No SIPs tracked yet. Add your first SIP!</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update SIP Modals -->
+{% for sip in sips %}
+<div class="modal fade" id="updateSip{{ sip.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update {{ sip.fund_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('main.update_sip', id=sip.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Total Invested (₹)</label>
+                        <input type="number" name="total_invested" class="form-control" value="{{ sip.total_invested or 0 }}" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Value (₹)</label>
+                        <input type="number" name="current_value" class="form-control" value="{{ sip.current_value or 0 }}" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="is_active" class="form-select">
+                            <option value="1" {% if sip.is_active %}selected{% endif %}>Active</option>
+                            <option value="0" {% if not sip.is_active %}selected{% endif %}>Stopped</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add SIP Modal -->
+<div class="modal fade" id="addSipModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">add_circle</span> Add SIP</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('main.add_sip') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fund Name</label>
+                            <input type="text" name="fund_name" class="form-control" placeholder="e.g. Axis Bluechip Fund" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Platform</label>
+                            <input type="text" name="platform" class="form-control" placeholder="e.g. Groww, Zerodha" list="sipPlatforms">
+                            <datalist id="sipPlatforms">
+                                <option value="Groww"><option value="Zerodha"><option value="Upstox">
+                                <option value="Angel One"><option value="Paytm Money"><option value="Kuvera">
+                                <option value="Coin by Zerodha"><option value="ET Money"><option value="PhonePe">
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">SIP Amount (₹)</label>
+                            <input type="number" name="sip_amount" class="form-control" min="100" step="1" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">SIP Date</label>
+                            <input type="number" name="sip_date" class="form-control" min="1" max="28" value="1">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Expected Return (%)</label>
+                            <input type="number" name="expected_return" class="form-control" value="12" step="0.1">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Months Invested</label>
+                            <input type="number" name="months_invested" class="form-control" min="0" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Current Value (₹)</label>
+                            <input type="number" name="current_value" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Family Member</label>
+                            <input type="text" name="member" class="form-control" value="Self" list="memberList">
+                            <datalist id="memberList">
+                                <option value="Self"><option value="Spouse"><option value="Father">
+                                <option value="Mother"><option value="Son"><option value="Daughter">
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Any notes...">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Add SIP</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const sipData = {{ sip_by_fund|safe }};
+    if (sipData.length > 0) {
+        new Chart(document.getElementById('sipChart'), {
+            type: 'doughnut',
+            data: {
+                labels: sipData.map(d => d.fund),
+                datasets: [{ data: sipData.map(d => d.amount), backgroundColor: chartColors, borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, font: {size: 11} } } } }
+        });
+    }
+</script>
+{% endblock %}

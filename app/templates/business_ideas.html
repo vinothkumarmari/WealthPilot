@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Business Ideas — WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">lightbulb</span> {{ t('AI Business Ideas') }}</h4>
+    <small class="text-muted">{{ t('Personalized business suggestions based on your profile, wealth & government schemes') }}</small>
+</div>
+
+<!-- Profile Summary -->
+<div class="alert alert-info mb-4">
+    <div class="d-flex align-items-center">
+        <span class="material-icons-outlined me-2" style="font-size:28px">psychology</span>
+        <div>
+            <strong>AI Analysis:</strong> {{ ideas.profile_summary }}
+            <br><small class="text-muted">Profession: <strong>{{ ideas.profession }}</strong> | Region: <strong>{{ ideas.state }}</strong> | Investment Capacity: <strong>{{ ideas.tier|upper }}</strong></small>
+        </div>
+    </div>
+    {% if ideas.profession == 'Not Set' %}
+    <div class="mt-2">
+        <a href="{{ url_for('main.profile') }}" class="btn btn-sm btn-primary"><span class="material-icons-outlined" style="font-size:16px">edit</span> Update Profile</a>
+        <small class="text-muted ms-2">Set your Profession & State for personalized recommendations</small>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Profession-Based Ideas -->
+{% if ideas.profession_ideas %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">work</span> {{ t('Best Ideas for') }} {{ ideas.profession }}</h5>
+    </div>
+    {% for idea in ideas.profession_ideas %}
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100" style="border-left: 4px solid {{ idea.color }}">
+            <div class="card-header py-2">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <span class="material-icons-outlined me-2" style="color:{{ idea.color }}; font-size:32px">{{ idea.icon }}</span>
+                        <div>
+                            <h6 class="mb-0">{{ idea.name }}</h6>
+                            <small class="text-muted">Investment: <strong class="text-primary">{{ idea.investment }}</strong> | Risk:
+                                <span class="badge bg-{{ 'success' if idea.risk == 'low' else 'warning' if idea.risk == 'moderate' else 'danger' }}-subtle text-{{ 'success' if idea.risk == 'low' else 'warning' if idea.risk == 'moderate' else 'danger' }}">{{ idea.risk|title }}</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">AI Score</small>
+                        <div class="fw-bold text-{{ 'success' if idea.score >= 70 else 'warning' if idea.score >= 50 else 'danger' }}" style="font-size:1.2rem">{{ idea.score }}%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body py-2">
+                <p class="small mb-2">{{ idea.description }}</p>
+                <div class="row text-center mb-2">
+                    <div class="col-6">
+                        <div class="bg-light rounded p-2">
+                            <small class="text-muted d-block">Monthly Potential</small>
+                            <strong class="text-success">{{ idea.monthly_potential }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="bg-light rounded p-2">
+                            <small class="text-muted d-block">Time to Profit</small>
+                            <strong class="text-primary">{{ idea.time_to_profit }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-start mb-1">
+                    <span class="material-icons-outlined text-info me-1" style="font-size:16px">school</span>
+                    <small><strong>Skills:</strong> {{ idea.skills_needed }}</small>
+                </div>
+                <div class="d-flex align-items-start">
+                    <span class="material-icons-outlined text-success me-1" style="font-size:16px">account_balance</span>
+                    <small><strong>Govt Scheme:</strong> {{ idea.govt_scheme }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- General Business Ideas -->
+{% if ideas.general_ideas %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">rocket_launch</span> {{ t('Popular Business Ideas') }} ({{ t('Any Profession') }})</h5>
+    </div>
+    {% for idea in ideas.general_ideas %}
+    <div class="col-lg-6 col-xl-4 mb-3">
+        <div class="card h-100" style="border-left: 4px solid {{ idea.color }}">
+            <div class="card-header py-2">
+                <div class="d-flex align-items-center">
+                    <span class="material-icons-outlined me-2" style="color:{{ idea.color }}; font-size:28px">{{ idea.icon }}</span>
+                    <div>
+                        <h6 class="mb-0 small fw-bold">{{ idea.name }}</h6>
+                        <small class="text-muted">{{ idea.investment }} |
+                            <span class="badge bg-{{ 'success' if idea.risk == 'low' else 'warning' }}-subtle text-{{ 'success' if idea.risk == 'low' else 'warning' }}">{{ idea.risk|title }}</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body py-2">
+                <p class="small mb-2">{{ idea.description }}</p>
+                <small class="text-success d-block"><span class="material-icons-outlined" style="font-size:14px">trending_up</span> {{ idea.monthly_potential }}/month</small>
+                <small class="text-muted d-block"><span class="material-icons-outlined" style="font-size:14px">account_balance</span> {{ idea.govt_scheme }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- State-Specific Schemes -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">location_on</span> {{ ideas.state }} — State MSME Schemes</h5>
+    </div>
+    <div class="col-md-12">
+        <div class="card" style="border-left: 4px solid #6C5CE7">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="bg-light rounded p-3 h-100">
+                            <small class="text-muted d-block mb-1">State MSME Portal</small>
+                            <strong class="text-primary">{{ ideas.state_info.portal }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="bg-light rounded p-3 h-100">
+                            <small class="text-muted d-block mb-1">Key Scheme</small>
+                            <strong>{{ ideas.state_info.scheme }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="bg-light rounded p-3 h-100">
+                            <small class="text-muted d-block mb-1">Additional Benefits</small>
+                            <strong>{{ ideas.state_info.extra }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Central Government Schemes -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">account_balance</span> {{ t('Central Govt Schemes for Business') }}</h5>
+    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Scheme</th>
+                                <th>Benefit</th>
+                                <th>Max Project</th>
+                                <th>Eligibility</th>
+                                <th>Portal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for scheme in ideas.central_schemes %}
+                            <tr>
+                                <td class="fw-medium">{{ scheme.name }}</td>
+                                <td><span class="badge bg-success-subtle text-success">{{ scheme.subsidy }}</span></td>
+                                <td>{{ scheme.max_project }}</td>
+                                <td><small>{{ scheme.who }}</small></td>
+                                <td><span class="text-primary small">{{ scheme.portal }}</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Steps -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">checklist</span> {{ t('Quick Action Steps to Start') }}</h5>
+    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 col-6 mb-3 text-center">
+                        <div class="bg-light rounded p-3">
+                            <span class="material-icons-outlined text-primary" style="font-size:36px">app_registration</span>
+                            <h6 class="mt-2 mb-1 small fw-bold">Step 1</h6>
+                            <small class="text-muted">Register on <strong>Udyam Portal</strong> (Free MSME ID)</small>
+                            <br><small class="text-primary">udyamregistration.gov.in</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3 text-center">
+                        <div class="bg-light rounded p-3">
+                            <span class="material-icons-outlined text-success" style="font-size:36px">request_quote</span>
+                            <h6 class="mt-2 mb-1 small fw-bold">Step 2</h6>
+                            <small class="text-muted">Apply for <strong>PMEGP / Mudra</strong> loan with subsidy</small>
+                            <br><small class="text-primary">kviconline.gov.in/pmegp</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3 text-center">
+                        <div class="bg-light rounded p-3">
+                            <span class="material-icons-outlined text-warning" style="font-size:36px">location_on</span>
+                            <h6 class="mt-2 mb-1 small fw-bold">Step 3</h6>
+                            <small class="text-muted">Check <strong>State MSME</strong> portal for extra subsidy</small>
+                            <br><small class="text-primary">{{ ideas.state_info.portal }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6 mb-3 text-center">
+                        <div class="bg-light rounded p-3">
+                            <span class="material-icons-outlined text-info" style="font-size:36px">storefront</span>
+                            <h6 class="mt-2 mb-1 small fw-bold">Step 4</h6>
+                            <small class="text-muted">Register on <strong>GeM</strong> to sell to government</small>
+                            <br><small class="text-primary">gem.gov.in</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

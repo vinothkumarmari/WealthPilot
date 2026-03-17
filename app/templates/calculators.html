@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% block title %}Calculators - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">calculate</span> {{ t('Investment Calculators') }}</h4>
+    <p class="text-muted">{{ t('Calculate SIP, Lumpsum, EMI, FD & Retirement returns') }}</p>
+</div>
+
+<!-- Calculator Tabs -->
+<ul class="nav nav-pills calc-tabs mb-4" role="tablist">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="pill" href="#sipCalc"><span class="material-icons-outlined">autorenew</span> {{ t('SIP Calculator') }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#lumpsumCalc"><span class="material-icons-outlined">payments</span> {{ t('Lumpsum Calculator') }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#emiCalc"><span class="material-icons-outlined">home</span> {{ t('EMI Calculator') }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#fdCalc"><span class="material-icons-outlined">account_balance</span> FD</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#retireCalc"><span class="material-icons-outlined">elderly</span> {{ t('Retirement Planner') }}</a></li>
+</ul>
+
+<div class="tab-content">
+    <!-- SIP Calculator -->
+    <div class="tab-pane fade show active" id="sipCalc">
+        <div class="row">
+            <div class="col-lg-5 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>{{ t('SIP Calculator') }}</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">{{ t('Monthly SIP Amount') }} (₹)</label>
+                            <input type="range" class="form-range" id="sipAmount" min="500" max="200000" value="5000" step="500" oninput="document.getElementById('sipAmountVal').value=this.value">
+                            <input type="number" class="form-control mt-1" id="sipAmountVal" value="5000" onchange="document.getElementById('sipAmount').value=this.value">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Expected Return (% p.a.)</label>
+                            <input type="range" class="form-range" id="sipRate" min="1" max="30" value="12" step="0.5" oninput="document.getElementById('sipRateVal').value=this.value">
+                            <input type="number" class="form-control mt-1" id="sipRateVal" value="12" step="0.5" onchange="document.getElementById('sipRate').value=this.value">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Time Period (Years)</label>
+                            <input type="range" class="form-range" id="sipYears" min="1" max="40" value="10" oninput="document.getElementById('sipYearsVal').value=this.value">
+                            <input type="number" class="form-control mt-1" id="sipYearsVal" value="10" onchange="document.getElementById('sipYears').value=this.value">
+                        </div>
+                        <button class="btn btn-accent w-100" onclick="calculateSIP()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>SIP Results</h6></div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3" id="sipResults">
+                            <div class="col-4">
+                                <h6 class="text-muted">Invested</h6>
+                                <h4 class="text-primary" id="sipInvested">-</h4>
+                            </div>
+                            <div class="col-4">
+                                <h6 class="text-muted">Returns</h6>
+                                <h4 class="text-success" id="sipReturns">-</h4>
+                            </div>
+                            <div class="col-4">
+                                <h6 class="text-muted">Total Value</h6>
+                                <h4 class="text-accent" id="sipTotal">-</h4>
+                            </div>
+                        </div>
+                        <canvas id="sipChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lumpsum Calculator -->
+    <div class="tab-pane fade" id="lumpsumCalc">
+        <div class="row">
+            <div class="col-lg-5 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>Lumpsum Calculator</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Investment Amount (₹)</label>
+                            <input type="number" class="form-control" id="lsAmount" value="100000" min="1000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Expected Return (% p.a.)</label>
+                            <input type="number" class="form-control" id="lsRate" value="10" step="0.5">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Time Period (Years)</label>
+                            <input type="number" class="form-control" id="lsYears" value="10" min="1" max="50">
+                        </div>
+                        <button class="btn btn-accent w-100" onclick="calculateLumpsum()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>Lumpsum Results</h6></div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-4"><h6 class="text-muted">Invested</h6><h4 class="text-primary" id="lsInvested">-</h4></div>
+                            <div class="col-4"><h6 class="text-muted">Returns</h6><h4 class="text-success" id="lsReturns">-</h4></div>
+                            <div class="col-4"><h6 class="text-muted">Total</h6><h4 class="text-accent" id="lsTotal">-</h4></div>
+                        </div>
+                        <canvas id="lsChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EMI Calculator -->
+    <div class="tab-pane fade" id="emiCalc">
+        <div class="row">
+            <div class="col-lg-5 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>EMI Calculator</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Loan Amount (₹)</label>
+                            <input type="number" class="form-control" id="emiPrincipal" value="3000000" min="10000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Interest Rate (% p.a.)</label>
+                            <input type="number" class="form-control" id="emiRate" value="8.5" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tenure (Years)</label>
+                            <input type="number" class="form-control" id="emiYears" value="20" min="1" max="30">
+                        </div>
+                        <button class="btn btn-accent w-100" onclick="calculateEMI()">Calculate EMI</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>EMI Results</h6></div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-4"><h6 class="text-muted">Monthly EMI</h6><h4 class="text-primary" id="emiValue">-</h4></div>
+                            <div class="col-4"><h6 class="text-muted">Total Interest</h6><h4 class="text-danger" id="emiInterest">-</h4></div>
+                            <div class="col-4"><h6 class="text-muted">Total Payment</h6><h4 class="text-accent" id="emiTotal">-</h4></div>
+                        </div>
+                        <canvas id="emiChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FD Calculator -->
+    <div class="tab-pane fade" id="fdCalc">
+        <div class="row">
+            <div class="col-lg-5 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>Fixed Deposit Calculator</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Deposit Amount (₹)</label>
+                            <input type="number" class="form-control" id="fdAmount" value="500000" min="1000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Interest Rate (% p.a.)</label>
+                            <input type="number" class="form-control" id="fdRate" value="7" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tenure (Years)</label>
+                            <input type="number" class="form-control" id="fdYears" value="5" min="1" max="10">
+                        </div>
+                        <button class="btn btn-accent w-100" onclick="calculateFD()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>FD Results</h6></div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-4"><h6 class="text-muted">Deposited</h6><h4 class="text-primary" id="fdInvested">-</h4></div>
+                            <div class="col-4"><h6 class="text-muted">Interest</h6><h4 class="text-success" id="fdInterest">-</h4></div>
+                            <div class="col-4"><h6 class="text-muted">Maturity</h6><h4 class="text-accent" id="fdTotal">-</h4></div>
+                        </div>
+                        <canvas id="fdChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retirement Calculator -->
+    <div class="tab-pane fade" id="retireCalc">
+        <div class="row">
+            <div class="col-lg-5 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>Retirement Planner</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Current Age</label>
+                            <input type="number" class="form-control" id="retAge" value="{{ current_user.age or 30 }}" min="18" max="60">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Retirement Age</label>
+                            <input type="number" class="form-control" id="retRetireAge" value="60" min="40" max="70">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monthly Expenses (₹)</label>
+                            <input type="number" class="form-control" id="retExpense" value="50000" min="5000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Expected Inflation (%)</label>
+                            <input type="number" class="form-control" id="retInflation" value="6" step="0.5">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Expected Return (%)</label>
+                            <input type="number" class="form-control" id="retReturn" value="10" step="0.5">
+                        </div>
+                        <button class="btn btn-accent w-100" onclick="calculateRetirement()">Calculate</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 mb-3">
+                <div class="card">
+                    <div class="card-header"><h6>Retirement Plan</h6></div>
+                    <div class="card-body" id="retResults">
+                        <div class="text-center text-muted py-5">
+                            <span class="material-icons-outlined" style="font-size:48px">elderly</span>
+                            <p>Fill the form and click Calculate to see your retirement plan</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let sipChartInstance, lsChartInstance, emiChartInstance, fdChartInstance;
+
+async function apiCalc(data) {
+    const res = await fetch('/api/calculate', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+    });
+    return res.json();
+}
+
+function fmt(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+
+async function calculateSIP() {
+    const r = await apiCalc({
+        type: 'sip',
+        monthly_sip: +document.getElementById('sipAmountVal').value,
+        rate: +document.getElementById('sipRateVal').value,
+        years: +document.getElementById('sipYearsVal').value
+    });
+    document.getElementById('sipInvested').textContent = fmt(r.invested);
+    document.getElementById('sipReturns').textContent = fmt(r.returns);
+    document.getElementById('sipTotal').textContent = fmt(r.total_value);
+    if (sipChartInstance) sipChartInstance.destroy();
+    sipChartInstance = new Chart(document.getElementById('sipChart'), {
+        type: 'bar',
+        data: {
+            labels: r.yearly_breakdown.map(d => 'Yr ' + d.year),
+            datasets: [
+                { label: 'Invested', data: r.yearly_breakdown.map(d => d.invested), backgroundColor: '#3498db' },
+                { label: 'Gains', data: r.yearly_breakdown.map(d => d.gain), backgroundColor: '#2ecc71' }
+            ]
+        },
+        options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '₹' + (v/100000).toFixed(1) + 'L' } } } }
+    });
+}
+
+async function calculateLumpsum() {
+    const r = await apiCalc({
+        type: 'lumpsum',
+        principal: +document.getElementById('lsAmount').value,
+        rate: +document.getElementById('lsRate').value,
+        years: +document.getElementById('lsYears').value
+    });
+    document.getElementById('lsInvested').textContent = fmt(r.invested);
+    document.getElementById('lsReturns').textContent = fmt(r.returns);
+    document.getElementById('lsTotal').textContent = fmt(r.total_value);
+    if (lsChartInstance) lsChartInstance.destroy();
+    lsChartInstance = new Chart(document.getElementById('lsChart'), {
+        type: 'line',
+        data: {
+            labels: r.yearly_breakdown.map(d => 'Yr ' + d.year),
+            datasets: [{ label: 'Value', data: r.yearly_breakdown.map(d => d.value), borderColor: '#2ecc71', fill: true, backgroundColor: 'rgba(46,204,113,0.1)', tension: 0.4 }]
+        },
+        options: { responsive: true, scales: { y: { ticks: { callback: v => '₹' + (v/100000).toFixed(1) + 'L' } } } }
+    });
+}
+
+async function calculateEMI() {
+    const r = await apiCalc({
+        type: 'emi',
+        principal: +document.getElementById('emiPrincipal').value,
+        rate: +document.getElementById('emiRate').value,
+        years: +document.getElementById('emiYears').value
+    });
+    document.getElementById('emiValue').textContent = fmt(r.emi);
+    document.getElementById('emiInterest').textContent = fmt(r.total_interest);
+    document.getElementById('emiTotal').textContent = fmt(r.total_payment);
+    if (emiChartInstance) emiChartInstance.destroy();
+    emiChartInstance = new Chart(document.getElementById('emiChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Principal', 'Interest'],
+            datasets: [{ data: [r.principal, r.total_interest], backgroundColor: ['#3498db', '#e74c3c'] }]
+        },
+        options: { responsive: true }
+    });
+}
+
+async function calculateFD() {
+    const r = await apiCalc({
+        type: 'fd',
+        principal: +document.getElementById('fdAmount').value,
+        rate: +document.getElementById('fdRate').value,
+        years: +document.getElementById('fdYears').value
+    });
+    document.getElementById('fdInvested').textContent = fmt(r.invested);
+    document.getElementById('fdInterest').textContent = fmt(r.interest_earned);
+    document.getElementById('fdTotal').textContent = fmt(r.maturity_value);
+    if (fdChartInstance) fdChartInstance.destroy();
+    fdChartInstance = new Chart(document.getElementById('fdChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Principal', 'Interest'],
+            datasets: [{ data: [r.invested, r.interest_earned], backgroundColor: ['#3498db', '#f39c12'] }]
+        },
+        options: { responsive: true }
+    });
+}
+
+async function calculateRetirement() {
+    const r = await apiCalc({
+        type: 'retirement',
+        current_age: +document.getElementById('retAge').value,
+        retirement_age: +document.getElementById('retRetireAge').value,
+        monthly_expense: +document.getElementById('retExpense').value,
+        inflation_rate: +document.getElementById('retInflation').value,
+        return_rate: +document.getElementById('retReturn').value
+    });
+    document.getElementById('retResults').innerHTML = `
+        <div class="row text-center mb-4">
+            <div class="col-6 col-md-3 mb-3">
+                <div class="p-3 rounded bg-light"><h6 class="text-muted">Years to Retire</h6><h3 class="text-primary">${r.years_to_retire}</h3></div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="p-3 rounded bg-light"><h6 class="text-muted">Future Monthly Expense</h6><h3 class="text-warning">${fmt(r.future_monthly_expense)}</h3></div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="p-3 rounded bg-light"><h6 class="text-muted">Required Corpus</h6><h3 class="text-danger">${fmt(r.required_corpus)}</h3></div>
+            </div>
+            <div class="col-6 col-md-3 mb-3">
+                <div class="p-3 rounded bg-light"><h6 class="text-muted">Monthly SIP Needed</h6><h3 class="text-success">${fmt(r.monthly_sip_needed)}</h3></div>
+            </div>
+        </div>
+        <div class="alert alert-info">
+            <span class="material-icons-outlined me-2">lightbulb</span>
+            Start investing <strong>${fmt(r.monthly_sip_needed)}/month</strong> now to build a corpus of <strong>${fmt(r.required_corpus)}</strong> by age ${r.retirement_age}.
+            Your current expense of ${fmt(r.current_monthly_expense)}/month will become ${fmt(r.future_monthly_expense)}/month due to inflation.
+        </div>
+    `;
+}
+</script>
+{% endblock %}

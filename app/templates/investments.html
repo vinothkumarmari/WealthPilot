@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+{% block title %}Investments - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">trending_up</span> {{ t('Investment Portfolio') }}</h4>
+        <p class="text-muted">{{ t('Track all your investments across platforms') }}</p>
+    </div>
+    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addInvestModal">
+        <span class="material-icons-outlined">add</span> {{ t('Add Investment') }}
+    </button>
+</div>
+
+<!-- Summary -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-invest">
+            <span class="material-icons-outlined stat-icon">account_balance</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Total Invested') }}</span>
+                <span class="stat-value">₹{{ total_invested|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-networth">
+            <span class="material-icons-outlined stat-icon">trending_up</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Current Value') }}</span>
+                <span class="stat-value">₹{{ total_current|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card {% if total_returns >= 0 %}stat-income{% else %}stat-expense{% endif %}">
+            <span class="material-icons-outlined stat-icon">{% if total_returns >= 0 %}arrow_upward{% else %}arrow_downward{% endif %}</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Total Returns') }}</span>
+                <span class="stat-value">₹{{ total_returns|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-savings">
+            <span class="material-icons-outlined stat-icon">percent</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Return %') }}</span>
+                <span class="stat-value">{{ "{:.1f}".format(total_returns / total_invested * 100 if total_invested > 0 else 0) }}%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bank Balance & PF Summary -->
+{% if bank_accounts or pf_accounts %}
+<div class="row mb-4">
+    {% if bank_accounts %}
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><span class="material-icons-outlined">account_balance</span> {{ t('Bank Accounts') }}</h6>
+                <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#addBankModal">
+                    <span class="material-icons-outlined" style="font-size:16px">add</span>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>{{ t('Bank') }}</th><th>{{ t('Type') }}</th><th>A/C</th><th>{{ t('Balance') }}</th><th>{{ t('Action') }}</th></tr></thead>
+                        <tbody>
+                        {% for b in bank_accounts %}
+                        <tr>
+                            <td class="fw-medium">{{ b.bank_name }}</td>
+                            <td><span class="badge bg-info-subtle text-info">{{ b.account_type }}</span></td>
+                            <td>****{{ b.account_number_last4 or '----' }}</td>
+                            <td class="fw-bold">₹{{ b.balance|inr }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('main.update_bank_balance', id=b.id) }}" class="d-inline">
+                                    <div class="input-group input-group-sm" style="width:140px">
+                                        <input type="number" name="balance" class="form-control" value="{{ b.balance|int }}" min="0">
+                                        <button class="btn btn-outline-success btn-sm" title="Update">
+                                            <span class="material-icons-outlined" style="font-size:14px">save</span>
+                                        </button>
+                                    </div>
+                                </form>
+                                <a href="{{ url_for('main.delete_bank_account', id=b.id) }}" class="btn btn-sm btn-outline-danger mt-1" onclick="return confirm('Remove?')">
+                                    <span class="material-icons-outlined" style="font-size:14px">delete</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                        <tfoot><tr class="fw-bold"><td colspan="3">{{ t('Total') }}</td><td>₹{{ total_bank_balance|inr }}</td><td></td></tr></tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if pf_accounts %}
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><span class="material-icons-outlined">savings</span> {{ t('Provident Fund') }}</h6>
+                <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#addPFModal">
+                    <span class="material-icons-outlined" style="font-size:16px">add</span>
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>{{ t('Type') }}</th><th>{{ t('Employer') }}</th><th>{{ t('Monthly') }} (You+Co)</th><th>{{ t('Balance') }}</th><th>{{ t('Rate') }}</th><th></th></tr></thead>
+                        <tbody>
+                        {% for pf in pf_accounts %}
+                        <tr>
+                            <td><span class="badge bg-primary">{{ pf.pf_type }}</span></td>
+                            <td>{{ pf.employer or '-' }}</td>
+                            <td>₹{{ pf.employee_contribution|inr }} + ₹{{ pf.employer_contribution|inr }}</td>
+                            <td class="fw-bold text-success">₹{{ pf.total_balance|inr }}</td>
+                            <td>{{ pf.interest_rate }}%</td>
+                            <td>
+                                <a href="{{ url_for('main.delete_pf', id=pf.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
+                                    <span class="material-icons-outlined" style="font-size:14px">delete</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Portfolio Chart -->
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">pie_chart</span> {{ t('Portfolio Allocation') }}</h6></div>
+            <div class="card-body">
+                <canvas id="invChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Investments Table -->
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">list</span> {{ t('All Investments') }}</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Type') }}</th><th>{{ t('Platform') }}</th><th>{{ t('Invested') }}</th><th>{{ t('Current') }}</th><th>{{ t('Return') }}</th><th>{{ t('Member') }}</th><th>{{ t('Action') }}</th></tr></thead>
+                        <tbody>
+                        {% for inv in investments %}
+                        {% set ret = inv.current_value - inv.amount_invested %}
+                        <tr>
+                            <td class="fw-medium">{{ inv.name }}</td>
+                            <td><span class="badge bg-primary-subtle text-primary">{{ inv.investment_type }}</span></td>
+                            <td>{{ inv.platform or '-' }}</td>
+                            <td>₹{{ inv.amount_invested|inr }}</td>
+                            <td>₹{{ inv.current_value|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ inv.member or 'Self' }}</span></td>
+                            <td>
+                                <a href="{{ url_for('main.delete_investment', id=inv.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
+                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% for p in policies %}
+                        {% set ret = (p.maturity_value or p.total_paid or 0) - (p.total_paid or 0) %}
+                        <tr>
+                            <td class="fw-medium">{{ p.policy_name }}</td>
+                            <td><span class="badge bg-info-subtle text-info">Insurance</span></td>
+                            <td>{{ p.provider or '-' }}</td>
+                            <td>₹{{ (p.total_paid or 0)|inr }}</td>
+                            <td>₹{{ (p.maturity_value or p.total_paid or 0)|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ p.member or 'Self' }}</span></td>
+                            <td><span class="badge bg-info-subtle text-info">Policy</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% for s in schemes %}
+                        {% set ret = (s.maturity_value or s.total_paid or 0) - (s.total_paid or 0) %}
+                        <tr>
+                            <td class="fw-medium">{{ s.scheme_name }}</td>
+                            <td><span class="badge bg-success-subtle text-success">Scheme</span></td>
+                            <td>{{ s.provider or '-' }}</td>
+                            <td>₹{{ (s.total_paid or 0)|inr }}</td>
+                            <td>₹{{ (s.maturity_value or s.total_paid or 0)|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ s.member or 'Self' }}</span></td>
+                            <td><span class="badge bg-success-subtle text-success">Scheme</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% for sip in sips %}
+                        {% set ret = (sip.current_value or 0) - (sip.total_invested or 0) %}
+                        <tr>
+                            <td class="fw-medium">{{ sip.fund_name }}</td>
+                            <td><span class="badge bg-warning-subtle text-warning">SIP</span></td>
+                            <td>{{ sip.platform or '-' }}</td>
+                            <td>₹{{ (sip.total_invested or 0)|inr }}</td>
+                            <td>₹{{ (sip.current_value or 0)|inr }}</td>
+                            <td class="{% if ret >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {% if ret >= 0 %}+{% endif %}₹{{ ret|inr }}
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary">{{ sip.member or 'Self' }}</span></td>
+                            <td><span class="badge bg-warning-subtle text-warning">SIP</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not investments and not policies and not schemes and not sips %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">No investments tracked yet.</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Investment Modal -->
+<div class="modal fade" id="addInvestModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">add_circle</span> {{ t('Add Investment') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('main.add_investment') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Investment Name') }}</label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Axis Bluechip Fund" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Type</label>
+                            <select name="investment_type" class="form-select" required>
+                                <option value="Mutual Fund">Mutual Fund</option>
+                                <option value="Stocks">Stocks</option>
+                                <option value="Fixed Deposit">Fixed Deposit</option>
+                                <option value="Recurring Deposit">Recurring Deposit</option>
+                                <option value="PPF">PPF</option>
+                                <option value="EPF">EPF</option>
+                                <option value="VPF">VPF</option>
+                                <option value="NPS">NPS</option>
+                                <option value="Gold">Gold</option>
+                                <option value="Silver">Silver</option>
+                                <option value="SGB">Sovereign Gold Bond</option>
+                                <option value="SIP">SIP</option>
+                                <option value="Index Fund">Index Fund</option>
+                                <option value="REIT">REIT</option>
+                                <option value="Real Estate">Real Estate</option>
+                                <option value="Crypto">Cryptocurrency</option>
+                                <option value="Bonds">Bonds</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Platform') }}</label>
+                            <input type="text" name="platform" class="form-control" placeholder="e.g. Groww, Zerodha" list="platforms">
+                            <datalist id="platforms">
+                                <option value="Groww"><option value="Zerodha"><option value="Upstox">
+                                <option value="Angel One"><option value="SBI"><option value="HDFC">
+                                <option value="ICICI Direct"><option value="Paytm Money"><option value="Kuvera">
+                                <option value="Coin by Zerodha"><option value="ET Money"><option value="PhonePe">
+                            </datalist>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Amount Invested (₹)</label>
+                            <input type="number" name="amount_invested" class="form-control" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Current Value (₹)</label>
+                            <input type="number" name="current_value" class="form-control" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Expected Return') }} (%)</label>
+                            <input type="number" name="expected_return_rate" class="form-control" step="0.1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Start Date') }}</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Maturity Date') }}</label>
+                            <input type="date" name="maturity_date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">{{ t('Notes') }}</label>
+                            <input type="text" name="notes" class="form-control" placeholder="Any notes...">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ t('Family Member') }}</label>
+                            <input type="text" name="member" class="form-control" value="Self" list="memberList">
+                            <datalist id="memberList">
+                                <option value="Self"><option value="Spouse"><option value="Father">
+                                <option value="Mother"><option value="Son"><option value="Daughter">
+                            </datalist>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('Cancel') }}</button>
+                    <button type="submit" class="btn btn-accent">{{ t('Add Investment') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Bank Account Modal -->
+<div class="modal fade" id="addBankModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">account_balance</span> {{ t('Add Bank Account') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.add_bank_account') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Bank Name') }}</label>
+                            <input type="text" name="bank_name" class="form-control" placeholder="e.g. SBI, HDFC" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Account Type') }}</label>
+                            <select name="account_type" class="form-select">
+                                <option value="Savings">Savings</option>
+                                <option value="Current">Current</option>
+                                <option value="Salary">Salary</option>
+                                <option value="FD">Fixed Deposit</option>
+                                <option value="RD">Recurring Deposit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Last 4 Digits</label>
+                            <input type="text" name="account_number_last4" class="form-control" maxlength="4" placeholder="1234">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Balance (₹)</label>
+                            <input type="number" name="balance" class="form-control" min="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Interest Rate (%)</label>
+                            <input type="number" name="interest_rate" class="form-control" step="0.01" value="3.5">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Notes</label>
+                            <input type="text" name="notes" class="form-control" placeholder="Optional notes">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Add Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add PF Modal -->
+<div class="modal fade" id="addPFModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">savings</span> Add Provident Fund</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.add_pf') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">PF Type</label>
+                            <select name="pf_type" class="form-select">
+                                <option value="EPF">EPF (Employee PF)</option>
+                                <option value="VPF">VPF (Voluntary PF)</option>
+                                <option value="GPF">GPF (Govt PF)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">UAN Number</label>
+                            <input type="text" name="uan_number" class="form-control" placeholder="12-digit UAN">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Employer</label>
+                            <input type="text" name="employer" class="form-control" placeholder="Company name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Total Balance (₹)</label>
+                            <input type="number" name="total_balance" class="form-control" min="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Your Monthly (₹)</label>
+                            <input type="number" name="employee_contribution" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Employer Monthly (₹)</label>
+                            <input type="number" name="employer_contribution" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Interest Rate (%)</label>
+                            <input type="number" name="interest_rate" class="form-control" step="0.01" value="8.25">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Notes</label>
+                            <input type="text" name="notes" class="form-control" placeholder="Optional notes">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Add PF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Buttons (if no PF/Bank yet) -->
+{% if not bank_accounts or not pf_accounts %}
+<div class="row mb-4">
+    {% if not bank_accounts %}
+    <div class="col-md-6 mb-3">
+        <div class="card p-4 text-center">
+            <span class="material-icons-outlined" style="font-size:48px; color: var(--accent)">account_balance</span>
+            <h6 class="mt-2">Add Bank Account</h6>
+            <p class="text-muted small">Track your savings/current account balances for better AI suggestions</p>
+            <button class="btn btn-sm btn-accent mx-auto" style="width:fit-content" data-bs-toggle="modal" data-bs-target="#addBankModal">
+                <span class="material-icons-outlined" style="font-size:16px">add</span> Add Bank Account
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    {% if not pf_accounts %}
+    <div class="col-md-6 mb-3">
+        <div class="card p-4 text-center">
+            <span class="material-icons-outlined" style="font-size:48px; color: var(--accent)">savings</span>
+            <h6 class="mt-2">Add Provident Fund</h6>
+            <p class="text-muted small">Track your EPF/VPF/GPF balance and contributions</p>
+            <button class="btn btn-sm btn-accent mx-auto" style="width:fit-content" data-bs-toggle="modal" data-bs-target="#addPFModal">
+                <span class="material-icons-outlined" style="font-size:16px">add</span> Add PF Account
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const invData = {{ inv_by_type|safe }};
+    if (invData.length > 0) {
+        new Chart(document.getElementById('invChart'), {
+            type: 'doughnut',
+            data: {
+                labels: invData.map(d => d.type),
+                datasets: [{ data: invData.map(d => d.amount), backgroundColor: chartColors, borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
+        });
+    }
+</script>
+{% endblock %}

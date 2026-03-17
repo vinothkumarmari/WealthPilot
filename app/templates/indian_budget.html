@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% block title %}Indian Budget 2025-26 - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">receipt_long</span> Union Budget 2025-26 — Investment Highlights</h4>
+    <p class="text-muted">Key budget announcements that impact your savings and investments</p>
+</div>
+
+<div class="alert alert-light border d-flex align-items-center justify-content-between mb-4">
+    <span><span class="material-icons-outlined me-2" style="vertical-align:middle">menu_book</span>Read the full Union Budget 2025-26 document and related resources:</span>
+    <div class="d-flex gap-2">
+        <a href="https://www.indiabudget.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Full Budget Document</a>
+        <a href="https://www.incometax.gov.in/iec/foportal/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Income Tax Portal</a>
+        <a href="https://eportal.incometax.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>File ITR</a>
+    </div>
+</div>
+
+<!-- Tax Regime Changes -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex align-items-center">
+        <span class="material-icons-outlined me-2">payments</span>
+        <h6 class="mb-0">New Tax Regime — Income Tax Slabs (FY 2025-26)</h6>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-success mb-3">
+            <strong>No income tax up to ₹12,00,000!</strong> With standard deduction of ₹75,000, salaried individuals effectively pay zero tax up to ₹12,75,000.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+                <thead class="table-light">
+                    <tr><th>Income Slab</th><th>Tax Rate</th><th>Tax Amount</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Up to ₹4,00,000</td><td>Nil</td><td>₹0</td></tr>
+                    <tr><td>₹4,00,001 - ₹8,00,000</td><td>5%</td><td>₹20,000</td></tr>
+                    <tr><td>₹8,00,001 - ₹12,00,000</td><td>10%</td><td>₹40,000</td></tr>
+                    <tr><td>₹12,00,001 - ₹16,00,000</td><td>15%</td><td>₹60,000</td></tr>
+                    <tr><td>₹16,00,001 - ₹20,00,000</td><td>20%</td><td>₹80,000</td></tr>
+                    <tr><td>₹20,00,001 - ₹24,00,000</td><td>25%</td><td>₹1,00,000</td></tr>
+                    <tr><td>Above ₹24,00,000</td><td>30%</td><td>—</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="small text-muted mb-2">Marginal relief ensures no one pays more tax than their income beyond ₹12L. Tax saving up to ₹1,10,000 compared to previous slabs.</p>
+        <div class="d-flex gap-2">
+            <a href="https://eportal.incometax.gov.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>File Income Tax Return</a>
+            <a href="https://www.incometax.gov.in/iec/foportal/help/individual/return-applicable-1" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary"><span class="material-icons-outlined me-1" style="font-size:16px">calculate</span>Tax Calculator</a>
+        </div>
+    </div>
+</div>
+
+<!-- TDS/TCS Changes -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white d-flex align-items-center">
+        <span class="material-icons-outlined me-2">account_balance_wallet</span>
+        <h6 class="mb-0">TDS & TCS Rationalization</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>TDS Threshold Increases</h6>
+                <ul class="small">
+                    <li><strong>Interest on securities (193):</strong> ₹5,000 → ₹10,000</li>
+                    <li><strong>Dividends (194):</strong> ₹5,000 → ₹10,000</li>
+                    <li><strong>Insurance commission (194D):</strong> ₹15,000 → ₹20,000</li>
+                    <li><strong>Rent (194-I):</strong> ₹2,40,000 → ₹6,00,000</li>
+                    <li><strong>Senior citizen FD interest (194A):</strong> ₹50,000 → ₹1,00,000</li>
+                    <li><strong>Other FD interest (194A):</strong> ₹40,000 → ₹50,000</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6>TCS on Foreign Remittance</h6>
+                <ul class="small">
+                    <li><strong>LRS limit for TCS:</strong> ₹7,00,000 → ₹10,00,000 (no TCS below this)</li>
+                    <li><strong>Education abroad TCS:</strong> Removed if financed by loan from specified institution</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Capital Gains -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark d-flex align-items-center">
+        <span class="material-icons-outlined me-2">trending_up</span>
+        <h6 class="mb-0">Capital Gains & Investment Impact</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card border-start border-primary border-3 h-100">
+                    <div class="card-body">
+                        <h6>Updated Capital Gains (from Budget 2024)</h6>
+                        <ul class="small mb-0">
+                            <li><strong>STCG (Equity):</strong> 20% (was 15%)</li>
+                            <li><strong>LTCG (Equity):</strong> 12.5% above ₹1.25L (was 10% above ₹1L)</li>
+                            <li><strong>LTCG (Debt/Gold/Property):</strong> 12.5% (was 20% with indexation)</li>
+                            <li><strong>Indexation:</strong> Removed for properties acquired after 23 Jul 2024</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-start border-success border-3 h-100">
+                    <div class="card-body">
+                        <h6>NPS Vatsalya (New)</h6>
+                        <ul class="small mb-0">
+                            <li>NPS accounts can now be opened for minors (children)</li>
+                            <li>Converted to regular NPS account when child turns 18</li>
+                            <li>Same tax benefits under 80CCD</li>
+                            <li>Build retirement corpus from childhood</li>
+                        </ul>
+                        <a href="https://enps.nsdl.com/eNPS/NationalPensionSystem.html" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-success mt-2"><span class="material-icons-outlined me-1" style="font-size:16px">open_in_new</span>Open NPS Vatsalya</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Investment-Friendly Points -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white d-flex align-items-center">
+        <span class="material-icons-outlined me-2">savings</span>
+        <h6 class="mb-0">Key Investment-Friendly Announcements</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-success me-2">check_circle</span>
+                            <div>
+                                <strong>Section 80C limit unchanged</strong>
+                                <p class="small text-muted mb-0">₹1,50,000 deduction for PPF, ELSS, LIC, NSC, 5-yr FD etc. (Old Regime only)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-success me-2">check_circle</span>
+                            <div>
+                                <strong>NPS employer contribution raised to 14%</strong>
+                                <p class="small text-muted mb-0">Private sector employees can now get 14% employer NPS contribution (was 10%)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-success me-2">check_circle</span>
+                            <div>
+                                <strong>ULIPs — no LTCG if held 5+ years</strong>
+                                <p class="small text-muted mb-0">Unit-linked insurance plans with premium up to ₹2.5L/year remain tax-free</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-success me-2">check_circle</span>
+                            <div>
+                                <strong>IFSC Gift City — Tax benefits extended</strong>
+                                <p class="small text-muted mb-0">Extended tax holiday for units in IFSC till March 2030</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-primary me-2">info</span>
+                            <div>
+                                <strong>Self-occupied house — 2 properties allowed</strong>
+                                <p class="small text-muted mb-0">Annual value of 2 self-occupied house properties treated as NIL</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-primary me-2">info</span>
+                            <div>
+                                <strong>No ITR required if income ≤ ₹12L</strong>
+                                <p class="small text-muted mb-0">Simplified compliance — no return filing needed if total income under ₹12,00,000 (salary/pension)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-danger me-2">warning</span>
+                            <div>
+                                <strong>Crypto remains at 30% flat</strong>
+                                <p class="small text-muted mb-0">No change — VDA (crypto) profits taxed at 30% + 1% TDS on transfer</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <span class="material-icons-outlined text-primary me-2">info</span>
+                            <div>
+                                <strong>Updated ITR window extended to 4 years</strong>
+                                <p class="small text-muted mb-0">Taxpayers can file updated returns within 4 years (was 2 years) with additional tax</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Impact Summary -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white d-flex align-items-center">
+        <span class="material-icons-outlined me-2">lightbulb</span>
+        <h6 class="mb-0">How This Impacts Your Portfolio</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <span class="material-icons-outlined text-success" style="font-size:48px">savings</span>
+                        <h6 class="mt-2">Tax Savings</h6>
+                        <p class="small">With zero tax up to ₹12.75L income, redirect the saved tax amount into SIPs, PPF, or NPS for wealth building.</p>
+                        <a href="https://www.mutualfundssahihai.com/en" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Start SIP</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <span class="material-icons-outlined text-primary" style="font-size:48px">family_restroom</span>
+                        <h6 class="mt-2">NPS Vatsalya</h6>
+                        <p class="small">Start investing for your children early. Open NPS Vatsalya accounts to build a retirement corpus from a young age.</p>
+                        <a href="https://enps.nsdl.com/eNPS/NationalPensionSystem.html" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Open NPS</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <span class="material-icons-outlined text-warning" style="font-size:48px">real_estate_agent</span>
+                        <h6 class="mt-2">Property Planning</h6>
+                        <p class="small">Indexation removal for new properties means higher tax on LTCG. Consider holding properties longer or using 54EC bonds.</p>
+                        <a href="https://www.incometax.gov.in/iec/foportal/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-warning"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>LTCG Guide</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+

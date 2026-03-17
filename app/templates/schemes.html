@@ -1,0 +1,675 @@
+{% extends 'base.html' %}
+{% block title %}Schemes & Bonds - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">workspace_premium</span> {{ t('Schemes & Bonds') }}</h4>
+        <p class="text-muted">{{ t('Track gold schemes, chit funds, bonds, and recurring plans') }}</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#scanSchemeModal">
+            <span class="material-icons-outlined">document_scanner</span> {{ t('Scan Document') }}
+        </button>
+        <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addSchemeModal">
+            <span class="material-icons-outlined">add</span> {{ t('Add Scheme') }}
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-income">
+            <span class="material-icons-outlined stat-icon">assignment_turned_in</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Active Schemes') }}</span>
+                <span class="stat-value">{{ active_count }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-expense">
+            <span class="material-icons-outlined stat-icon">event_repeat</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Monthly Commitment') }}</span>
+                <span class="stat-value">₹{{ total_monthly_commitment|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-invest">
+            <span class="material-icons-outlined stat-icon">savings</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Total Invested') }}</span>
+                <span class="stat-value">₹{{ total_invested|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-savings">
+            <span class="material-icons-outlined stat-icon">monetization_on</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Maturity Value') }}</span>
+                <span class="stat-value">₹{{ total_maturity|inr }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- By Type Chart -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6><span class="material-icons-outlined">donut_large</span> {{ t('Schemes & Bonds') }}</h6>
+                <canvas id="typeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schemes Table -->
+    <div class="col-md-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="mb-0"><span class="material-icons-outlined">list</span> {{ t('All Schemes & Bonds') }}</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ t('Provider') }}</th>
+                                <th>{{ t('Scheme') }}</th>
+                                <th>{{ t('Type') }}</th>
+                                <th>{{ t('Installment') }}</th>
+                                <th>{{ t('Progress') }}</th>
+                                <th>{{ t('Total Paid') }}</th>
+                                <th>{{ t('Status') }}</th>
+                                <th>{{ t('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if schemes %}
+                            {% for s in schemes %}
+                            <tr>
+                                <td><strong>{{ s.provider }}</strong></td>
+                                <td>{{ s.scheme_name }}</td>
+                                <td><span class="badge bg-warning text-dark">{{ s.scheme_type }}</span></td>
+                                <td>₹{{ s.installment_amount|inr }}/{{ s.installment_frequency }}</td>
+                                <td>
+                                    {% if s.total_installments > 0 %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: {{ (s.paid_installments / s.total_installments * 100)|int }}%"></div>
+                                        </div>
+                                        <small>{{ s.paid_installments }}/{{ s.total_installments }}</small>
+                                    </div>
+                                    {% else %}
+                                    <small class="text-muted">{{ s.paid_installments }} paid</small>
+                                    {% endif %}
+                                </td>
+                                <td>₹{{ s.total_paid|inr }}</td>
+                                <td>
+                                    {% if s.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% elif s.status == 'completed' %}
+                                    <span class="badge bg-primary">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ s.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateScheme{{ s.id }}" title="Update">
+                                        <span class="material-icons-outlined" style="font-size:16px">edit</span>
+                                    </button>
+                                    <a href="{{ url_for('main.delete_scheme', id=s.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this scheme?')" title="Delete">
+                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr><td colspan="8" class="text-center text-muted py-4">No schemes or bonds added yet. Click "Add Scheme" to start tracking.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scheme Details Cards -->
+{% for s in schemes %}
+{% if s.bonus_benefit or s.notes or s.maturity_value > 0 %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <div>
+                <h6>{{ s.provider }} — {{ s.scheme_name }}</h6>
+                {% if s.bonus_benefit %}<p class="mb-1"><span class="badge bg-success">Bonus:</span> {{ s.bonus_benefit }}</p>{% endif %}
+                {% if s.maturity_value > 0 %}<p class="mb-1"><strong>Maturity Value:</strong> ₹{{ s.maturity_value|inr }}</p>{% endif %}
+                {% if s.notes %}<p class="mb-0 text-muted"><small>{{ s.notes }}</small></p>{% endif %}
+            </div>
+            <div class="text-end">
+                {% if s.start_date %}<p class="mb-1"><small>Start: {{ s.start_date.strftime('%d %b %Y') }}</small></p>{% endif %}
+                {% if s.maturity_date %}<p class="mb-0"><small>Maturity: {{ s.maturity_date.strftime('%d %b %Y') }}</small></p>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<!-- ============ GOVERNMENT & PRIVATE BONDS DIRECTORY ============ -->
+<div class="card mb-4 mt-4">
+    <div class="card-header">
+        <h6 class="mb-0"><span class="material-icons-outlined me-1">assured_workload</span> Government & Private Bonds Directory</h6>
+    </div>
+    <div class="card-body">
+        <h6 class="text-primary mb-3"><span class="material-icons-outlined" style="font-size:18px">flag</span> Central Government Bonds</h6>
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">RBI Floating Rate Bond</strong>
+                            <span class="badge bg-success" style="font-size:10px">Govt</span>
+                        </div>
+                        <div class="small text-muted">8.05% p.a. | 7 years | Min ₹1,000</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://rfrb.rbi.org.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary btn-sm w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Apply via Bank</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">G-Sec (RBI Retail Direct)</strong>
+                            <span class="badge bg-success" style="font-size:10px">Sovereign</span>
+                        </div>
+                        <div class="small text-muted">6.8–7.4% | 91 days–40 yrs | Min ₹10K</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://rbiretaildirect.org.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>RBI Retail Direct</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">State Dev. Loans (SDLs)</strong>
+                            <span class="badge bg-info" style="font-size:10px">State Govt</span>
+                        </div>
+                        <div class="small text-muted">7.0–7.8% | 10–15 yrs | Higher than G-Sec</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://rbiretaildirect.org.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy via RBI RD</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Treasury Bills (T-Bills)</strong>
+                            <span class="badge bg-success" style="font-size:10px">Short-Term</span>
+                        </div>
+                        <div class="small text-muted">6.5–7.0% | 91/182/364 days | Min ₹25K</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://rbiretaildirect.org.in/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy via RBI RD</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">NABARD Bonds (80C)</strong>
+                            <span class="badge bg-primary" style="font-size:10px">Tax Save</span>
+                        </div>
+                        <div class="small text-muted">7.0–7.5% | 5–7 yrs | 80C eligible</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.nabard.org/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>NABARD</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-warning">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">54EC Bonds (REC/NHAI/PFC)</strong>
+                            <span class="badge bg-warning text-dark" style="font-size:10px">LTCG Exempt</span>
+                        </div>
+                        <div class="small text-muted">5.0% | 5 yrs | Capital gains tax exempt</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.recindia.nic.in/54EC-bonds" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Apply at REC</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">IRFC Tax-Free Bonds</strong>
+                            <span class="badge bg-success" style="font-size:10px">Tax-Free</span>
+                        </div>
+                        <div class="small text-muted">7–8% tax-free | NSE/BSE listed | ~10% effective</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.nseindia.com/market-data/bonds-traded-in-capital-market" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy on NSE</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 border-warning">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Sovereign Gold Bond (SGB)</strong>
+                            <span class="badge bg-warning text-dark" style="font-size:10px">Gold+2.5%</span>
+                        </div>
+                        <div class="small text-muted">2.5% + gold returns | 8 yrs | LTCG exempt</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.rbi.org.in/Scripts/BS_PressReleaseDisplay.aspx?prid=57413" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Apply via Bank</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="text-primary mb-3 mt-2"><span class="material-icons-outlined" style="font-size:18px">business</span> Best Private / Corporate Bonds (NCDs)</h6>
+        <div class="row">
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">HDFC Ltd NCDs</strong>
+                            <span class="badge bg-primary" style="font-size:10px">AAA</span>
+                        </div>
+                        <div class="small text-muted">7.5–8.5% | 2–10 yrs | NSE/BSE listed</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.thefixedincome.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Bajaj Finance NCDs</strong>
+                            <span class="badge bg-primary" style="font-size:10px">AAA</span>
+                        </div>
+                        <div class="small text-muted">7.8–8.8% | 12–60 months | Monthly payout</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.bajajfinserv.in/fixed-deposit" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Invest</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Tata Capital NCDs</strong>
+                            <span class="badge bg-primary" style="font-size:10px">AAA</span>
+                        </div>
+                        <div class="small text-muted">7.5–8.5% | 24–60 months | NSE/BSE listed</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.thefixedincome.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Shriram Finance NCDs</strong>
+                            <span class="badge bg-info" style="font-size:10px">AA+</span>
+                        </div>
+                        <div class="small text-muted">8.5–10.0% | 24–60 months | High yield</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.thefixedincome.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Muthoot Finance NCDs</strong>
+                            <span class="badge bg-info" style="font-size:10px">AA+</span>
+                        </div>
+                        <div class="small text-muted">8.0–9.5% | 24–60 months | Gold-backed</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.thefixedincome.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="small">Mahindra Finance NCDs</strong>
+                            <span class="badge bg-info" style="font-size:10px">AA+</span>
+                        </div>
+                        <div class="small text-muted">8.0–9.0% | 24–60 months | NSE/BSE listed</div>
+                    </div>
+                    <div class="card-footer bg-transparent py-1">
+                        <a href="https://www.thefixedincome.com/" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary w-100" style="font-size:11px"><span class="material-icons-outlined me-1" style="font-size:14px">open_in_new</span>Buy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-info small mb-0 mt-2">
+            <span class="material-icons-outlined me-1" style="font-size:16px">lightbulb</span>
+            <strong>Tip:</strong> Buy AAA/AA+ rated bonds only. Use <a href="https://www.thefixedincome.com/" target="_blank" rel="noopener noreferrer">TheFixedIncome.com</a>, <a href="https://www.indiabonds.com/" target="_blank" rel="noopener noreferrer">IndiaBonds.com</a> or <a href="https://rbiretaildirect.org.in/" target="_blank" rel="noopener noreferrer">RBI Retail Direct</a> to buy bonds online.
+        </div>
+    </div>
+</div>
+
+<!-- Update Scheme Modals -->
+{% for s in schemes %}
+<div class="modal fade" id="updateScheme{{ s.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Update Scheme</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <form method="POST" action="{{ url_for('main.update_scheme', id=s.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Installments Paid</label>
+                        <input type="number" name="paid_installments" class="form-control" value="{{ s.paid_installments }}" min="0">
+                        {% if s.total_installments > 0 %}
+                        <small class="text-muted">Out of {{ s.total_installments }} total</small>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="active" {% if s.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="completed" {% if s.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="cancelled" {% if s.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-accent">Update</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Scheme Modal -->
+<div class="modal fade" id="addSchemeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">workspace_premium</span> Add Scheme / Bond</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.add_scheme') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Scheme Type *</label>
+                            <select name="scheme_type" class="form-select" required>
+                                <option value="">Select Type</option>
+                                {% for st in scheme_types %}
+                                <option value="{{ st }}">{{ st }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Provider / Shop Name *</label>
+                            <input type="text" name="provider" class="form-control" placeholder="e.g. Kalyan Jewellers, SBI, Post Office" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Scheme Name *</label>
+                            <input type="text" name="scheme_name" class="form-control" placeholder="e.g. Gold Savings Plan 2026" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Installment (₹) *</label>
+                            <input type="number" name="installment_amount" class="form-control" placeholder="e.g. 20000" step="0.01" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Frequency</label>
+                            <select name="installment_frequency" class="form-select">
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="half-yearly">Half-Yearly</option>
+                                <option value="yearly">Yearly</option>
+                                <option value="one-time">One-Time</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Total Installments</label>
+                            <input type="number" name="total_installments" class="form-control" placeholder="e.g. 11" min="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Paid So Far</label>
+                            <input type="number" name="paid_installments" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Maturity Value (₹)</label>
+                            <input type="number" name="maturity_value" class="form-control" placeholder="Expected value" step="0.01">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Bonus / Benefit</label>
+                            <input type="text" name="bonus_benefit" class="form-control" placeholder="e.g. 1 month free gold">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Maturity Date</label>
+                            <input type="date" name="maturity_date" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="active" selected>Active</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Family Member</label>
+                            <input type="text" name="member" class="form-control" value="Self" list="schemeMemberList">
+                            <datalist id="schemeMemberList">
+                                <option value="Self"><option value="Spouse"><option value="Father">
+                                <option value="Mother"><option value="Son"><option value="Daughter">
+                            </datalist>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" class="form-control" rows="1" placeholder="Additional details..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Add Scheme</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Scheme Document Modal -->
+<div class="modal fade" id="scanSchemeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">document_scanner</span> Scan Scheme / Bond Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#schemeScanUploadTab">Upload File</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#schemeScanTextTab">Paste Text</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="schemeScanUploadTab">
+                        <p class="text-muted">Upload your scheme receipt, bond certificate, or plan document (PDF or image) and we'll auto-detect the details.</p>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Document</label>
+                            <input type="file" id="schemeDocFile" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.bmp,.tiff,.webp">
+                            <small class="text-muted">Supported: PDF, PNG, JPG, JPEG (max 16MB)</small>
+                        </div>
+                        <button type="button" class="btn btn-accent w-100" id="schemeScanBtn" onclick="scanSchemeDoc()">
+                            <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">search</span> Scan & Auto-Fill
+                        </button>
+                    </div>
+                    <div class="tab-pane fade" id="schemeScanTextTab">
+                        <p class="text-muted">Paste the text from your scheme/bond document below and we'll extract the details.</p>
+                        <div class="mb-3">
+                            <textarea id="schemePasteText" class="form-control" rows="6" placeholder="Paste scheme/bond document text here..."></textarea>
+                        </div>
+                        <button type="button" class="btn btn-accent w-100" id="schemePasteBtn" onclick="scanSchemeFromText()">
+                            <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">text_snippet</span> Extract & Auto-Fill
+                        </button>
+                    </div>
+                </div>
+                <div id="schemeScanStatus" class="d-none mt-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="spinner-border spinner-border-sm text-primary" id="schemeScanSpinner"></div>
+                        <span id="schemeScanMsg">Scanning document...</span>
+                    </div>
+                </div>
+                <div id="schemeScanResult" class="d-none mt-2">
+                    <div class="alert alert-info" id="schemeScanResultMsg"></div>
+                    <div id="schemeScanPreview" class="p-2 bg-light rounded mb-2" style="max-height:150px;overflow-y:auto;font-size:0.8rem;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const typeData = {{ by_type_json|safe }};
+if (typeData.length > 0) {
+    new Chart(document.getElementById('typeChart'), {
+        type: 'doughnut',
+        data: {
+            labels: typeData.map(d => d.type),
+            datasets: [{
+                data: typeData.map(d => d.count),
+                backgroundColor: chartColors.slice(0, typeData.length)
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+function _showSchemeScanProgress() {
+    document.getElementById('schemeScanStatus').classList.remove('d-none');
+    document.getElementById('schemeScanResult').classList.add('d-none');
+    document.getElementById('schemeScanSpinner').classList.remove('d-none');
+    document.getElementById('schemeScanMsg').textContent = 'Scanning document...';
+}
+
+function _handleSchemeScanResult(result) {
+    document.getElementById('schemeScanSpinner').classList.add('d-none');
+    document.getElementById('schemeScanResult').classList.remove('d-none');
+    document.getElementById('schemeScanResultMsg').textContent = result.message;
+    document.getElementById('schemeScanBtn').disabled = false;
+    document.getElementById('schemePasteBtn').disabled = false;
+
+    if (result.success && result.data && !result.low_confidence) {
+        const d = result.data;
+        const scanModal = bootstrap.Modal.getInstance(document.getElementById('scanSchemeModal'));
+        scanModal.hide();
+
+        setTimeout(() => {
+            const addModal = new bootstrap.Modal(document.getElementById('addSchemeModal'));
+            addModal.show();
+
+            const form = document.querySelector('#addSchemeModal form');
+            if (d.scheme_type) { const sel = form.querySelector('[name=scheme_type]'); for (let o of sel.options) { if (o.value === d.scheme_type) { o.selected = true; break; } } }
+            if (d.provider) form.querySelector('[name=provider]').value = d.provider;
+            if (d.scheme_name) form.querySelector('[name=scheme_name]').value = d.scheme_name;
+            if (d.installment_amount) form.querySelector('[name=installment_amount]').value = d.installment_amount;
+            if (d.installment_frequency) { const sel = form.querySelector('[name=installment_frequency]'); for (let o of sel.options) { if (o.value === d.installment_frequency) { o.selected = true; break; } } }
+            if (d.total_installments) form.querySelector('[name=total_installments]').value = d.total_installments;
+            if (d.maturity_value) form.querySelector('[name=maturity_value]').value = d.maturity_value;
+            if (d.bonus_benefit) form.querySelector('[name=bonus_benefit]').value = d.bonus_benefit;
+            if (d.start_date) form.querySelector('[name=start_date]').value = d.start_date;
+            if (d.maturity_date) form.querySelector('[name=maturity_date]').value = d.maturity_date;
+        }, 400);
+    }
+    if (result.needs_text_input || result.low_confidence) {
+        const textTab = document.querySelector('a[href="#schemeScanTextTab"]');
+        if (textTab) { new bootstrap.Tab(textTab).show(); }
+        document.getElementById('schemeScanResultMsg').className = 'alert alert-warning';
+    } else if (result.is_wrong_type) {
+        document.getElementById('schemeScanResultMsg').className = 'alert alert-info';
+        document.getElementById('schemeScanResultMsg').innerHTML = result.message +
+            ' <a href="{{ url_for("main.policies") }}" class="alert-link">Go to Policies page &rarr;</a>';
+    } else if (result.success) {
+        document.getElementById('schemeScanResultMsg').className = 'alert alert-success';
+    } else {
+        document.getElementById('schemeScanResultMsg').className = 'alert alert-danger';
+    }
+    if (result.raw_text_preview) {
+        document.getElementById('schemeScanPreview').textContent = result.raw_text_preview;
+    }
+    document.getElementById('schemeScanMsg').textContent = result.message;
+}
+
+function scanSchemeDoc() {
+    const fileInput = document.getElementById('schemeDocFile');
+    if (!fileInput.files.length) { alert('Please select a file.'); return; }
+
+    const formData = new FormData();
+    formData.append('document', fileInput.files[0]);
+
+    _showSchemeScanProgress();
+    document.getElementById('schemeScanBtn').disabled = true;
+
+    fetch('{{ url_for("main.scan_scheme_document") }}', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(result => _handleSchemeScanResult(result))
+        .catch(err => {
+            document.getElementById('schemeScanSpinner').classList.add('d-none');
+            document.getElementById('schemeScanMsg').textContent = 'Scan failed: ' + err.message;
+            document.getElementById('schemeScanBtn').disabled = false;
+        });
+}
+
+function scanSchemeFromText() {
+    const text = document.getElementById('schemePasteText').value.trim();
+    if (!text) { alert('Please paste the document text.'); return; }
+
+    _showSchemeScanProgress();
+    document.getElementById('schemePasteBtn').disabled = true;
+
+    fetch('{{ url_for("main.scan_scheme_text") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text })
+    })
+        .then(r => r.json())
+        .then(result => _handleSchemeScanResult(result))
+        .catch(err => {
+            document.getElementById('schemeScanSpinner').classList.add('d-none');
+            document.getElementById('schemeScanMsg').textContent = 'Parse failed: ' + err.message;
+            document.getElementById('schemePasteBtn').disabled = false;
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Budget Planner - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">account_balance_wallet</span> {{ t('Monthly Budget Planner') }}</h4>
+        <p class="text-muted">{{ t('Plan and track your spending with the 50/30/20 rule') }}</p>
+    </div>
+    <form class="d-flex gap-2" method="GET">
+        <input type="month" name="month" class="form-control" value="{{ month }}" onchange="this.form.submit()">
+    </form>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-income">
+            <span class="material-icons-outlined stat-icon">payments</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Monthly Salary') }}</span>
+                <span class="stat-value">₹{{ salary|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-invest">
+            <span class="material-icons-outlined stat-icon">playlist_add_check</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Total Planned') }}</span>
+                <span class="stat-value">₹{{ total_planned|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card stat-expense">
+            <span class="material-icons-outlined stat-icon">receipt_long</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Total Spent') }}</span>
+                <span class="stat-value">₹{{ total_actual|inr }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card {% if total_actual <= total_planned %}stat-savings{% else %}stat-debt{% endif %}">
+            <span class="material-icons-outlined stat-icon">{% if total_actual <= total_planned %}check_circle{% else %}warning{% endif %}</span>
+            <div class="stat-info">
+                <span class="stat-label">{{ t('Budget Status') }}</span>
+                <span class="stat-value">{% if total_actual <= total_planned %}{{ t('On Track') }}{% else %}{{ t('Over Budget') }}{% endif %}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7 mb-3">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">bar_chart</span> {{ t('Budget vs Actual') }}</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="budgetChart" height="350"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5 mb-3">
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">analytics</span> {{ t('Category Breakdown') }}</h6></div>
+            <div class="card-body p-0" style="max-height:400px;overflow-y:auto;">
+                {% for item in budget_data %}
+                {% if item.planned > 0 or item.actual > 0 %}
+                <div class="px-3 py-2 border-bottom">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="fw-medium">{{ item.category }}</small>
+                        <small class="{% if item.over %}text-danger{% else %}text-muted{% endif %}">
+                            ₹{{ item.actual|inr }} / ₹{{ item.planned|inr }}
+                        </small>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar {% if item.over %}bg-danger{% elif item.pct > 80 %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ item.pct }}%"></div>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Budget -->
+<div class="card mt-3">
+    <div class="card-header"><h6><span class="material-icons-outlined">edit</span> Set Budget for {{ month }}</h6></div>
+    <div class="card-body">
+        <form action="{{ url_for('main.save_budget') }}" method="POST">
+            <input type="hidden" name="month" value="{{ month }}">
+            <div class="row">
+                {% for item in budget_data %}
+                <div class="col-md-4 col-lg-3 mb-3">
+                    <label class="form-label small">{{ item.category }}</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">₹</span>
+                        <input type="number" name="budget_{{ item.category }}" class="form-control" value="{{ item.planned|int }}" min="0" step="100">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-accent">
+                <span class="material-icons-outlined">save</span> Save Budget
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const budgetData = {{ budget_data|tojson|safe }};
+    const active = budgetData.filter(d => d.planned > 0 || d.actual > 0);
+    if (active.length > 0) {
+        new Chart(document.getElementById('budgetChart'), {
+            type: 'bar',
+            data: {
+                labels: active.map(d => d.category),
+                datasets: [{
+                    label: 'Planned', data: active.map(d => d.planned),
+                    backgroundColor: 'rgba(52, 152, 219, 0.6)', borderColor: '#3498db', borderWidth: 1
+                },{
+                    label: 'Actual', data: active.map(d => d.actual),
+                    backgroundColor: active.map(d => d.over ? 'rgba(231, 76, 60, 0.6)' : 'rgba(46, 204, 113, 0.6)'),
+                    borderColor: active.map(d => d.over ? '#e74c3c' : '#2ecc71'), borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true, indexAxis: 'y',
+                scales: { x: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } } },
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+    }
+</script>
+{% endblock %}

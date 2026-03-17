@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% block title %}Loans - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">account_balance</span> {{ t('Loan Tracker') }}</h4>
+    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addLoanModal">
+        <span class="material-icons-outlined">add</span> {{ t('Add Loan') }}
+    </button>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center p-3">
+            <span class="material-icons-outlined text-primary" style="font-size:32px">credit_score</span>
+            <h5 class="mt-2 mb-0">{{ active_count }}</h5>
+            <small class="text-muted">{{ t('Active Loans') }}</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center p-3">
+            <span class="material-icons-outlined text-danger" style="font-size:32px">payments</span>
+            <h5 class="mt-2 mb-0">₹{{ "{:,.0f}".format(total_emi) }}</h5>
+            <small class="text-muted">{{ t('Monthly EMI') }}</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center p-3">
+            <span class="material-icons-outlined text-warning" style="font-size:32px">pending</span>
+            <h5 class="mt-2 mb-0">₹{{ "{:,.0f}".format(total_outstanding) }}</h5>
+            <small class="text-muted">Outstanding</small>
+        </div>
+    </div>
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center p-3">
+            <span class="material-icons-outlined text-success" style="font-size:32px">check_circle</span>
+            <h5 class="mt-2 mb-0">₹{{ "{:,.0f}".format(total_paid_amount) }}</h5>
+            <small class="text-muted">{{ t('Total Paid') }}</small>
+        </div>
+    </div>
+</div>
+
+{% if monthly_salary > 0 %}
+<div class="row mb-4">
+    <div class="col-12">
+        {% set emi_ratio = (total_emi / monthly_salary * 100) if monthly_salary > 0 else 0 %}
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>{{ t('EMI to Income Ratio') }}</strong>
+                <span class="badge bg-{{ 'success' if emi_ratio < 30 else ('warning' if emi_ratio < 50 else 'danger') }}">
+                    {{ "%.1f"|format(emi_ratio) }}%
+                </span>
+            </div>
+            <div class="progress" style="height:10px">
+                <div class="progress-bar bg-{{ 'success' if emi_ratio < 30 else ('warning' if emi_ratio < 50 else 'danger') }}" 
+                     style="width:{{ [emi_ratio, 100]|min }}%"></div>
+            </div>
+            <small class="text-muted mt-1">
+                {% if emi_ratio < 30 %}Healthy — EMIs are well within limits
+                {% elif emi_ratio < 50 %}Moderate — Consider reducing debt before taking new loans
+                {% else %}High Risk — EMIs exceed 50% of income. Prioritize clearing high-interest debt
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Loan Cards -->
+{% if loan_data %}
+<div class="row">
+    {% for item in loan_data %}
+    {% set loan = item.loan %}
+    {% set ai = item.analysis %}
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0">{{ loan.loan_name }}</h6>
+                    <small class="text-muted">{{ loan.lender }} — {{ loan.loan_type }} Loan</small>
+                </div>
+                <div>
+                    <span class="badge bg-{{ ai.badge_color }} fs-6">{{ ai.verdict }}</span>
+                    {% if not loan.is_active %}
+                    <span class="badge bg-secondary ms-1">Closed</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Principal</small>
+                        <div class="fw-bold">₹{{ "{:,.0f}".format(loan.principal_amount) }}</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted">Interest</small>
+                        <div class="fw-bold">{{ loan.interest_rate }}% p.a.</div>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted">EMI</small>
+                        <div class="fw-bold text-danger">₹{{ "{:,.0f}".format(loan.emi_amount) }}</div>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>{{ loan.paid_months or 0 }} of {{ loan.tenure_months }} EMIs paid</small>
+                        <small class="fw-bold">{{ "%.1f"|format(item.progress) }}%</small>
+                    </div>
+                    <div class="progress" style="height:8px">
+                        <div class="progress-bar bg-{{ 'success' if item.progress >= 75 else ('primary' if item.progress >= 50 else 'warning') }}" 
+                             style="width:{{ item.progress }}%"></div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Total Interest</small>
+                        <div class="text-danger fw-bold">₹{{ "{:,.0f}".format(ai.total_interest) }} ({{ ai.interest_pct }}%)</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Outstanding</small>
+                        <div class="fw-bold">₹{{ "{:,.0f}".format(loan.outstanding_balance or 0) }}</div>
+                    </div>
+                </div>
+
+                {% if loan.start_date %}
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">Start Date</small>
+                        <div>{{ loan.start_date.strftime('%d %b %Y') }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">End Date</small>
+                        <div>{{ loan.end_date.strftime('%d %b %Y') if loan.end_date else 'N/A' }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- AI Analysis -->
+                <div class="mt-3 p-3 rounded" style="background: var(--card-bg); border: 1px solid var(--border-color);">
+                    <h6 class="mb-2"><span class="material-icons-outlined" style="font-size:18px">psychology</span> AI Analysis</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="me-2">Score:</span>
+                        <div class="progress flex-grow-1" style="height:8px">
+                            <div class="progress-bar bg-{{ ai.badge_color }}" style="width:{{ ai.score }}%"></div>
+                        </div>
+                        <span class="ms-2 fw-bold">{{ ai.score }}/100</span>
+                    </div>
+                    {% for reason in ai.reasons %}
+                    <small class="d-block text-muted">• {{ reason }}</small>
+                    {% endfor %}
+                    {% if ai.tips %}
+                    <hr class="my-2">
+                    <small class="fw-bold text-primary">Tips:</small>
+                    {% for tip in ai.tips %}
+                    <small class="d-block text-success">💡 {{ tip }}</small>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer d-flex gap-2">
+                {% if loan.is_active %}
+                <form method="POST" action="{{ url_for('main.record_loan_payment', id=loan.id) }}" class="d-inline">
+                    <button class="btn btn-sm btn-success">
+                        <span class="material-icons-outlined" style="font-size:16px">paid</span> Record Payment
+                    </button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('main.delete_loan', id=loan.id) }}" class="btn btn-sm btn-outline-danger"
+                   onclick="return confirm('Delete this loan?')">
+                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card p-5 text-center">
+    <span class="material-icons-outlined" style="font-size:64px; color: var(--accent);">credit_score</span>
+    <h5 class="mt-3">No Loans Added</h5>
+    <p class="text-muted">Track your loans, EMIs, and get AI analysis on whether your loans are good or bad.</p>
+    <button class="btn btn-accent mx-auto" style="width:fit-content" data-bs-toggle="modal" data-bs-target="#addLoanModal">
+        <span class="material-icons-outlined">add</span> Add Your First Loan
+    </button>
+</div>
+{% endif %}
+
+<!-- Credit Card Offers -->
+{% if cc_offers %}
+<div class="mt-4">
+    <h5><span class="material-icons-outlined">credit_card</span> Credit Card Recommendations</h5>
+    <div class="row mt-3">
+        {% for offer in cc_offers %}
+        <div class="col-md-4 col-sm-6 mb-3">
+            <div class="card h-100 p-3">
+                <h6>{{ offer.card }}</h6>
+                <p class="text-muted small mb-1">{{ offer.benefit }}</p>
+                <small class="text-muted">Annual Fee: {{ offer.annual_fee }}</small>
+                <div class="mt-2">
+                    <span class="badge bg-info">{{ offer.best_for }}</span>
+                </div>
+                <a href="{{ offer.apply_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary mt-auto">
+                    Apply Now <span class="material-icons-outlined" style="font-size:14px">open_in_new</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Loan Modal -->
+<div class="modal fade" id="addLoanModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Loan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('main.add_loan') }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Loan Type</label>
+                            <select name="loan_type" class="form-select" required>
+                                <option value="Home">Home Loan</option>
+                                <option value="Car">Car Loan</option>
+                                <option value="Two Wheeler">Two Wheeler Loan</option>
+                                <option value="Personal" selected>Personal Loan</option>
+                                <option value="Education">Education Loan</option>
+                                <option value="Gold">Gold Loan</option>
+                                <option value="Credit Card">Credit Card EMI</option>
+                                <option value="Business">Business Loan</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Lender (Bank/NBFC)</label>
+                            <input type="text" name="lender" class="form-control" placeholder="e.g. SBI, HDFC" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Loan Name</label>
+                            <input type="text" name="loan_name" class="form-control" placeholder="e.g. Home Loan - SBI" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Principal Amount (₹)</label>
+                            <input type="number" name="principal_amount" class="form-control" min="1000" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Interest Rate (% p.a.)</label>
+                            <input type="number" name="interest_rate" class="form-control" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Tenure (Months)</label>
+                            <input type="number" name="tenure_months" class="form-control" min="1" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">EMI Amount (₹) <small class="text-muted">auto if blank</small></label>
+                            <input type="number" name="emi_amount" class="form-control" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">EMIs Already Paid</label>
+                            <input type="number" name="paid_months" class="form-control" value="0" min="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">EMI Deduction Day</label>
+                            <input type="number" name="emi_day" class="form-control" value="5" min="1" max="31">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Any additional details..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">
+                        <span class="material-icons-outlined">save</span> Add Loan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
