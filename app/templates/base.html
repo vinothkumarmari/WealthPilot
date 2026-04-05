@@ -17,6 +17,8 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom CSS -->
@@ -207,6 +209,36 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery + DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+    // Auto-initialize DataTables on all tables with class 'wp-datatable'
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof jQuery !== 'undefined' && jQuery.fn.DataTable) {
+            jQuery('.wp-datatable').each(function() {
+                if (!jQuery.fn.DataTable.isDataTable(this)) {
+                    jQuery(this).DataTable({
+                        pageLength: 25,
+                        lengthMenu: [10, 25, 50, 100],
+                        order: [],
+                        language: {
+                            search: '',
+                            searchPlaceholder: 'Search...',
+                            lengthMenu: 'Show _MENU_',
+                            info: 'Showing _START_-_END_ of _TOTAL_',
+                            paginate: { previous: '‹', next: '›' }
+                        },
+                        dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'f>>" +
+                             "<'row'<'col-sm-12'tr>>" +
+                             "<'row mt-2'<'col-sm-5'i><'col-sm-7'p>>"
+                    });
+                }
+            });
+        }
+    });
+    </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 

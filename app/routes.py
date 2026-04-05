@@ -14,6 +14,8 @@ from . import limiter, csrf
 import json
 import re
 import os
+import io
+import csv
 import secrets
 from werkzeug.utils import secure_filename
 
@@ -588,6 +590,131 @@ def health_check():
         return jsonify({'status': 'healthy', 'database': 'connected'}), 200
     except Exception as e:
         return jsonify({'status': 'unhealthy', 'database': str(e)}), 503
+
+
+# ======================== DATA EXPORT (CSV) ========================
+
+EXPORT_CONFIG = {
+    'income': {
+        'model': 'Income',
+        'fields': ['source', 'income_type', 'amount', 'frequency', 'date', 'description'],
+        'headers': ['Source', 'Type', 'Amount', 'Frequency', 'Date', 'Description'],
+    },
+    'expenses': {
+        'model': 'Expense',
+        'fields': ['category', 'amount', 'date', 'description', 'is_recurring'],
+        'headers': ['Category', 'Amount', 'Date', 'Description', 'Recurring'],
+    },
+    'investments': {
+        'model': 'Investment',
+        'fields': ['investment_type', 'platform', 'name', 'amount_invested', 'current_value', 'expected_return_rate', 'start_date', 'maturity_date', 'is_active', 'member', 'notes'],
+        'headers': ['Type', 'Platform', 'Name', 'Invested', 'Current Value', 'Return Rate %', 'Start Date', 'Maturity Date', 'Active', 'Member', 'Notes'],
+    },
+    'assets': {
+        'model': 'Asset',
+        'fields': ['asset_type', 'name', 'purchase_price', 'current_value', 'purchase_date', 'emi_amount', 'emi_remaining_months', 'loan_amount', 'notes'],
+        'headers': ['Type', 'Name', 'Purchase Price', 'Current Value', 'Purchase Date', 'EMI', 'EMI Months Left', 'Loan Amount', 'Notes'],
+    },
+    'goals': {
+        'model': 'FinancialGoal',
+        'fields': ['goal_name', 'target_amount', 'current_saved', 'target_date', 'priority', 'category'],
+        'headers': ['Goal', 'Target Amount', 'Current Saved', 'Target Date', 'Priority', 'Category'],
+    },
+    'policies': {
+        'model': 'InsurancePolicy',
+        'fields': ['policy_type', 'provider', 'policy_name', 'policy_number', 'sum_assured', 'premium_amount', 'premium_frequency', 'start_date', 'maturity_date', 'nominee', 'member', 'status', 'notes'],
+        'headers': ['Type', 'Provider', 'Policy Name', 'Policy No.', 'Sum Assured', 'Premium', 'Frequency', 'Start Date', 'Maturity Date', 'Nominee', 'Member', 'Status', 'Notes'],
+    },
+    'schemes': {
+        'model': 'Scheme',
+        'fields': ['scheme_type', 'provider', 'scheme_name', 'installment_amount', 'installment_frequency', 'total_installments', 'paid_installments', 'total_paid', 'maturity_value', 'start_date', 'maturity_date', 'member', 'status', 'notes'],
+        'headers': ['Type', 'Provider', 'Scheme Name', 'Installment', 'Frequency', 'Total Installments', 'Paid', 'Total Paid', 'Maturity Value', 'Start Date', 'Maturity Date', 'Member', 'Status', 'Notes'],
+    },
+    'sips': {
+        'model': 'SIP',
+        'fields': ['fund_name', 'platform', 'sip_amount', 'frequency', 'sip_date', 'start_date', 'expected_return', 'total_invested', 'current_value', 'member', 'is_active', 'notes'],
+        'headers': ['Fund Name', 'Platform', 'SIP Amount', 'Frequency', 'SIP Date', 'Start Date', 'Expected Return %', 'Total Invested', 'Current Value', 'Member', 'Active', 'Notes'],
+    },
+    'loans': {
+        'model': 'Loan',
+        'fields': ['loan_type', 'lender', 'loan_name', 'principal_amount', 'interest_rate', 'tenure_months', 'emi_amount', 'paid_months', 'total_paid', 'outstanding_balance', 'start_date', 'end_date', 'is_active', 'notes'],
+        'headers': ['Type', 'Lender', 'Loan Name', 'Principal', 'Interest Rate %', 'Tenure (Months)', 'EMI', 'Paid Months', 'Total Paid', 'Outstanding', 'Start Date', 'End Date', 'Active', 'Notes'],
+    },
+}
+
+@main.route('/export/<data_type>')
+@login_required
+def export_csv(data_type):
+    if data_type not in EXPORT_CONFIG:
+        flash('Invalid export type.', 'danger')
+        return redirect(url_for('main.dashboard'))
+
+    config = EXPORT_CONFIG[data_type]
+    model_class = globals().get(config['model']) or locals().get(config['model'])
+    if not model_class:
+        # Resolve from models module
+        import app.models as m
+        model_class = getattr(m, config['model'])
+
+    records = model_class.query.filter_by(user_id=current_user.id).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(config['headers'])
+    for record in records:
+        row = []
+        for field in config['fields']:
+            val = getattr(record, field, '')
+            if isinstance(val, (date, datetime)):
+                val = val.strftime('%Y-%m-%d')
+            elif isinstance(val, bool):
+                val = 'Yes' if val else 'No'
+            elif val is None:
+                val = ''
+            row.append(val)
+        writer.writerow(row)
+
+    output.seek(0)
+    from flask import Response
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename=wealthpilot_{data_type}_{date.today().isoformat()}.csv'
+        }
+    )
+
+
+# ======================== ACCOUNT DELETION ========================
+
+@main.route('/delete-account', methods=['GET', 'POST'])
+@login_required
+def delete_account():
+    if current_user.is_admin:
+        flash('Admin account cannot be deleted from here.', 'danger')
+        return redirect(url_for('main.profile'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_text = request.form.get('confirm_text', '').strip()
+        
+        if not check_password_hash(current_user.password_hash, password):
+            flash('Incorrect password. Account not deleted.', 'danger')
+            return render_template('delete_account.html')
+        
+        if confirm_text != 'DELETE':
+            flash('Please type DELETE to confirm.', 'danger')
+            return render_template('delete_account.html')
+        
+        user = current_user._get_current_object()
+        logout_user()
+        session.clear()
+        db.session.delete(user)
+        db.session.commit()
+        flash('Your account and all data have been permanently deleted.', 'info')
+        return redirect(url_for('main.index'))
+    
+    return render_template('delete_account.html')
 
 
 # ======================== DASHBOARD ========================

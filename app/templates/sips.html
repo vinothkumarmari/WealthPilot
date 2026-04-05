@@ -62,7 +62,7 @@
             <div class="card-header"><h6><span class="material-icons-outlined">list</span> {{ t('All SIPs') }}</h6></div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0 wp-datatable">
                         <thead><tr><th>{{ t('Fund Name') }}</th><th>{{ t('Platform') }}</th><th>SIP/{{ t('Monthly') }}</th><th>{{ t('Invested') }}</th><th>{{ t('Current') }}</th><th>{{ t('Return') }}</th><th>{{ t('Member') }}</th><th>{{ t('Actions') }}</th></tr></thead>
                         <tbody>
                         {% for sip in sips %}

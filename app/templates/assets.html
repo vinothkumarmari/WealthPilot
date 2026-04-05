@@ -50,7 +50,7 @@
             <div class="card-header"><h6><span class="material-icons-outlined">list</span> {{ t('All Assets') }}</h6></div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0 wp-datatable">
                         <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Type') }}</th><th>{{ t('Purchase') }}</th><th>{{ t('Current') }}</th><th>{{ t('EMI') }}</th><th>{{ t('Loan') }}</th><th>{{ t('Action') }}</th></tr></thead>
                         <tbody>
                         {% for a in assets %}

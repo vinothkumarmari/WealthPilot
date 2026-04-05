@@ -112,6 +112,26 @@
                     <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ t('Risk Level') }}</span><strong>{{ current_user.risk_appetite|title }}</strong></div>
                     <div class="d-flex justify-content-between mb-2"><span class="text-muted">{{ t('Member Since') }}</span><strong>{{ current_user.created_at.strftime('%b %Y') }}</strong></div>
                 </div>
+                <hr>
+                <h6 class="text-start mb-3">{{ t('Export My Data') }}</h6>
+                <div class="d-flex flex-wrap gap-1 mb-3">
+                    <a href="{{ url_for('main.export_csv', data_type='income') }}" class="btn btn-sm btn-outline-primary">Income</a>
+                    <a href="{{ url_for('main.export_csv', data_type='expenses') }}" class="btn btn-sm btn-outline-primary">Expenses</a>
+                    <a href="{{ url_for('main.export_csv', data_type='investments') }}" class="btn btn-sm btn-outline-primary">Investments</a>
+                    <a href="{{ url_for('main.export_csv', data_type='assets') }}" class="btn btn-sm btn-outline-primary">Assets</a>
+                    <a href="{{ url_for('main.export_csv', data_type='loans') }}" class="btn btn-sm btn-outline-primary">Loans</a>
+                    <a href="{{ url_for('main.export_csv', data_type='policies') }}" class="btn btn-sm btn-outline-primary">Policies</a>
+                    <a href="{{ url_for('main.export_csv', data_type='schemes') }}" class="btn btn-sm btn-outline-primary">Schemes</a>
+                    <a href="{{ url_for('main.export_csv', data_type='sips') }}" class="btn btn-sm btn-outline-primary">SIPs</a>
+                    <a href="{{ url_for('main.export_csv', data_type='goals') }}" class="btn btn-sm btn-outline-primary">Goals</a>
+                </div>
+                <hr>
+                {% if not current_user.is_admin %}
+                <a href="{{ url_for('main.delete_account') }}" class="btn btn-sm btn-outline-danger w-100">
+                    <span class="material-icons-outlined" style="font-size: 16px; vertical-align: middle;">delete_forever</span>
+                    {{ t('Delete Account') }}
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
