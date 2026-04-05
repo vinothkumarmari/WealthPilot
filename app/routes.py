@@ -7,9 +7,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification
 from .ml_engine import FinancialAdvisor
 from .config import Config
+from . import limiter, csrf
 import json
 import re
 import os
@@ -141,7 +142,13 @@ def index():
     return render_template('landing.html')
 
 
+@main.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
+
+
 @main.route('/register', methods=['GET', 'POST'])
+@limiter.limit('10 per minute')
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
@@ -169,8 +176,14 @@ def register():
             return render_template('register.html')
 
         # Password strength check
-        if len(password) < 6:
-            flash('Password must be at least 6 characters.', 'danger')
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'danger')
+            return render_template('register.html')
+        if not re.search(r'[A-Z]', password):
+            flash('Password must contain at least one uppercase letter.', 'danger')
+            return render_template('register.html')
+        if not re.search(r'[0-9]', password):
+            flash('Password must contain at least one number.', 'danger')
             return render_template('register.html')
 
         existing = User.query.filter((User.username == username) | (User.email == email)).first()
@@ -277,6 +290,7 @@ def verify_otp():
 
 
 @main.route('/resend-otp')
+@limiter.limit('3 per minute')
 def resend_otp():
     user_id = session.get('pending_user_id')
     if not user_id:
@@ -303,6 +317,7 @@ def resend_otp():
 
 
 @main.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
@@ -310,23 +325,45 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
-            if not user.is_verified:
-                # Resend OTP for unverified user
-                otp = generate_otp()
-                user.otp_code = otp
-                user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
+        
+        if user:
+            # Check account lockout
+            if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+                remaining = int((user.locked_until - datetime.now(timezone.utc)).total_seconds() / 60) + 1
+                flash(f'Account locked due to too many failed attempts. Try again in {remaining} minute(s).', 'danger')
+                return render_template('login.html')
+            
+            if check_password_hash(user.password_hash, password):
+                # Reset failed attempts on success
+                user.failed_login_count = 0
+                user.locked_until = None
                 db.session.commit()
-                session['pending_user_id'] = user.id
-                email_sent = send_otp_email(user.email, otp)
-                if email_sent:
-                    flash('Email not verified. New OTP sent to your email.', 'warning')
-                else:
-                    flash('Email not verified. OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
-                return redirect(url_for('main.verify_otp'))
-            login_user(user, remember=request.form.get('remember'))
-            flash('Login successful!', 'success')
-            return redirect(url_for('main.dashboard'))
+                
+                if not user.is_verified:
+                    otp = generate_otp()
+                    user.otp_code = otp
+                    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
+                    db.session.commit()
+                    session['pending_user_id'] = user.id
+                    email_sent = send_otp_email(user.email, otp)
+                    if email_sent:
+                        flash('Email not verified. New OTP sent to your email.', 'warning')
+                    else:
+                        flash('Email not verified. OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+                    return redirect(url_for('main.verify_otp'))
+                login_user(user, remember=request.form.get('remember'))
+                session['_last_activity'] = datetime.now(timezone.utc).isoformat()
+                flash('Login successful!', 'success')
+                return redirect(url_for('main.dashboard'))
+            else:
+                # Increment failed login count
+                user.failed_login_count = (user.failed_login_count or 0) + 1
+                if user.failed_login_count >= Config.MAX_FAILED_LOGINS:
+                    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=Config.ACCOUNT_LOCKOUT_MINUTES)
+                    db.session.commit()
+                    flash(f'Account locked for {Config.ACCOUNT_LOCKOUT_MINUTES} minutes due to {Config.MAX_FAILED_LOGINS} failed attempts.', 'danger')
+                    return render_template('login.html')
+                db.session.commit()
         flash('Invalid credentials.', 'danger')
     return render_template('login.html')
 
@@ -413,8 +450,14 @@ def reset_password():
             return render_template('reset_password.html', email=user.email)
 
         # Validate password
-        if len(password) < 6:
-            flash('Password must be at least 6 characters.', 'danger')
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'danger')
+            return render_template('reset_password.html', email=user.email, otp_verified=True)
+        if not re.search(r'[A-Z]', password):
+            flash('Password must contain at least one uppercase letter.', 'danger')
+            return render_template('reset_password.html', email=user.email, otp_verified=True)
+        if not re.search(r'[0-9]', password):
+            flash('Password must contain at least one number.', 'danger')
             return render_template('reset_password.html', email=user.email, otp_verified=True)
         if password != confirm:
             flash('Passwords do not match.', 'danger')
@@ -494,8 +537,57 @@ def resend_reset_otp():
 @login_required
 def logout():
     logout_user()
+    session.clear()
     flash('Logged out successfully.', 'info')
     return redirect(url_for('main.index'))
+
+
+# ======================== CHANGE PASSWORD ========================
+
+@main.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_pw = request.form.get('current_password', '')
+        new_pw = request.form.get('new_password', '')
+        confirm_pw = request.form.get('confirm_password', '')
+        
+        if not check_password_hash(current_user.password_hash, current_pw):
+            flash('Current password is incorrect.', 'danger')
+            return render_template('change_password.html')
+        
+        if len(new_pw) < 8:
+            flash('New password must be at least 8 characters.', 'danger')
+            return render_template('change_password.html')
+        if not re.search(r'[A-Z]', new_pw):
+            flash('New password must contain at least one uppercase letter.', 'danger')
+            return render_template('change_password.html')
+        if not re.search(r'[0-9]', new_pw):
+            flash('New password must contain at least one number.', 'danger')
+            return render_template('change_password.html')
+        if new_pw != confirm_pw:
+            flash('New passwords do not match.', 'danger')
+            return render_template('change_password.html')
+        if check_password_hash(current_user.password_hash, new_pw):
+            flash('New password must be different from current password.', 'danger')
+            return render_template('change_password.html')
+        
+        current_user.password_hash = generate_password_hash(new_pw)
+        db.session.commit()
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('main.profile'))
+    return render_template('change_password.html')
+
+
+# ======================== HEALTH CHECK ========================
+
+@main.route('/health')
+def health_check():
+    try:
+        db.session.execute(db.text('SELECT 1'))
+        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
+    except Exception as e:
+        return jsonify({'status': 'unhealthy', 'database': str(e)}), 503
 
 
 # ======================== DASHBOARD ========================
@@ -766,7 +858,7 @@ def add_income():
     return redirect(url_for('main.income'))
 
 
-@main.route('/income/delete/<int:id>')
+@main.route('/income/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_income(id):
     inc = Income.query.get_or_404(id)
@@ -959,7 +1051,7 @@ def add_expense():
     return redirect(url_for('main.expenses'))
 
 
-@main.route('/expenses/delete/<int:id>')
+@main.route('/expenses/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_expense(id):
     exp = Expense.query.get_or_404(id)
@@ -1064,7 +1156,7 @@ def add_investment():
     return redirect(url_for('main.investments'))
 
 
-@main.route('/investments/delete/<int:id>')
+@main.route('/investments/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_investment(id):
     inv = Investment.query.get_or_404(id)
@@ -1100,7 +1192,7 @@ def add_pf():
     return redirect(url_for('main.investments'))
 
 
-@main.route('/delete-pf/<int:id>')
+@main.route('/delete-pf/<int:id>', methods=['POST'])
 @login_required
 def delete_pf(id):
     pf = ProvidentFund.query.get_or_404(id)
@@ -1146,7 +1238,7 @@ def update_bank_balance(id):
     return redirect(url_for('main.investments'))
 
 
-@main.route('/delete-bank-account/<int:id>')
+@main.route('/delete-bank-account/<int:id>', methods=['POST'])
 @login_required
 def delete_bank_account(id):
     acct = BankAccount.query.get_or_404(id)
@@ -1353,7 +1445,7 @@ def add_asset():
     return redirect(url_for('main.assets'))
 
 
-@main.route('/assets/delete/<int:id>')
+@main.route('/assets/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_asset(id):
     asset = Asset.query.get_or_404(id)
@@ -1406,7 +1498,7 @@ def update_goal(id):
     return redirect(url_for('main.goals'))
 
 
-@main.route('/goals/delete/<int:id>')
+@main.route('/goals/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_goal(id):
     goal = FinancialGoal.query.get_or_404(id)
@@ -1492,7 +1584,7 @@ def admin_panel():
     )
 
 
-@main.route('/admin/delete-user/<int:id>')
+@main.route('/admin/delete-user/<int:id>', methods=['POST'])
 @admin_required
 def admin_delete_user(id):
     user = db.session.get(User, id)
@@ -1579,7 +1671,7 @@ def admin_test_mail():
     return redirect(url_for('main.admin_panel'))
 
 
-@main.route('/admin/toggle-verify/<int:id>')
+@main.route('/admin/toggle-verify/<int:id>', methods=['POST'])
 @admin_required
 def admin_toggle_verify(id):
     user = db.session.get(User, id)
@@ -1663,7 +1755,7 @@ def add_policy():
     return redirect(url_for('main.policies'))
 
 
-@main.route('/policies/delete/<int:id>')
+@main.route('/policies/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_policy(id):
     policy = InsurancePolicy.query.get_or_404(id)
@@ -2055,7 +2147,7 @@ def update_scheme(id):
     return redirect(url_for('main.schemes'))
 
 
-@main.route('/schemes/delete/<int:id>')
+@main.route('/schemes/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_scheme(id):
     scheme = Scheme.query.get_or_404(id)
@@ -2246,7 +2338,7 @@ def update_sip(id):
     return redirect(url_for('main.sips'))
 
 
-@main.route('/sips/delete/<int:id>')
+@main.route('/sips/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_sip(id):
     sip = SIP.query.get_or_404(id)
@@ -2550,7 +2642,7 @@ def record_loan_payment(id):
     return redirect(url_for('main.loans'))
 
 
-@main.route('/delete-loan/<int:id>')
+@main.route('/delete-loan/<int:id>', methods=['POST'])
 @login_required
 def delete_loan(id):
     loan = Loan.query.get_or_404(id)
@@ -2568,8 +2660,118 @@ def delete_loan(id):
 @main.route('/gold-silver')
 @login_required
 def gold_silver():
-    analysis = advisor.get_gold_silver_analysis()
+    from .ibja_rates import fetch_ibja_rates
+    live = fetch_ibja_rates()
+
+    if live.get('success'):
+        gold_data = {}
+        for karat in ['24K', '22K', '18K']:
+            g = live['gold'][karat]
+            price = g['price_per_gram'] or 0
+            history_day = live.get('gold_history', [])
+            prev_price = history_day[-2][karat] if len(history_day) >= 2 else price
+            change = price - prev_price
+            change_pct = (change / prev_price * 100) if prev_price else 0
+            avg = sum(h[karat] for h in history_day) / len(history_day) if history_day else price
+            trend = 'Bullish' if price >= avg else 'Bearish'
+
+            gold_data[karat] = {
+                'current_price': price,
+                'price_10g': g['price_per_10g'] or round(price * 10, 2),
+                'purity': g['purity'],
+                'change': round(change, 2),
+                'change_pct': round(change_pct, 2),
+                'trend': trend,
+                'history_day': [{'date': h['date'], 'price': h[karat]} for h in history_day],
+                'history_month': [{'date': h['date'], 'price': h[karat]} for h in live.get('gold_history_month', [])],
+                'history_year': [{'date': h['date'], 'price': h[karat]} for h in live.get('gold_history_year', [])],
+            }
+
+        # Additional purities
+        extra_purities = {}
+        for key in ['995', '585']:
+            g = live['gold'].get(key, {})
+            if g.get('price_per_gram'):
+                extra_purities[key] = {
+                    'price_per_gram': g['price_per_gram'],
+                    'price_per_10g': g['price_per_10g'],
+                    'purity': g['purity'],
+                }
+
+        # Silver
+        s = live['silver']
+        s_price = s['price_per_gram'] or 0
+        s_history_day = live.get('silver_history', [])
+        s_prev = s_history_day[-2]['price'] if len(s_history_day) >= 2 else s_price
+        s_change = s_price - s_prev
+        s_change_pct = (s_change / s_prev * 100) if s_prev else 0
+        s_avg = sum(h['price'] for h in s_history_day) / len(s_history_day) if s_history_day else s_price
+        s_trend = 'Bullish' if s_price >= s_avg else 'Bearish'
+
+        # Platinum
+        pt = live.get('platinum', {})
+        pt_price = pt.get('price_per_gram') or 0
+
+        # Tips
+        gold_tips = []
+        if gold_data['24K']['trend'] == 'Bullish':
+            gold_tips.append('Gold prices trending up — good if already invested, wait for dip to buy more')
+            gold_tips.append('Consider Sovereign Gold Bonds for 2.5% extra annual returns')
+        else:
+            gold_tips.append('Gold prices trending down — good buying opportunity')
+            gold_tips.append('Consider SIP-style gold investment via Gold ETF/SGB')
+        gold_tips.append('22K gold is best for jewelry, 24K for investment (coins/bars/ETFs)')
+
+        silver_tips = []
+        if s_trend == 'Bullish':
+            silver_tips.append('Silver showing upward trend — industrial demand driving prices')
+        else:
+            silver_tips.append('Silver dipping — accumulate for long-term as industrial metal')
+
+        analysis = {
+            'gold': gold_data,
+            'gold_tips': gold_tips,
+            'extra_purities': extra_purities,
+            'silver': {
+                'current_price': s_price,
+                'unit': 'per gram',
+                'price_kg': s['price_per_kg'] or round(s_price * 1000, 2),
+                'change': round(s_change, 2),
+                'change_pct': round(s_change_pct, 2),
+                'trend': s_trend,
+                'history_day': s_history_day,
+                'history_month': live.get('silver_history_month', []),
+                'history_year': live.get('silver_history_year', []),
+                'tips': silver_tips,
+            },
+            'platinum': {
+                'price_per_gram': pt_price,
+                'price_per_10g': pt.get('price_per_10g') or round(pt_price * 10, 2),
+            },
+            'am_pm_data': live.get('am_pm_data', []),
+            'chart_data_points': live.get('chart_data_points', 0),
+            'last_updated': live['last_updated'],
+            'source': live['source'],
+            'live': True,
+        }
+    else:
+        analysis = advisor.get_gold_silver_analysis()
+        analysis['source'] = 'Simulated (IBJA unavailable)'
+        analysis['live'] = False
+        analysis['am_pm_data'] = []
+        analysis['extra_purities'] = {}
+        analysis['chart_data_points'] = 0
+
     return render_template('gold_silver.html', analysis=analysis)
+
+
+@main.route('/api/live-rates')
+@login_required
+def api_live_rates():
+    """API endpoint for AJAX refresh of live rates."""
+    from .ibja_rates import fetch_ibja_rates
+    live = fetch_ibja_rates()
+    return jsonify(live)
 
 
 # ======================== RATE MONITOR ========================
@@ -2620,6 +2822,16 @@ def feedback():
 @login_required
 def help_guide():
     return render_template('help_guide.html')
+
+
+@main.route('/privacy-policy')
+def privacy_policy():
+    return render_template('privacy_policy.html')
+
+
+@main.route('/terms-of-service')
+def terms_of_service():
+    return render_template('terms_of_service.html')
 
 
 # ======================== DUE REMINDERS ========================
@@ -2682,3 +2894,151 @@ def send_reminders():
         return jsonify(success=True, message=f'Reminder sent to {current_user.email} — {len(dues)} due(s)')
     except Exception as e:
         return jsonify(success=True, message=f'{len(dues)} dues found. Email not sent (mail not configured). Dues: {"; ".join(dues)}')
+
+
+# ======================== NOTIFICATIONS ========================
+
+def _generate_notifications(user):
+    """Auto-generate notifications for the user based on their financial data."""
+    today = date.today()
+    new_notifs = []
+
+    # Policy premium due in next 7 days
+    policies = InsurancePolicy.query.filter_by(user_id=user.id, status='active').all()
+    for p in policies:
+        if p.premium_due_day:
+            # Check if due day is within next 7 days
+            try:
+                due_date = today.replace(day=p.premium_due_day)
+                if due_date < today:
+                    due_date = (due_date + relativedelta(months=1))
+                days_until = (due_date - today).days
+                if 0 <= days_until <= 7:
+                    # Check if we already sent this notification this month
+                    existing = Notification.query.filter(
+                        Notification.user_id == user.id,
+                        Notification.title.contains(p.policy_name or 'Policy'),
+                        Notification.created_at >= today.replace(day=1)
+                    ).first()
+                    if not existing:
+                        new_notifs.append(Notification(
+                            user_id=user.id,
+                            title=f'Premium Due: {p.policy_name or p.provider}',
+                            message=f'₹{p.premium_amount:,.0f} premium due in {days_until} days (day {p.premium_due_day})',
+                            category='warning', icon='shield', link='/policies'
+                        ))
+            except (ValueError, AttributeError):
+                pass
+
+    # Loan EMI due in next 7 days
+    loans = Loan.query.filter_by(user_id=user.id).all()
+    for loan in loans:
+        if loan.emi_day and loan.outstanding_balance and loan.outstanding_balance > 0:
+            try:
+                due_date = today.replace(day=loan.emi_day)
+                if due_date < today:
+                    due_date = (due_date + relativedelta(months=1))
+                days_until = (due_date - today).days
+                if 0 <= days_until <= 7:
+                    existing = Notification.query.filter(
+                        Notification.user_id == user.id,
+                        Notification.title.contains(loan.loan_name or loan.lender or 'Loan'),
+                        Notification.created_at >= today.replace(day=1)
+                    ).first()
+                    if not existing:
+                        new_notifs.append(Notification(
+                            user_id=user.id,
+                            title=f'EMI Due: {loan.loan_name or loan.lender}',
+                            message=f'₹{loan.emi_amount:,.0f} EMI due in {days_until} days',
+                            category='danger', icon='credit_score', link='/loans'
+                        ))
+            except (ValueError, AttributeError):
+                pass
+
+    # Goal deadline approaching (within 30 days)
+    goals = FinancialGoal.query.filter_by(user_id=user.id).all()
+    for goal in goals:
+        if goal.target_date:
+            days_left = (goal.target_date - today).days
+            if 0 < days_left <= 30 and goal.current_saved < goal.target_amount:
+                remaining = goal.target_amount - goal.current_saved
+                existing = Notification.query.filter(
+                    Notification.user_id == user.id,
+                    Notification.title.contains(goal.goal_name),
+                    Notification.created_at >= today - timedelta(days=7)
+                ).first()
+                if not existing:
+                    new_notifs.append(Notification(
+                        user_id=user.id,
+                        title=f'Goal Deadline: {goal.goal_name}',
+                        message=f'₹{remaining:,.0f} remaining with {days_left} days left',
+                        category='info', icon='flag', link='/goals'
+                    ))
+
+    # SIP reminder (day of month)
+    sips = SIP.query.filter_by(user_id=user.id).all()
+    for sip in sips:
+        if sip.sip_date:
+            try:
+                due_date = today.replace(day=sip.sip_date)
+                if due_date < today:
+                    due_date = (due_date + relativedelta(months=1))
+                days_until = (due_date - today).days
+                if 0 <= days_until <= 3:
+                    existing = Notification.query.filter(
+                        Notification.user_id == user.id,
+                        Notification.title.contains(sip.fund_name),
+                        Notification.created_at >= today.replace(day=1)
+                    ).first()
+                    if not existing:
+                        new_notifs.append(Notification(
+                            user_id=user.id,
+                            title=f'SIP Due: {sip.fund_name}',
+                            message=f'₹{sip.sip_amount:,.0f} SIP investment due in {days_until} days',
+                            category='info', icon='auto_graph', link='/sips'
+                        ))
+            except (ValueError, AttributeError):
+                pass
+
+    if new_notifs:
+        db.session.add_all(new_notifs)
+        db.session.commit()
+
+
+@main.route('/notifications')
+@login_required
+def notifications():
+    _generate_notifications(current_user)
+    notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(50).all()
+    unread = sum(1 for n in notifs if not n.is_read)
+    return render_template('notifications.html', notifications=notifs, unread_count=unread)
+
+
+@main.route('/notifications/read/<int:id>', methods=['POST'])
+@login_required
+def mark_notification_read(id):
+    notif = Notification.query.get_or_404(id)
+    if notif.user_id != current_user.id:
+        return jsonify(success=False), 403
+    notif.is_read = True
+    db.session.commit()
+    if notif.link:
+        return redirect(notif.link)
+    return redirect(url_for('main.notifications'))
+
+
+@main.route('/notifications/read-all', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    Notification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
+    db.session.commit()
+    flash('All notifications marked as read.', 'success')
+    return redirect(url_for('main.notifications'))
+
+
+@main.route('/notifications/count')
+@login_required
+def notification_count():
+    _generate_notifications(current_user)
+    count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+    return jsonify(count=count)

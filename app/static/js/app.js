@@ -1,5 +1,29 @@
 // MoneyManager Pro - Main JavaScript
 
+// ============ CSRF TOKEN FOR AJAX ============
+(function() {
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (csrfMeta) {
+        const csrfToken = csrfMeta.getAttribute('content');
+        const origFetch = window.fetch;
+        window.fetch = function(url, options) {
+            options = options || {};
+            if (options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method.toUpperCase())) {
+                options.headers = options.headers || {};
+                // For FormData, set as header; for JSON, set as header
+                if (options.body instanceof FormData) {
+                    options.body.append('csrf_token', csrfToken);
+                } else {
+                    if (typeof options.headers === 'object' && !(options.headers instanceof Headers)) {
+                        options.headers['X-CSRFToken'] = csrfToken;
+                    }
+                }
+            }
+            return origFetch.call(this, url, options);
+        };
+    }
+})();
+
 // Chart.js color palette
 const chartColors = [
     '#6C5CE7', '#00CEC9', '#FD79A8', '#FDCB6E', '#E17055',
@@ -62,3 +86,35 @@ document.querySelectorAll('.alert-dismissible').forEach(function(alert) {
         bsAlert.close();
     }, 5000);
 });
+
+// ============ TABLE SEARCH & FILTER ============
+
+// Full-text search across all visible columns
+function filterTable(tableId, query) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = table.querySelectorAll('tbody tr');
+    const q = query.toLowerCase().trim();
+    rows.forEach(row => {
+        if (row.cells.length <= 1) return; // skip "no records" rows
+        const text = row.textContent.toLowerCase();
+        row.style.display = q === '' || text.includes(q) ? '' : 'none';
+    });
+}
+
+// Filter by specific column value (badge text or cell text)
+function filterTableByCol(tableId, colIndex, value) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        if (row.cells.length <= 1) return;
+        const cell = row.cells[colIndex];
+        if (!cell) return;
+        const cellText = cell.textContent.trim();
+        row.style.display = value === '' || cellText === value ? '' : 'none';
+    });
+    // Also clear the text search when filter changes
+    const searchInput = table.closest('.card').querySelector('input[type="text"]');
+    if (searchInput) searchInput.value = '';
+}

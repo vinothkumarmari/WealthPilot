@@ -9,6 +9,7 @@
                 Wealth<span class="text-accent">Pilot</span>
             </a>
             <div>
+                <a href="{{ url_for('main.pricing') }}" class="btn btn-link text-light me-2">Pricing</a>
                 <a href="{{ url_for('main.login') }}" class="btn btn-outline-light me-2">Login</a>
                 <a href="{{ url_for('main.register') }}" class="btn btn-accent">Get Started</a>
             </div>
@@ -76,6 +77,10 @@
     </section>
 
     <footer class="landing-footer text-center py-4">
+        <div class="mb-2">
+            <a href="{{ url_for('main.privacy_policy') }}" class="text-light text-decoration-none me-3">Privacy Policy</a>
+            <a href="{{ url_for('main.terms_of_service') }}" class="text-light text-decoration-none">Terms of Service</a>
+        </div>
         <p class="mb-0">&copy; 2026 WealthPilot — Built with AI for smarter finances.</p>
     </footer>
 </div>

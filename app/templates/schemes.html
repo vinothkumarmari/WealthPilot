@@ -122,9 +122,12 @@
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateScheme{{ s.id }}" title="Update">
                                         <span class="material-icons-outlined" style="font-size:16px">edit</span>
                                     </button>
-                                    <a href="{{ url_for('main.delete_scheme', id=s.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this scheme?')" title="Delete">
-                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                                    </a>
+                                    <form method="POST" action="{{ url_for('main.delete_scheme', id=s.id) }}" style="display:inline" onsubmit="return confirm('Delete this scheme?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -384,6 +387,7 @@
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Update Scheme</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <form method="POST" action="{{ url_for('main.update_scheme', id=s.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Installments Paid</label>
@@ -417,6 +421,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('main.add_scheme') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">

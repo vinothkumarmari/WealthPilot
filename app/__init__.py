@@ -4,9 +4,14 @@ Flask Application Package
 """
 import os
 import json
-from flask import Flask
-from flask_login import LoginManager
+import logging
+from datetime import datetime, timezone
+from flask import Flask, render_template, session, request
+from flask_login import LoginManager, current_user
 from flask_mail import Mail
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash
 from .models import db
 from .config import Config
@@ -16,11 +21,23 @@ login_manager.login_view = 'main.login'
 login_manager.login_message_category = 'info'
 
 mail = Mail()
+csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # ── Logging ──
+    log_level = logging.DEBUG if app.debug else logging.INFO
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+    app.logger.setLevel(log_level)
+    app.logger.info('WealthPilot starting up...')
 
     # Load saved mail config before initializing Flask-Mail
     mail_config_path = os.path.join(app.instance_path, 'mail_config.json')
@@ -40,6 +57,8 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
+    csrf.init_app(app)
+    limiter.init_app(app)
 
     # Register Jinja2 globals
     app.jinja_env.globals.update(min=min, max=max)
@@ -89,6 +108,58 @@ def create_app():
     # Register blueprint
     from .routes import main
     app.register_blueprint(main)
+
+    # Security headers
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self';"
+        )
+        if not app.debug:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
+
+    # Session idle timeout
+    @app.before_request
+    def check_session_timeout():
+        if current_user.is_authenticated:
+            now = datetime.now(timezone.utc)
+            last = session.get('_last_activity')
+            timeout = app.config.get('SESSION_IDLE_TIMEOUT', 1800)
+            if last:
+                from datetime import datetime as dt
+                try:
+                    last_dt = dt.fromisoformat(last)
+                    if (now - last_dt).total_seconds() > timeout:
+                        from flask_login import logout_user
+                        logout_user()
+                        session.clear()
+                        from flask import flash
+                        flash('Session expired due to inactivity. Please log in again.', 'warning')
+                        return
+                except (ValueError, TypeError):
+                    pass
+            session['_last_activity'] = now.isoformat()
+            session.permanent = True
+
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return render_template('404.html'), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return render_template('500.html'), 500
 
     # Create database tables and seed admin
     with app.app_context():

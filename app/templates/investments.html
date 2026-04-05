@@ -76,6 +76,7 @@
                             <td class="fw-bold">₹{{ b.balance|inr }}</td>
                             <td>
                                 <form method="POST" action="{{ url_for('main.update_bank_balance', id=b.id) }}" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <div class="input-group input-group-sm" style="width:140px">
                                         <input type="number" name="balance" class="form-control" value="{{ b.balance|int }}" min="0">
                                         <button class="btn btn-outline-success btn-sm" title="Update">
@@ -83,9 +84,12 @@
                                         </button>
                                     </div>
                                 </form>
-                                <a href="{{ url_for('main.delete_bank_account', id=b.id) }}" class="btn btn-sm btn-outline-danger mt-1" onclick="return confirm('Remove?')">
-                                    <span class="material-icons-outlined" style="font-size:14px">delete</span>
-                                </a>
+                                <form method="POST" action="{{ url_for('main.delete_bank_account', id=b.id) }}" style="display:inline" onsubmit="return confirm('Remove?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger mt-1">
+                                        <span class="material-icons-outlined" style="font-size:14px">delete</span>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -119,9 +123,12 @@
                             <td class="fw-bold text-success">₹{{ pf.total_balance|inr }}</td>
                             <td>{{ pf.interest_rate }}%</td>
                             <td>
-                                <a href="{{ url_for('main.delete_pf', id=pf.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
-                                    <span class="material-icons-outlined" style="font-size:14px">delete</span>
-                                </a>
+                                <form method="POST" action="{{ url_for('main.delete_pf', id=pf.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <span class="material-icons-outlined" style="font-size:14px">delete</span>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -148,10 +155,27 @@
     <!-- Investments Table -->
     <div class="col-lg-8 mb-3">
         <div class="card">
-            <div class="card-header"><h6><span class="material-icons-outlined">list</span> {{ t('All Investments') }}</h6></div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><span class="material-icons-outlined">list</span> {{ t('All Investments') }}</h6>
+                <div class="d-flex gap-2">
+                    <input type="text" id="investSearch" class="form-control form-control-sm" placeholder="Search..." style="width:150px" oninput="filterTable('investTable', this.value)">
+                    <select id="investTypeFilter" class="form-select form-select-sm" style="width:130px" onchange="filterTableByCol('investTable', 1, this.value)">
+                        <option value="">All Types</option>
+                        <option value="Mutual Fund">Mutual Fund</option>
+                        <option value="Stocks">Stocks</option>
+                        <option value="FD">FD</option>
+                        <option value="PPF">PPF</option>
+                        <option value="NPS">NPS</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Scheme">Scheme</option>
+                        <option value="SIP">SIP</option>
+                    </select>
+                </div>
+            </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0" id="investTable">
                         <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Type') }}</th><th>{{ t('Platform') }}</th><th>{{ t('Invested') }}</th><th>{{ t('Current') }}</th><th>{{ t('Return') }}</th><th>{{ t('Member') }}</th><th>{{ t('Action') }}</th></tr></thead>
                         <tbody>
                         {% for inv in investments %}
@@ -167,9 +191,12 @@
                             </td>
                             <td><span class="badge bg-secondary-subtle text-secondary">{{ inv.member or 'Self' }}</span></td>
                             <td>
-                                <a href="{{ url_for('main.delete_investment', id=inv.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
-                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                                </a>
+                                <form method="POST" action="{{ url_for('main.delete_investment', id=inv.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -238,6 +265,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('main.add_investment') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -335,6 +363,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('main.add_bank_account') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -387,6 +416,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('main.add_pf') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">

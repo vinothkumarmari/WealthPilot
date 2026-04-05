@@ -12,6 +12,7 @@
             <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-1">edit_note</span> {{ t('Share Your Feedback') }}</h6></div>
             <div class="card-body">
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label class="form-label">{{ t('Rating') }}</label>
                         <div class="star-rating" id="starRating">

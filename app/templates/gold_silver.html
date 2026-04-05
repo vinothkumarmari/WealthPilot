@@ -1,22 +1,32 @@
 {% extends 'base.html' %}
 {% block title %}Gold & Silver Rates - WealthPilot{% endblock %}
 {% block content %}
-<div class="page-header">
-    <h4><span class="material-icons-outlined">diamond</span> {{ t('Gold & Silver Live Rates') }}</h4>
-    <small class="text-muted">Last updated: {{ analysis.last_updated }} &nbsp;|&nbsp; Source: bullions.co.in</small>
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h4><span class="material-icons-outlined">diamond</span> {{ t('Gold, Silver & Platinum — Live IBJA Rates') }}</h4>
+        <small class="text-muted">
+            <span id="lastUpdated">Last updated: {{ analysis.last_updated }}</span> &nbsp;|&nbsp;
+            Source: <a href="https://ibjarates.com/" target="_blank" rel="noopener">{{ analysis.source|default('IBJA') }}</a>
+            {% if analysis.live %}<span class="badge bg-success ms-2"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">circle</span> LIVE</span>{% else %}<span class="badge bg-warning ms-2">Offline</span>{% endif %}
+            {% if analysis.chart_data_points %}<span class="badge bg-info ms-1">{{ analysis.chart_data_points }} chart points</span>{% endif %}
+        </small>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" onclick="refreshRates()" id="refreshBtn">
+        <span class="material-icons-outlined" style="font-size:16px">refresh</span> Refresh
+    </button>
 </div>
 
 <!-- ============ GOLD PRICE CARDS — 24K / 22K / 18K ============ -->
 <h5 class="mb-3"><span class="material-icons-outlined" style="color:#FFD700; vertical-align:middle">star</span> {{ t('Gold Rates (per gram)') }}</h5>
-<div class="row mb-4">
+<div class="row mb-3">
 {% for karat in ['24K', '22K', '18K'] %}
 {% set g = analysis.gold[karat] %}
     <div class="col-md-4 mb-3">
-        <div class="card p-3 h-100">
+        <div class="card p-3 h-100 gold-price-card" data-karat="{{ karat }}">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h6 class="text-muted mb-1">Gold {{ karat }}</h6>
-                    <h3 class="mb-0" style="color: {{ '#FFD700' if karat == '24K' else ('#DAA520' if karat == '22K' else '#B8860B') }};">
+                    <h6 class="text-muted mb-1">Gold {{ karat }} {% if g.purity %}<small>({{ g.purity }})</small>{% endif %}</h6>
+                    <h3 class="mb-0 price-per-gram" style="color: {{ '#FFD700' if karat == '24K' else ('#DAA520' if karat == '22K' else '#B8860B') }};">
                         ₹{{ "{:,.2f}".format(g.current_price) }}
                     </h3>
                     <small class="text-muted">per gram</small>
@@ -35,7 +45,7 @@
             </div>
             <hr class="my-2">
             <div class="d-flex justify-content-between small">
-                <div><span class="text-muted">{{ t('10 Gram') }}</span><br><strong>₹{{ "{:,.0f}".format(g.price_10g) }}</strong></div>
+                <div><span class="text-muted">{{ t('10 Gram') }}</span><br><strong class="price-10g">₹{{ "{:,.0f}".format(g.price_10g) }}</strong></div>
                 <div class="text-end">
                     <span class="text-muted">{{ t('Trend') }}</span><br>
                     <span class="badge bg-{{ 'success' if g.trend == 'Bullish' else 'danger' }}">{{ g.trend }}</span>
@@ -46,15 +56,32 @@
 {% endfor %}
 </div>
 
-<!-- ============ SILVER PRICE CARD ============ -->
-<h5 class="mb-3"><span class="material-icons-outlined" style="color:#C0C0C0; vertical-align:middle">hexagon</span> {{ t('Silver Rate') }}</h5>
+<!-- ============ EXTRA PURITIES — 995 & 585 ============ -->
+{% if analysis.extra_purities %}
+<div class="row mb-4">
+{% for key, ep in analysis.extra_purities.items() %}
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 h-100 border-warning">
+            <h6 class="text-muted mb-1">Gold {{ ep.purity }} Purity</h6>
+            <h4 class="mb-0" style="color:#CD7F32;">₹{{ "{:,.2f}".format(ep.price_per_gram) }}</h4>
+            <small class="text-muted">per gram</small>
+            <hr class="my-2">
+            <small>10g: <strong>₹{{ "{:,.0f}".format(ep.price_per_10g) }}</strong></small>
+        </div>
+    </div>
+{% endfor %}
+</div>
+{% endif %}
+
+<!-- ============ SILVER & PLATINUM CARDS ============ -->
+<h5 class="mb-3"><span class="material-icons-outlined" style="color:#C0C0C0; vertical-align:middle">hexagon</span> {{ t('Silver & Platinum') }}</h5>
 <div class="row mb-4">
     <div class="col-md-6 mb-3">
-        <div class="card p-3 h-100">
+        <div class="card p-3 h-100 silver-price-card">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h6 class="text-muted mb-1">{{ t('Silver (per gram)') }}</h6>
-                    <h3 class="mb-0" style="color: #C0C0C0;">₹{{ "{:,.2f}".format(analysis.silver.current_price) }}</h3>
+                    <h6 class="text-muted mb-1">{{ t('Silver 999 (per gram)') }}</h6>
+                    <h3 class="mb-0 price-per-gram" style="color: #C0C0C0;">₹{{ "{:,.2f}".format(analysis.silver.current_price) }}</h3>
                 </div>
                 <div class="text-end">
                     <span class="badge bg-{{ 'success' if analysis.silver.change >= 0 else 'danger' }}">
@@ -70,7 +97,7 @@
             </div>
             <hr class="my-2">
             <div class="d-flex justify-content-between small">
-                <div><span class="text-muted">{{ t('1 Kg') }}</span><br><strong>₹{{ "{:,.0f}".format(analysis.silver.price_kg) }}</strong></div>
+                <div><span class="text-muted">{{ t('1 Kg') }}</span><br><strong class="price-kg">₹{{ "{:,.0f}".format(analysis.silver.price_kg) }}</strong></div>
                 <div class="text-end">
                     <span class="text-muted">{{ t('Trend') }}</span><br>
                     <span class="badge bg-{{ 'success' if analysis.silver.trend == 'Bullish' else 'danger' }}">{{ analysis.silver.trend }}</span>
@@ -78,35 +105,179 @@
             </div>
         </div>
     </div>
+    {% if analysis.platinum and analysis.platinum.price_per_gram %}
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="text-muted mb-1">Platinum 999</h6>
+                    <h3 class="mb-0" style="color: #E5E4E2;">₹{{ "{:,.2f}".format(analysis.platinum.price_per_gram) }}</h3>
+                    <small class="text-muted">per gram</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-info">Precious Metal</span>
+                    <div class="mt-2">
+                        <small class="text-muted">10g: <strong>₹{{ "{:,.0f}".format(analysis.platinum.price_per_10g) }}</strong></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+<!-- ============ AM / PM RATES COMPARISON TABLE ============ -->
+{% if analysis.am_pm_data %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="mb-3">
+            <span class="material-icons-outlined" style="font-size:18px">schedule</span>
+            AM vs PM Rates — All Purities (₹ per gram)
+        </h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover table-bordered mb-0" id="ampmTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th rowspan="2">Date</th>
+                        <th colspan="5" class="text-center" style="background:#4a3000;color:#FFD700">AM Rates (Gold)</th>
+                        <th rowspan="2" class="text-center" style="background:#4a4a4a">Silver<br>AM</th>
+                        <th colspan="5" class="text-center" style="background:#003000;color:#90EE90">PM Rates (Gold)</th>
+                        <th rowspan="2" class="text-center" style="background:#404040">Silver<br>PM</th>
+                    </tr>
+                    <tr>
+                        <th style="background:#5a4000;color:#FFE44D">999</th>
+                        <th style="background:#5a4000;color:#FFE44D">995</th>
+                        <th style="background:#5a4000;color:#FFE44D">916</th>
+                        <th style="background:#5a4000;color:#FFE44D">750</th>
+                        <th style="background:#5a4000;color:#FFE44D">585</th>
+                        <th style="background:#005000;color:#AAFFAA">999</th>
+                        <th style="background:#005000;color:#AAFFAA">995</th>
+                        <th style="background:#005000;color:#AAFFAA">916</th>
+                        <th style="background:#005000;color:#AAFFAA">750</th>
+                        <th style="background:#005000;color:#AAFFAA">585</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in analysis.am_pm_data %}
+                    <tr>
+                        <td class="fw-bold text-nowrap">{{ row.date }}</td>
+                        {% if row.am %}
+                            <td>₹{{ "{:,.2f}".format(row.am.gold_999) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.am.gold_995) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.am.gold_916) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.am.gold_750) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.am.gold_585) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.am.silver) }}</td>
+                        {% else %}
+                            <td colspan="6" class="text-muted text-center">—</td>
+                        {% endif %}
+                        {% if row.pm %}
+                            <td class="fw-bold">₹{{ "{:,.2f}".format(row.pm.gold_999) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.pm.gold_995) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.pm.gold_916) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.pm.gold_750) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.pm.gold_585) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.pm.silver) }}</td>
+                        {% else %}
+                            <td colspan="6" class="text-muted text-center">—</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <small class="text-muted mt-2 d-block">Source: IBJA (India Bullion and Jewellers Association) — showing last {{ analysis.am_pm_data|length }} trading days</small>
+    </div>
+</div>
+{% endif %}
 
 <!-- ============ GOLD CHARTS — Day / Month / Year ============ -->
 <div class="card mb-4">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0"><span class="material-icons-outlined" style="font-size:18px; color:#FFD700">show_chart</span> {{ t('Gold Price Trend') }}</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h6 class="mb-0"><span class="material-icons-outlined" style="font-size:18px; color:#FFD700">show_chart</span> {{ t('Gold Price Trend') }}
+                <small class="text-muted ms-2" id="goldChartInfo"></small>
+            </h6>
             <div class="btn-group btn-group-sm" id="goldRangeGroup">
-                <button class="btn btn-outline-warning active" data-range="day" onclick="switchGoldRange('day')">{{ t('30 Days') }}</button>
+                <button class="btn btn-outline-warning active" data-range="day" onclick="switchGoldRange('day')">{{ t('Recent') }} <small>(IBJA)</small></button>
                 <button class="btn btn-outline-warning" data-range="month" onclick="switchGoldRange('month')">{{ t('12 Months') }}</button>
                 <button class="btn btn-outline-warning" data-range="year" onclick="switchGoldRange('year')">{{ t('5 Years') }}</button>
             </div>
         </div>
-        <canvas id="goldChart" height="180"></canvas>
+        <canvas id="goldChart" height="200"></canvas>
     </div>
 </div>
 
 <!-- ============ SILVER CHARTS — Day / Month / Year ============ -->
 <div class="card mb-4">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0"><span class="material-icons-outlined" style="font-size:18px; color:#C0C0C0">show_chart</span> {{ t('Silver Price Trend') }}</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h6 class="mb-0"><span class="material-icons-outlined" style="font-size:18px; color:#C0C0C0">show_chart</span> {{ t('Silver Price Trend') }}
+                <small class="text-muted ms-2" id="silverChartInfo"></small>
+            </h6>
             <div class="btn-group btn-group-sm" id="silverRangeGroup">
-                <button class="btn btn-outline-secondary active" data-range="day" onclick="switchSilverRange('day')">{{ t('30 Days') }}</button>
+                <button class="btn btn-outline-secondary active" data-range="day" onclick="switchSilverRange('day')">{{ t('Recent') }} <small>(IBJA)</small></button>
                 <button class="btn btn-outline-secondary" data-range="month" onclick="switchSilverRange('month')">{{ t('12 Months') }}</button>
                 <button class="btn btn-outline-secondary" data-range="year" onclick="switchSilverRange('year')">{{ t('5 Years') }}</button>
             </div>
         </div>
-        <canvas id="silverChart" height="180"></canvas>
+        <canvas id="silverChart" height="200"></canvas>
+    </div>
+</div>
+
+<!-- ============ ALL PURITIES COMPARISON CARD ============ -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="mb-3"><span class="material-icons-outlined" style="font-size:18px;color:#FFD700">compare_arrows</span> All Gold Purities — Quick Comparison</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-warning">
+                    <tr>
+                        <th>Purity</th>
+                        <th>Karat</th>
+                        <th class="text-end">₹ / Gram</th>
+                        <th class="text-end">₹ / 10 Gram</th>
+                        <th>Best For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set purities = [
+                        ('999', '24K', analysis.gold['24K'].current_price, analysis.gold['24K'].price_10g, 'Investment (Coins, Bars, ETF, SGB)'),
+                        ('995', '~24K', analysis.extra_purities.get('995', {}).get('price_per_gram', 0), analysis.extra_purities.get('995', {}).get('price_per_10g', 0), 'International Gold Standard'),
+                        ('916', '22K', analysis.gold['22K'].current_price, analysis.gold['22K'].price_10g, 'Jewelry (Indian Standard)'),
+                        ('750', '18K', analysis.gold['18K'].current_price, analysis.gold['18K'].price_10g, 'Daily Wear Jewelry'),
+                        ('585', '14K', analysis.extra_purities.get('585', {}).get('price_per_gram', 0), analysis.extra_purities.get('585', {}).get('price_per_10g', 0), 'Affordable Jewelry / Fashion'),
+                    ] %}
+                    {% for purity, karat, ppg, p10g, best_for in purities %}
+                    {% if ppg %}
+                    <tr>
+                        <td><span class="badge bg-warning text-dark">{{ purity }}</span></td>
+                        <td class="fw-bold">{{ karat }}</td>
+                        <td class="text-end fw-bold">₹{{ "{:,.2f}".format(ppg) }}</td>
+                        <td class="text-end">₹{{ "{:,.0f}".format(p10g) }}</td>
+                        <td><small>{{ best_for }}</small></td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    <tr class="table-light">
+                        <td><span class="badge bg-secondary">999</span></td>
+                        <td class="fw-bold">Silver</td>
+                        <td class="text-end fw-bold">₹{{ "{:,.2f}".format(analysis.silver.current_price) }}</td>
+                        <td class="text-end">₹{{ "{:,.0f}".format(analysis.silver.price_kg) }}/kg</td>
+                        <td><small>Industrial, Coins, ETF</small></td>
+                    </tr>
+                    {% if analysis.platinum and analysis.platinum.price_per_gram %}
+                    <tr class="table-light">
+                        <td><span class="badge" style="background:#E5E4E2;color:#333">999</span></td>
+                        <td class="fw-bold">Platinum</td>
+                        <td class="text-end fw-bold">₹{{ "{:,.2f}".format(analysis.platinum.price_per_gram) }}</td>
+                        <td class="text-end">₹{{ "{:,.0f}".format(analysis.platinum.price_per_10g) }}</td>
+                        <td><small>Premium Jewelry, Catalyst</small></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -157,7 +328,6 @@
 <!-- ============ CHARTS JS ============ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-// Gold data per karat and per range
 const goldHistories = {
     '24K': { day: {{ analysis.gold['24K'].history_day | tojson }}, month: {{ analysis.gold['24K'].history_month | tojson }}, year: {{ analysis.gold['24K'].history_year | tojson }} },
     '22K': { day: {{ analysis.gold['22K'].history_day | tojson }}, month: {{ analysis.gold['22K'].history_month | tojson }}, year: {{ analysis.gold['22K'].history_year | tojson }} },
@@ -173,6 +343,12 @@ const goldColors = { '24K': '#FFD700', '22K': '#DAA520', '18K': '#B8860B' };
 let currentGoldRange = 'day';
 let currentSilverRange = 'day';
 
+const rangeLabels = {
+    day: 'IBJA Live Data (~80 trading days)',
+    month: '12-Month Trend (estimated)',
+    year: '5-Year Trend (estimated)'
+};
+
 function buildGoldDatasets(range) {
     return ['24K', '22K', '18K'].map(k => ({
         label: k + ' ₹/g',
@@ -181,12 +357,11 @@ function buildGoldDatasets(range) {
         backgroundColor: goldColors[k] + '18',
         fill: k === '24K',
         tension: 0.3,
-        pointRadius: range === 'year' ? 4 : 2,
+        pointRadius: range === 'year' ? 3 : (range === 'month' ? 2 : 1),
         borderWidth: k === '24K' ? 2.5 : 1.5,
     }));
 }
 
-// Gold chart
 const goldCtx = document.getElementById('goldChart');
 let goldChart = new Chart(goldCtx, {
     type: 'line',
@@ -197,13 +372,23 @@ let goldChart = new Chart(goldCtx, {
     options: {
         responsive: true,
         interaction: { mode: 'index', intersect: false },
-        plugins: { legend: { display: true, position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8 } } },
+        plugins: {
+            legend: { display: true, position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8 } },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return ctx.dataset.label + ': ₹' + ctx.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                    }
+                }
+            }
+        },
         scales: {
-            x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
-            y: { ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
+            x: { ticks: { maxTicksLimit: 12, font: { size: 10 }, maxRotation: 45 } },
+            y: { beginAtZero: false, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
         }
     }
 });
+document.getElementById('goldChartInfo').textContent = rangeLabels.day;
 
 function switchGoldRange(range) {
     currentGoldRange = range;
@@ -213,6 +398,7 @@ function switchGoldRange(range) {
     document.querySelectorAll('#goldRangeGroup button').forEach(b => {
         b.classList.toggle('active', b.dataset.range === range);
     });
+    document.getElementById('goldChartInfo').textContent = rangeLabels[range];
 }
 
 // Silver chart
@@ -228,29 +414,85 @@ let silverChart = new Chart(silverCtx, {
             backgroundColor: 'rgba(192,192,192,0.12)',
             fill: true,
             tension: 0.3,
-            pointRadius: 2
+            pointRadius: 1,
+            borderWidth: 2
         }]
     },
     options: {
         responsive: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return 'Silver: ₹' + ctx.parsed.y.toLocaleString('en-IN', {minimumFractionDigits: 2}) + '/g';
+                    }
+                }
+            }
+        },
         scales: {
-            x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
-            y: { ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
+            x: { ticks: { maxTicksLimit: 12, font: { size: 10 }, maxRotation: 45 } },
+            y: { beginAtZero: false, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
         }
     }
 });
+document.getElementById('silverChartInfo').textContent = rangeLabels.day;
 
 function switchSilverRange(range) {
     currentSilverRange = range;
     const data = silverHistories[range];
     silverChart.data.labels = data.map(d => d.date);
     silverChart.data.datasets[0].data = data.map(d => d.price);
-    silverChart.data.datasets[0].pointRadius = range === 'year' ? 4 : 2;
+    silverChart.data.datasets[0].pointRadius = range === 'year' ? 3 : (range === 'month' ? 2 : 1);
     silverChart.update();
     document.querySelectorAll('#silverRangeGroup button').forEach(b => {
         b.classList.toggle('active', b.dataset.range === range);
     });
+    document.getElementById('silverChartInfo').textContent = rangeLabels[range];
+}
+
+// Refresh rates via AJAX
+function refreshRates() {
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading...';
+    fetch('/api/live-rates')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const goldMap = {'24K': data.gold['24K'], '22K': data.gold['22K'], '18K': data.gold['18K']};
+                document.querySelectorAll('.gold-price-card').forEach(card => {
+                    const karat = card.dataset.karat;
+                    if (goldMap[karat]) {
+                        const g = goldMap[karat];
+                        card.querySelector('.price-per-gram').textContent = '₹' + g.price_per_gram.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                        card.querySelector('.price-10g').textContent = '₹' + g.price_per_10g.toLocaleString('en-IN', {maximumFractionDigits: 0});
+                    }
+                });
+                const sCard = document.querySelector('.silver-price-card');
+                if (sCard && data.silver) {
+                    sCard.querySelector('.price-per-gram').textContent = '₹' + data.silver.price_per_gram.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                    sCard.querySelector('.price-kg').textContent = '₹' + data.silver.price_per_kg.toLocaleString('en-IN', {maximumFractionDigits: 0});
+                }
+                document.getElementById('lastUpdated').textContent = 'Last updated: ' + data.last_updated;
+
+                if (data.gold_history && data.gold_history.length > 0) {
+                    ['24K', '22K', '18K'].forEach(k => {
+                        goldHistories[k].day = data.gold_history.map(h => ({date: h.date, price: h[k]}));
+                    });
+                    switchGoldRange(currentGoldRange);
+                }
+                if (data.silver_history && data.silver_history.length > 0) {
+                    silverHistories.day = data.silver_history;
+                    switchSilverRange(currentSilverRange);
+                }
+            }
+        })
+        .catch(() => {})
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-outlined" style="font-size:16px">refresh</span> Refresh';
+        });
 }
 </script>
 {% endblock %}

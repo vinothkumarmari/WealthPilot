@@ -27,6 +27,9 @@ class User(UserMixin, db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     otp_code = db.Column(db.String(10))
     otp_expiry = db.Column(db.DateTime)
+    failed_login_count = db.Column(db.Integer, default=0)
+    locked_until = db.Column(db.DateTime)
+    last_activity = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
@@ -43,6 +46,7 @@ class User(UserMixin, db.Model):
     bank_accounts = db.relationship('BankAccount', backref='user', lazy=True, cascade='all, delete-orphan')
     provident_funds = db.relationship('ProvidentFund', backref='user', lazy=True, cascade='all, delete-orphan')
     feedbacks = db.relationship('Feedback', backref='user', lazy=True, cascade='all, delete-orphan')
+    notifications = db.relationship('Notification', backref='user', lazy=True, cascade='all, delete-orphan')
 
 
 class Income(db.Model):
@@ -247,4 +251,16 @@ class Feedback(db.Model):
     rating = db.Column(db.Integer, nullable=False)  # 1-5 stars
     category = db.Column(db.String(50), default='General')  # General, UI, Features, Bug, Suggestion
     message = db.Column(db.String(1000), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.String(500), nullable=False)
+    category = db.Column(db.String(50), default='info')  # info, warning, success, danger
+    icon = db.Column(db.String(50), default='notifications')
+    is_read = db.Column(db.Boolean, default=False)
+    link = db.Column(db.String(200))  # optional URL to navigate to
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

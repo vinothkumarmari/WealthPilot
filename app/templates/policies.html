@@ -129,9 +129,12 @@
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updatePolicy{{ p.id }}" title="Update">
                                         <span class="material-icons-outlined" style="font-size:16px">edit</span>
                                     </button>
-                                    <a href="{{ url_for('main.delete_policy', id=p.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this policy?')" title="Delete">
-                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                                    </a>
+                                    <form method="POST" action="{{ url_for('main.delete_policy', id=p.id) }}" style="display:inline" onsubmit="return confirm('Delete this policy?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -183,6 +186,7 @@
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title"><span class="material-icons-outlined">edit</span> Update Policy</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <form method="POST" action="{{ url_for('main.update_policy', id=p.id) }}" id="updateForm{{ p.id }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -349,6 +353,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('main.add_policy') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">

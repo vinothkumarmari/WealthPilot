@@ -215,9 +215,12 @@
                             <td class="text-danger fw-bold">₹{{ exp.amount|inr }}</td>
                             <td>{% if exp.is_recurring %}<span class="badge bg-info">Yes</span>{% else %}-{% endif %}</td>
                             <td>
-                                <a href="{{ url_for('main.delete_expense', id=exp.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
-                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                                </a>
+                                <form method="POST" action="{{ url_for('main.delete_expense', id=exp.id) }}" class="d-inline" onsubmit="return confirm('Delete?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% else %}

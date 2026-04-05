@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - WealthPilot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --accent: #6C5CE7; --accent-light: #A29BFE; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a1a; color: #fff; }
+        .pricing-hero { padding: 80px 0 40px; text-align: center; }
+        .pricing-hero h1 { font-weight: 800; font-size: 2.5rem; }
+        .pricing-hero .accent { color: var(--accent-light); }
+        .pricing-card {
+            background: #1a1a2e; border-radius: 16px; padding: 2rem;
+            border: 1px solid #2a2a4a; transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+        }
+        .pricing-card:hover { transform: translateY(-8px); box-shadow: 0 12px 40px rgba(108,92,231,0.2); }
+        .pricing-card.featured { border-color: var(--accent); position: relative; }
+        .pricing-card.featured::before {
+            content: 'MOST POPULAR'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: var(--accent); color: white; padding: 4px 16px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; letter-spacing: 1px;
+        }
+        .price { font-size: 3rem; font-weight: 800; }
+        .price small { font-size: 1rem; font-weight: 400; color: #888; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 8px 0; border-bottom: 1px solid #2a2a4a; display: flex; align-items: center; gap: 8px; }
+        .feature-list li:last-child { border-bottom: none; }
+        .feature-list .material-icons-outlined { font-size: 18px; }
+        .check { color: #00b894; }
+        .cross { color: #636e72; }
+        .btn-accent { background: var(--accent); color: white; border: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; }
+        .btn-accent:hover { background: #5a4bd1; color: white; }
+        .btn-outline-accent { border: 2px solid var(--accent); color: var(--accent-light); padding: 12px 32px; border-radius: 8px; font-weight: 600; }
+        .btn-outline-accent:hover { background: var(--accent); color: white; }
+        .faq-section { padding: 60px 0; }
+        .faq-item { background: #1a1a2e; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; border: 1px solid #2a2a4a; }
+        .faq-item h6 { color: var(--accent-light); font-weight: 600; }
+        .back-link { color: var(--accent-light); text-decoration: none; }
+        .back-link:hover { color: white; }
+        .compare-badge { font-size: 11px; background: #2a2a4a; padding: 2px 8px; border-radius: 4px; color: #a29bfe; }
+    </style>
+</head>
+<body>
+    <!-- Nav -->
+    <nav class="navbar navbar-dark py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('main.index') }}">
+                <span class="material-icons-outlined align-middle">account_balance_wallet</span>
+                Wealth<span style="color: var(--accent-light)">Pilot</span>
+            </a>
+            <div>
+                <a href="{{ url_for('main.login') }}" class="btn btn-outline-accent btn-sm me-2">Login</a>
+                <a href="{{ url_for('main.register') }}" class="btn btn-accent btn-sm">Sign Up Free</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pricing-hero">
+        <div class="container">
+            <h1>Simple, Transparent <span class="accent">Pricing</span></h1>
+            <p class="text-secondary mt-3 mb-0" style="max-width:600px; margin:auto;">Start free. Upgrade when you need advanced AI insights, unlimited exports, and priority support.</p>
+        </div>
+    </section>
+
+    <!-- Pricing Cards -->
+    <section class="pb-5">
+        <div class="container">
+            <div class="row g-4 justify-content-center">
+                <!-- Free Plan -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card">
+                        <div class="text-center mb-4">
+                            <span class="material-icons-outlined" style="font-size:48px; color: #00b894;">rocket_launch</span>
+                            <h4 class="mt-2 fw-bold">Starter</h4>
+                            <div class="price">₹0 <small>/forever</small></div>
+                        </div>
+                        <ul class="feature-list">
+                            <li><span class="material-icons-outlined check">check_circle</span> Track income, expenses & budget</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Up to 5 investments</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> 2 financial goals</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Basic AI health score</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> SIP & EMI calculators</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Dark & light theme</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> 4 language support</li>
+                            <li><span class="material-icons-outlined cross">remove_circle</span> <span class="text-secondary">Limited to 100 transactions/month</span></li>
+                            <li><span class="material-icons-outlined cross">remove_circle</span> <span class="text-secondary">No data export</span></li>
+                            <li><span class="material-icons-outlined cross">remove_circle</span> <span class="text-secondary">No policy OCR scan</span></li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Get Started Free</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pro Plan -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card featured">
+                        <div class="text-center mb-4">
+                            <span class="material-icons-outlined" style="font-size:48px; color: var(--accent-light);">workspace_premium</span>
+                            <h4 class="mt-2 fw-bold">Pro</h4>
+                            <div class="price">₹99 <small>/month</small></div>
+                            <span class="compare-badge">Save ₹189 with yearly</span>
+                        </div>
+                        <ul class="feature-list">
+                            <li><span class="material-icons-outlined check">check_circle</span> <strong>Everything in Starter</strong></li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Unlimited investments & goals</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Unlimited transactions</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Advanced AI suggestions</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Policy & scheme OCR scanner</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Gold & silver price tracker</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> CSV & PDF data export</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Smart notifications</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Tax planning with 80C/80D</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Business idea recommender</li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('main.register') }}" class="btn btn-accent w-100">Start 14-Day Free Trial</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Family Plan -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card">
+                        <div class="text-center mb-4">
+                            <span class="material-icons-outlined" style="font-size:48px; color: #fdcb6e;">family_restroom</span>
+                            <h4 class="mt-2 fw-bold">Family</h4>
+                            <div class="price">₹199 <small>/month</small></div>
+                            <span class="compare-badge">Up to 5 members</span>
+                        </div>
+                        <ul class="feature-list">
+                            <li><span class="material-icons-outlined check">check_circle</span> <strong>Everything in Pro</strong></li>
+                            <li><span class="material-icons-outlined check">check_circle</span> 5 family member accounts</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Family financial dashboard</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Joint goal tracking</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Shared expense tracking</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Member-wise investment view</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Priority email support</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Custom financial reports</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Retirement planning for family</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Insurance coverage analyzer</li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Start Family Trial</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+        <div class="container" style="max-width: 700px;">
+            <h3 class="text-center fw-bold mb-4">Frequently Asked Questions</h3>
+            <div class="faq-item">
+                <h6>Is the Starter plan really free forever?</h6>
+                <p class="text-secondary small mb-0">Yes! You can use the Starter plan with no time limit. It includes core budgeting, income/expense tracking, and basic AI features.</p>
+            </div>
+            <div class="faq-item">
+                <h6>Can I switch plans anytime?</h6>
+                <p class="text-secondary small mb-0">Absolutely. Upgrade, downgrade, or cancel at any time. Your data is always yours.</p>
+            </div>
+            <div class="faq-item">
+                <h6>Is my financial data secure?</h6>
+                <p class="text-secondary small mb-0">Your data is encrypted, CSRF-protected, and never shared with third parties. We use industry-standard security practices.</p>
+            </div>
+            <div class="faq-item">
+                <h6>What payment methods do you accept?</h6>
+                <p class="text-secondary small mb-0">We accept UPI, credit/debit cards, and net banking through Razorpay — India's most trusted payment gateway.</p>
+            </div>
+            <div class="faq-item">
+                <h6>Do you offer refunds?</h6>
+                <p class="text-secondary small mb-0">Yes, full refund within 7 days if you're not satisfied. No questions asked.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center py-4" style="background: #0a0a1a; border-top: 1px solid #2a2a4a;">
+        <p class="text-secondary small mb-0">&copy; 2026 WealthPilot. All rights reserved. <a href="{{ url_for('main.index') }}" class="back-link">← Back to Home</a></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

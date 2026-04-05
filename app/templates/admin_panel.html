@@ -101,6 +101,7 @@
     </div>
     <div class="card-body">
         <form action="{{ url_for('main.admin_mail_settings') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label small fw-bold">SMTP Server</label>
@@ -139,6 +140,7 @@
         {% if mail_cfg.get('mail_username') %}
         <hr>
         <form action="{{ url_for('main.admin_test_mail') }}" method="POST" class="d-flex gap-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex-grow-1">
                 <label class="form-label small fw-bold">Send Test Email</label>
                 <input type="email" name="test_email" class="form-control form-control-sm"
@@ -197,17 +199,19 @@
                         <td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '-' }}</td>
                         <td>
                             {% if not user.is_admin %}
-                            <a href="{{ url_for('main.admin_toggle_verify', id=user.id) }}" 
-                               class="btn btn-sm btn-outline-{{ 'warning' if user.is_verified else 'success' }}" 
-                               title="{{ 'Unverify' if user.is_verified else 'Verify' }}">
-                                <span class="material-icons-outlined" style="font-size: 16px;">{{ 'unpublished' if user.is_verified else 'check_circle' }}</span>
-                            </a>
-                            <a href="{{ url_for('main.admin_delete_user', id=user.id) }}" 
-                               class="btn btn-sm btn-outline-danger" 
-                               onclick="return confirm('Delete user {{ user.username }}?')"
-                               title="Delete User">
-                                <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
-                            </a>
+                            <form method="POST" action="{{ url_for('main.admin_toggle_verify', id=user.id) }}" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-{{ 'warning' if user.is_verified else 'success' }}"
+                                        title="{{ 'Unverify' if user.is_verified else 'Verify' }}">
+                                    <span class="material-icons-outlined" style="font-size: 16px;">{{ 'unpublished' if user.is_verified else 'check_circle' }}</span>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('main.admin_delete_user', id=user.id) }}" style="display:inline" onsubmit="return confirm('Delete user {{ user.username }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
+                                    <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
+                                </button>
+                            </form>
                             {% else %}
                             <span class="text-muted">Owner</span>
                             {% endif %}

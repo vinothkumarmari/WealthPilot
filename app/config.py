@@ -1,27 +1,46 @@
 import os
+import secrets
+from datetime import timedelta
+
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'VnIT-M0n3y-MaNaG3r-S3cR3t-K3y-2026')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+    WTF_CSRF_ENABLED = True
+    
+    # Session Configuration
+    SESSION_PERMANENT = True
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_REFRESH_EACH_REQUEST = True
+    
+    # Idle timeout (in seconds) — logged out after 30 min inactivity
+    SESSION_IDLE_TIMEOUT = int(os.environ.get('SESSION_IDLE_TIMEOUT', 1800))
+    
+    # Account lockout
+    MAX_FAILED_LOGINS = 5
+    ACCOUNT_LOCKOUT_MINUTES = 15
     
     # Database Configuration
     DB_NAME = 'Vnit'
-    DB_PASSWORD = os.environ.get('DB_PASSWORD', 'Vinith@45')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', f'sqlite:///{DB_NAME}.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # App Port
-    APP_PORT = 7777
+    APP_PORT = int(os.environ.get('PORT', 7777))
 
     # File Upload
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
     ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
     
-    # Admin Configuration
-    ADMIN_USERNAME = 'vinoth'
-    ADMIN_PASSWORD = 'Auto@360'
-    ADMIN_EMAIL = 'admin@wealthpilot.com'
-    ADMIN_FULL_NAME = 'Vinoth - Founder & CEO'
+    # Admin Configuration (use env vars in production)
+    ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'vinoth')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Auto@360')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@wealthpilot.com')
+    ADMIN_FULL_NAME = os.environ.get('ADMIN_FULL_NAME', 'Vinoth - Founder & CEO')
     
     # Email / SMTP Configuration for OTP
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')

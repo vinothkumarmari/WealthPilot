@@ -3,14 +3,15 @@
 {% block content %}
 <div class="page-header">
     <h4><span class="material-icons-outlined">help_outline</span> Help & User Guide</h4>
-    <p class="text-muted">Complete guide to using WealthPilot</p>
+    <p class="text-muted">Complete guide to WealthPilot — India's most comprehensive personal finance platform</p>
 </div>
 
 <!-- Quick Navigation -->
 <div class="card mb-4">
     <div class="card-body">
-        <h6>Quick Navigation</h6>
+        <h6><span class="material-icons-outlined me-1" style="font-size:16px">navigation</span> Quick Navigation</h6>
         <div class="d-flex flex-wrap gap-2">
+            <a href="#about" class="btn btn-sm btn-outline-dark">About WealthPilot</a>
             <a href="#dashboard" class="btn btn-sm btn-outline-primary">Dashboard</a>
             <a href="#income" class="btn btn-sm btn-outline-primary">Income & Salary</a>
             <a href="#expenses" class="btn btn-sm btn-outline-primary">Expenses</a>
@@ -20,7 +21,7 @@
             <a href="#sip" class="btn btn-sm btn-outline-primary">SIP Tracker</a>
             <a href="#budget" class="btn btn-sm btn-outline-primary">Budget Planner</a>
             <a href="#loans" class="btn btn-sm btn-outline-primary">Loans</a>
-            <a href="#goldsilver" class="btn btn-sm btn-outline-primary">Gold & Silver</a>
+            <a href="#goldsilver" class="btn btn-sm btn-outline-primary">Gold, Silver & Platinum</a>
             <a href="#ratemonitor" class="btn btn-sm btn-outline-primary">Rate Monitor</a>
             <a href="#tax" class="btn btn-sm btn-outline-primary">Tax Planning</a>
             <a href="#govtschemes" class="btn btn-sm btn-outline-primary">Govt Schemes</a>
@@ -29,12 +30,63 @@
             <a href="#bankaccounts" class="btn btn-sm btn-outline-primary">Bank Accounts</a>
             <a href="#pf" class="btn btn-sm btn-outline-primary">Provident Fund</a>
             <a href="#suggestions" class="btn btn-sm btn-outline-primary">AI Suggestions</a>
+            <a href="#businessideas" class="btn btn-sm btn-outline-primary">Business Ideas</a>
             <a href="#assets" class="btn btn-sm btn-outline-primary">Assets</a>
             <a href="#goals" class="btn btn-sm btn-outline-primary">Goals</a>
+            <a href="#notifications" class="btn btn-sm btn-outline-primary">Notifications</a>
             <a href="#reports" class="btn btn-sm btn-outline-primary">Reports</a>
             <a href="#profile" class="btn btn-sm btn-outline-primary">Profile</a>
             <a href="#feedback" class="btn btn-sm btn-outline-primary">Feedback</a>
             <a href="#forgotpassword" class="btn btn-sm btn-outline-primary">Forgot Password</a>
+            <a href="#security" class="btn btn-sm btn-outline-danger">Security & Privacy</a>
+            <a href="#pwa" class="btn btn-sm btn-outline-success">Install as App</a>
+            <a href="#faq" class="btn btn-sm btn-outline-dark">FAQ</a>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ABOUT WEALTHPILOT ============ -->
+<div class="card mb-4" id="about">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #a29bfe); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">info</span>About WealthPilot</h6>
+    </div>
+    <div class="card-body">
+        <p><strong>WealthPilot</strong> is a complete personal finance management platform built entirely in-house by our team. Every feature — from AI-powered investment analysis to live commodity rate tracking, tax planning, and insurance management — is developed, maintained, and operated by WealthPilot.</p>
+        <div class="row mt-3">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light p-3 h-100 text-center">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#6C5CE7">shield</span>
+                    <h6>Built In-House</h6>
+                    <small class="text-muted">All features designed and developed by the WealthPilot engineering team. No third-party data dependencies for core functionality.</small>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light p-3 h-100 text-center">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#FFD700">diamond</span>
+                    <h6>Proprietary AI Engine</h6>
+                    <small class="text-muted">Our financial advisor AI engine generates personalized recommendations based on your profile — no external AI APIs used.</small>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light p-3 h-100 text-center">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#00b894">lock</span>
+                    <h6>Your Data, Your Control</h6>
+                    <small class="text-muted">All data stored securely on our servers. We never share, sell, or transmit your financial data to any third party.</small>
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-light border mt-3 mb-0">
+            <strong>Platform Highlights:</strong>
+            <ul class="small mb-0 mt-1">
+                <li><strong>34+ pages</strong> covering every aspect of personal finance management</li>
+                <li><strong>86+ API endpoints</strong> powering a responsive, real-time experience</li>
+                <li><strong>4 languages</strong> — English, Tamil, Hindi, Telugu</li>
+                <li><strong>AI-powered</strong> investment, tax, loan, and business recommendations</li>
+                <li><strong>Live commodity rates</strong> for Gold (5 purities), Silver, and Platinum with historical charts</li>
+                <li><strong>PWA-ready</strong> — install as a native app on mobile and desktop</li>
+                <li><strong>Dark & Light themes</strong> with automatic preference saving</li>
+                <li><strong>Zero ads, zero tracking</strong> — we respect your privacy</li>
+            </ul>
         </div>
     </div>
 </div>
@@ -46,15 +98,17 @@
     </div>
     <div class="card-body">
         <ol>
+            <li class="mb-2"><strong>Create Account:</strong> Register with your email. A 6-digit OTP will be sent for verification — we ensure every account is verified.</li>
             <li class="mb-2"><strong>Set up your Profile:</strong> Click <strong>Profile</strong> in the sidebar. Enter your monthly salary, age, and risk appetite. This data powers AI suggestions, budget analysis, and retirement planning.</li>
             <li class="mb-2"><strong>Add your Income:</strong> Go to <strong>Income & Salary</strong> and record your salary and other income sources.</li>
             <li class="mb-2"><strong>Track Expenses:</strong> Navigate to <strong>Expenses</strong> and start logging daily expenses by category.</li>
             <li class="mb-2"><strong>Record Investments:</strong> Add your existing investments, insurance policies, schemes, and SIPs.</li>
             <li class="mb-2"><strong>Check AI Suggestions:</strong> Visit <strong>AI Suggestions</strong> to get personalized investment and savings recommendations.</li>
+            <li class="mb-2"><strong>Enable Notifications:</strong> The notification bell in the top bar will alert you about due premiums, SIP dates, goal deadlines, and loan EMIs.</li>
         </ol>
         <div class="alert alert-info small mb-0">
             <span class="material-icons-outlined me-1" style="font-size:16px">lightbulb</span>
-            <strong>Sidebar Navigation:</strong> The sidebar is organized into 3 sections — <strong>Finance</strong> (Dashboard, Income, Expenses, Budget, Loans), <strong>Investments</strong> (Investments, Policies, Schemes, SIP, Gold & Silver, Assets, Goals), and <strong>Tools & Info</strong> (Tax Planning, Calculators, AI Suggestions, Reports, Rate Monitor, Govt Schemes, Indian Budget).
+            <strong>Sidebar Navigation:</strong> The sidebar is organized into 3 sections — <strong>Finance</strong> (Dashboard, Income, Expenses, Budget, Loans), <strong>Investments</strong> (Investments, Policies, Schemes, SIP, Gold & Silver, Assets, Goals), and <strong>Tools & Info</strong> (Tax Planning, Calculators, AI Suggestions, Business Ideas, Reports, Rate Monitor, Govt Schemes, Indian Budget, Notifications).
         </div>
     </div>
 </div>
@@ -63,14 +117,16 @@
 <div class="card mb-3" id="dashboard">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">dashboard</span>Dashboard</h6></div>
     <div class="card-body">
-        <p>Your financial overview at a glance.</p>
+        <p>Your financial command center — everything at a glance.</p>
         <ul class="small">
-            <li><strong>Summary Cards:</strong> Total Income, Expenses, Investments, and Net Worth displayed at the top.</li>
+            <li><strong>Summary Cards:</strong> Total Income, Total Expenses, Total Investments, and Net Worth displayed at the top with real-time calculations.</li>
             <li><strong>Net Worth:</strong> Calculated as Investments + Bank Balances + Provident Fund – Loan Outstanding amounts. Gives a true picture of your financial position.</li>
+            <li><strong>Financial Health Score:</strong> AI-calculated score based on your savings rate, investment diversification, debt-to-income ratio, and goal progress.</li>
             <li><strong>Monthly Trends:</strong> Chart showing income vs expenses over the last 6 months.</li>
             <li><strong>Quick Actions:</strong> Fast links to add income, expense, or investment.</li>
-            <li><strong>Due Reminders:</strong> Upcoming premium payments and SIP dates.</li>
-            <li><strong>Maturity Tracker:</strong> Policies and schemes nearing maturity.</li>
+            <li><strong>Due Reminders:</strong> Upcoming premium payments, SIP dates, and loan EMI reminders.</li>
+            <li><strong>Maturity Tracker:</strong> Policies and schemes nearing maturity date.</li>
+            <li><strong>Search & Filter:</strong> Use the search bar to quickly find transactions across all your data.</li>
         </ul>
     </div>
 </div>
@@ -81,10 +137,11 @@
     <div class="card-body">
         <p>Record and manage all your income sources.</p>
         <ul class="small">
-            <li><strong>Add Income:</strong> Click "Add Income" button. Select month, enter amount, source (Salary, Freelance, Rental, etc.), and optional description.</li>
+            <li><strong>Add Income:</strong> Click "Add Income" button. Select month, enter amount, source (Salary, Freelance, Business, Rental, Dividends, Interest, etc.), and optional description.</li>
+            <li><strong>8 Income Types:</strong> Salary, Freelance, Business, Rental Income, Investment Returns, Dividends, Interest, Other.</li>
             <li><strong>Monthly View:</strong> See income breakdown by month with totals.</li>
-            <li><strong>Income Sources:</strong> Track multiple income streams — primary salary, side income, rental income, dividends.</li>
-            <li><strong>Edit/Delete:</strong> Click the action buttons next to each entry to modify or remove.</li>
+            <li><strong>Search & Filter:</strong> Use the search box to filter income entries by any column — source, amount, or description.</li>
+            <li><strong>Delete:</strong> Click the action buttons next to each entry to remove.</li>
         </ul>
         <div class="alert alert-info small mb-0">
             <span class="material-icons-outlined me-1" style="font-size:16px">lightbulb</span>
@@ -100,11 +157,14 @@
         <p>Track spending with automatic budget analysis.</p>
         <ul class="small">
             <li><strong>Add Expense:</strong> Enter amount, category (Housing, Food, Transport, Entertainment, etc.), date, and description.</li>
+            <li><strong>15 Categories:</strong> Housing, Food & Groceries, Transportation, Utilities, Healthcare, Insurance, Education, Entertainment, Shopping, Personal Care, Debt Payments, Savings, Investments, Charity, Miscellaneous.</li>
             <li><strong>Budget Analysis (50/30/20 Rule):</strong> Your expenses are auto-categorized into Needs, Wants, and Savings. The system compares your actual spending against the 50/30/20 benchmark.</li>
             <li><strong>Warning Alerts:</strong> Red alerts appear when Needs exceeds 50%, Wants exceeds 30%, or Savings drops below 20% of income.</li>
+            <li><strong>Custom Ratios:</strong> Adjust the 50/30/20 ratios to match your personal budget style.</li>
             <li><strong>Monthly Budget Trend:</strong> Stacked bar chart shows how your budget split changed over the last 6 months.</li>
             <li><strong>Monthly Commitments:</strong> Sidebar shows your insurance, scheme, SIP, and EMI commitments deducted from salary.</li>
             <li><strong>Category Breakdown:</strong> Doughnut chart shows spending by category.</li>
+            <li><strong>Search & Filter:</strong> Filter expenses by category, amount, or description.</li>
         </ul>
         <div class="alert alert-warning small mb-0">
             <span class="material-icons-outlined me-1" style="font-size:16px">warning</span>
@@ -117,13 +177,15 @@
 <div class="card mb-3" id="investments">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">trending_up</span>Investments</h6></div>
     <div class="card-body">
-        <p>Manage your investment portfolio including policies, schemes, and SIPs.</p>
+        <p>Manage your entire investment portfolio in one unified view.</p>
         <ul class="small">
-            <li><strong>Add Investment:</strong> Enter name, type (Stocks, Mutual Funds, FD, Gold, etc.), amount invested, current value, and date.</li>
-            <li><strong>Unified View:</strong> The investments page shows regular investments along with your insurance policies (as Insurance badge), government schemes (as Scheme badge), and SIPs (as SIP badge).</li>
+            <li><strong>Add Investment:</strong> Enter name, type (Stocks, Mutual Funds, FD, Gold, etc.), amount invested, current value, platform, and date.</li>
+            <li><strong>Unified View:</strong> The investments page shows regular investments alongside insurance policies (Insurance badge), government schemes (Scheme badge), and SIPs (SIP badge).</li>
             <li><strong>Portfolio Allocation:</strong> Pie chart shows how your money is distributed across investment types.</li>
             <li><strong>Profit/Loss:</strong> Each investment shows gain/loss amount and percentage in real-time.</li>
             <li><strong>Family Tracking:</strong> Assign investments to different family members.</li>
+            <li><strong>Maturity Tracking:</strong> Investments with maturity dates show countdown and alerts.</li>
+            <li><strong>Search & Filter:</strong> Filter investments by name, type, or platform.</li>
         </ul>
     </div>
 </div>
@@ -132,13 +194,16 @@
 <div class="card mb-3" id="policies">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">security</span>Insurance Policies</h6></div>
     <div class="card-body">
-        <p>Track all your insurance policies and premium payments.</p>
+        <p>Track all your insurance policies with premium payments and document scanning.</p>
         <ul class="small">
-            <li><strong>Add Policy:</strong> Enter policy name, company, type (Life/Health/Vehicle/Term), policy number, premium amount, frequency (Monthly/Quarterly/Yearly), start & maturity dates, and sum assured.</li>
+            <li><strong>19 Insurance Providers:</strong> LIC, HDFC Life, TATA AIA, ICICI Prudential, SBI Life, Bajaj Allianz, Kotak Life, Max Bupa, Star Health, Niva Bupa, Aditya Birla Health, PNB MetLife, and more.</li>
+            <li><strong>11 Policy Types:</strong> Term, Whole Life, Endowment, ULIP, Health, Critical Illness, Motor, and more.</li>
             <li><strong>Premium Tracking:</strong> Record premium payments with date and amount. Premium payments are automatically linked as expenses.</li>
+            <li><strong>Document Scanning:</strong> Upload policy PDFs or images — our built-in OCR engine extracts policy details automatically.</li>
+            <li><strong>Statement Parsing:</strong> Upload bank statements to auto-detect premium payment transactions.</li>
             <li><strong>Maturity Alerts:</strong> Policies nearing maturity are highlighted on the dashboard.</li>
-            <li><strong>Due Date Reminders:</strong> Get notified when premiums are due.</li>
-            <li><strong>Document Upload:</strong> Upload policy documents for easy reference.</li>
+            <li><strong>Due Date Reminders:</strong> Get notified when premiums are due via the notification center.</li>
+            <li><strong>Policy Lookup:</strong> Search policies by policy number for quick access.</li>
         </ul>
     </div>
 </div>
@@ -147,13 +212,13 @@
 <div class="card mb-3" id="schemes">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">workspace_premium</span>Schemes & Bonds</h6></div>
     <div class="card-body">
-        <p>Track personal savings schemes and browse a directory of government & private bonds.</p>
+        <p>Track personal savings schemes and browse government & private bonds directory.</p>
         <ul class="small">
-            <li><strong>Add Scheme:</strong> Enter scheme name, type (PPF, NSC, KVP, SSY, SCSS, Bonds, etc.), invested amount, current value, interest rate, start & maturity dates.</li>
+            <li><strong>13 Scheme Types:</strong> Gold Scheme, Silver Scheme, Chit Fund, RD, PPF, NSC, KVP, SSY, SCSS, Sovereign Gold Bonds, Post Office Time Deposit, Post Office MIS, Other.</li>
             <li><strong>Interest Tracking:</strong> Monitor accumulated interest and maturity value.</li>
-            <li><strong>Premium Payments:</strong> Record periodic deposits for schemes like PPF.</li>
-            <li><strong>Maturity Tracker:</strong> Get alerts when schemes are maturing.</li>
-            <li><strong>Bonds Directory:</strong> Browse government bonds (RBI Floating Rate, G-Sec, SDLs, T-Bills, NABARD, 54EC Capital Gain Bonds, IRFC Tax-Free) and top private/corporate NCDs (HDFC, Bajaj Finance, Tata Capital, Shriram Finance, Muthoot Finance, Mahindra Finance) with ratings, yields, and direct buy links.</li>
+            <li><strong>Premium Payments:</strong> Record periodic deposits and installments.</li>
+            <li><strong>Document Scanning:</strong> Upload scheme documents for OCR-based auto-extraction.</li>
+            <li><strong>Bonds Directory:</strong> Browse government bonds (RBI Floating Rate, G-Sec, SDLs, T-Bills, NABARD, 54EC Capital Gain Bonds, IRFC Tax-Free) and top corporate NCDs (HDFC, Bajaj Finance, Tata Capital, Shriram Finance, Muthoot Finance, Mahindra Finance) with ratings, yields, and buy links.</li>
             <li><strong>Bond Tips:</strong> Guidance on buying AAA/AA+ rated bonds via platforms like TheFixedIncome.com, IndiaBonds.com, or RBI Retail Direct.</li>
         </ul>
     </div>
@@ -163,12 +228,13 @@
 <div class="card mb-3" id="sip">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">loop</span>SIP Tracker</h6></div>
     <div class="card-body">
-        <p>Track your Systematic Investment Plans alongside policy and scheme recurring investments.</p>
+        <p>Track your Systematic Investment Plans with recurring investment management.</p>
         <ul class="small">
             <li><strong>Add SIP:</strong> Enter fund name, platform (Groww, Zerodha, etc.), SIP amount, SIP date, expected return %, total invested, and current value.</li>
             <li><strong>Unified View:</strong> Shows regular SIPs, plus active insurance policies (with premium frequency) and recurring scheme investments.</li>
             <li><strong>Performance:</strong> Track actual returns vs expected returns for each SIP.</li>
             <li><strong>Active/Inactive:</strong> Toggle SIP status. Inactive SIPs are tracked but excluded from commitment calculations.</li>
+            <li><strong>SIP Due Alerts:</strong> Get notified 3 days before SIP due dates via the notification center.</li>
         </ul>
     </div>
 </div>
@@ -180,42 +246,60 @@
         <p>Plan monthly budgets by category and track spending against planned amounts.</p>
         <ul class="small">
             <li><strong>Set Budget:</strong> Define planned amounts for each spending category (Housing, Food, Transport, etc.) per month.</li>
-            <li><strong>Track vs Actual:</strong> Compare planned budget against actual spending for each category.</li>
+            <li><strong>Track vs Actual:</strong> Compare planned budget against actual spending for each category with visual indicators.</li>
             <li><strong>Monthly Planning:</strong> Set budgets month by month to accommodate seasonal changes.</li>
+            <li><strong>50/30/20 Integration:</strong> Works with the expense tracker to give a complete budget picture.</li>
         </ul>
     </div>
 </div>
-
-<!-- Tax Planning -->
 
 <!-- Loans -->
 <div class="card mb-3" id="loans">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">credit_score</span>Loans</h6></div>
     <div class="card-body">
-        <p>Track all your loans with EMI schedules, interest analysis, and AI-powered good/bad assessment.</p>
+        <p>Track all your loans with EMI schedules, interest analysis, and AI assessment.</p>
         <ul class="small">
-            <li><strong>Add Loans:</strong> Track Home, Car, Personal, Education, Gold, Credit Card, and Business loans.</li>
+            <li><strong>Loan Types:</strong> Home, Car, Personal, Education, Gold, Credit Card, and Business loans.</li>
             <li><strong>EMI Tracking:</strong> Record monthly EMI payments and see remaining balance with progress bar.</li>
             <li><strong>AI Analysis:</strong> Each loan gets a score (Good/Average/Bad) based on interest rate, EMI-to-income ratio, and loan type.</li>
             <li><strong>Credit Card Offers:</strong> Get AI-recommended credit cards based on your income and spending profile.</li>
             <li><strong>Prepayment Tips:</strong> AI suggests how much you can save by paying extra each month.</li>
+            <li><strong>EMI Due Alerts:</strong> Get notified 7 days before EMI due dates via the notification center.</li>
         </ul>
     </div>
 </div>
 
-<!-- Gold & Silver -->
+<!-- Gold & Silver & Platinum -->
 <div class="card mb-3" id="goldsilver">
-    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">diamond</span>Gold & Silver Rates</h6></div>
+    <div class="card-header" style="background: linear-gradient(135deg, #FFD700, #DAA520); color: #333;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">diamond</span>Gold, Silver & Platinum — Live Rates</h6>
+    </div>
     <div class="card-body">
-        <p>Track gold and silver prices with multi-karat charts, trend analysis, and AI insights.</p>
+        <p>Comprehensive precious metals tracking with real-time prices, historical charts, and AI insights — powered by WealthPilot's proprietary rate engine.</p>
         <ul class="small">
-            <li><strong>Multi-Karat Rates:</strong> Current prices for Gold 24K, 22K, and 18K (per gram & per 10g) with daily change percentage and trend badges.</li>
-            <li><strong>Silver Rates:</strong> Silver per gram and per kg with daily change and trend analysis.</li>
-            <li><strong>Interactive Charts:</strong> Toggle between 30 Days, 12 Months, and 5 Years views. Gold chart shows all 3 karats overlaid for comparison.</li>
-            <li><strong>AI Insights:</strong> Separate gold and silver investment tips — buy/hold/wait recommendations based on trends.</li>
-            <li><strong>Investment Links:</strong> Direct links to invest in Sovereign Gold Bond, Gold ETF, Gold Mutual Fund, Silver ETF, and Silver Coins.</li>
-            <li><strong>Market Data:</strong> Prices sourced from live market data (bullions.co.in) and synced via the Rate Monitor.</li>
+            <li><strong>Gold — 5 Purities:</strong> Live rates for 999 (24K), 995, 916 (22K), 750 (18K), and 585 (14K) gold per gram and per 10 grams. Best-for guidance (investment vs jewelry) for each purity.</li>
+            <li><strong>Silver 999:</strong> Price per gram and per kilogram with daily change percentage and trend analysis.</li>
+            <li><strong>Platinum 999:</strong> Per gram and per 10 grams rates.</li>
+            <li><strong>AM vs PM Rates:</strong> Detailed comparison table showing morning and afternoon rates for all 5 gold purities, silver, and platinum — similar to institutional-grade data.</li>
+            <li><strong>All Purities Comparison:</strong> Quick side-by-side comparison table of all gold purities, silver, and platinum with usage guidance.</li>
+            <li><strong>Historical Charts — 3 Ranges:</strong>
+                <ul>
+                    <li><strong>Recent (~80 trading days):</strong> Actual market data from our rate engine</li>
+                    <li><strong>12 Months:</strong> Monthly price trend with all 3 karat overlays</li>
+                    <li><strong>5 Years:</strong> Quarterly price trend for long-term perspective</li>
+                </ul>
+            </li>
+            <li><strong>Gold Chart:</strong> Multi-karat overlay (24K, 22K, 18K) with interactive tooltips showing exact prices.</li>
+            <li><strong>Silver Chart:</strong> Filled area chart with ₹/gram values.</li>
+            <li><strong>Trend Badges:</strong> Bullish/Bearish indicators for gold and silver based on moving average analysis.</li>
+            <li><strong>AI Insights:</strong> Buy/hold/wait recommendations for both gold and silver based on current trends.</li>
+            <li><strong>Investment Links:</strong> Direct links to Sovereign Gold Bond (RBI), Gold ETF (AMFI), Gold Mutual Fund, Silver ETF, and Silver Coins.</li>
+            <li><strong>Live Refresh:</strong> Click the Refresh button to fetch the latest rates without reloading the page.</li>
         </ul>
+        <div class="alert alert-success small mb-0">
+            <span class="material-icons-outlined me-1" style="font-size:16px">verified</span>
+            <strong>Data Integrity:</strong> Our rate engine processes and standardizes commodity data internally. Rates are per-gram for easy understanding — no confusion with per-10g or per-kg figures from raw sources.
+        </div>
     </div>
 </div>
 
@@ -223,15 +307,60 @@
 <div class="card mb-3" id="ratemonitor">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">monitoring</span>Rate Monitor</h6></div>
     <div class="card-body">
-        <p>Central dashboard showing all government scheme rates, tax slabs, commodity prices, and FD rates — auto-synced across the app.</p>
+        <p>Central dashboard showing all rates, tax slabs, and market data — auto-synced across every page in the app.</p>
         <ul class="small">
-            <li><strong>Small Savings:</strong> PPF, SSY, SCSS, NSC, KVP, MIS, Time Deposits — all rates from NSI India.</li>
+            <li><strong>Small Savings:</strong> PPF, SSY, SCSS, NSC, KVP, MIS, Time Deposits — all current rates.</li>
             <li><strong>PF Rates:</strong> Current EPF, VPF, GPF interest rates.</li>
             <li><strong>Tax Slabs:</strong> New regime income tax slabs for FY 2025-26.</li>
-            <li><strong>Commodity Rates:</strong> Gold (24K, 22K, 18K per gram) and Silver (per gram/kg) base prices — these feed into the Gold & Silver page charts and analysis.</li>
+            <li><strong>Commodity Rates:</strong> Gold (24K, 22K, 18K per gram) and Silver (per gram/kg) — these feed into the Gold & Silver page and AI suggestions.</li>
             <li><strong>FD Rates:</strong> Top bank FD rates (SBI, HDFC, ICICI, Axis, Kotak, PNB).</li>
             <li><strong>Govt Links:</strong> Quick-access links to all official government portals (Income Tax, EPFO, NPS, NSI, etc.).</li>
-            <li><strong>Auto-Sync:</strong> All rates here flow into AI suggestions, investment analysis, and scheme pages.</li>
+            <li><strong>Auto-Sync:</strong> All rates here flow into AI suggestions, investment analysis, scheme calculations, and tax planning.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Tax Planning -->
+<div class="card mb-3" id="tax">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">receipt</span>Tax Planning</h6></div>
+    <div class="card-body">
+        <p>Plan your tax savings and compare old vs new tax regimes.</p>
+        <ul class="small">
+            <li><strong>Tax Deductions:</strong> View available deductions under Section 80C, 80D, 80CCD, 24(b), etc.</li>
+            <li><strong>Auto-Mapping:</strong> Your existing investments (PPF, ELSS, NPS, insurance premiums) are auto-mapped to relevant tax sections.</li>
+            <li><strong>Regime Comparison:</strong> Compare tax liability under Old Regime vs New Regime to pick the best option.</li>
+            <li><strong>Gap Analysis:</strong> See how much more you can invest to maximize tax savings under ₹1.5L (80C) and other limits.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Govt Schemes -->
+<div class="card mb-3" id="govtschemes">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">account_balance</span>Government Schemes & Subsidies</h6></div>
+    <div class="card-body">
+        <p>India's most comprehensive directory of government schemes and subsidies.</p>
+        <ul class="small">
+            <li><strong>Central Schemes:</strong> PPF, NSC, SSY, SCSS, POMIS, KVP, NPS, APY, SGB, POTD, Post Office RD, Mahila Samman, PMVVY — with interest rates, tenure, and eligibility details.</li>
+            <li><strong>State Schemes:</strong> Filter by state to view state-specific schemes (Tamil Nadu, Karnataka, Kerala, Maharashtra, AP, Telangana, Gujarat).</li>
+            <li><strong>Central Subsidies:</strong> PM Awas Yojana (housing), PM Ujjwala (LPG), PM Kisan (farmer income), Mudra Yojana (business loans), Ayushman Bharat (health), PM Fasal Bima (crop insurance), PMJJBY/PMSBY (life & accident cover), PM Surya Ghar (solar), EV subsidies.</li>
+            <li><strong>State Subsidies:</strong> State-level subsidies — TN agriculture electricity, KA Gruha Jyothi/Lakshmi, MH Ladki Bahin, TS Rythu Bandhu, AP YSR Cheyutha, KL electricity subsidy.</li>
+            <li><strong>Apply Online:</strong> Each scheme has an "Apply Online" button linking to the official government portal.</li>
+            <li><strong>Search & Filter:</strong> Dropdown filter (All / Central / State / Subsidies) and search bar for quick navigation.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Indian Budget -->
+<div class="card mb-3" id="indianbudget">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">receipt_long</span>Indian Budget</h6></div>
+    <div class="card-body">
+        <p>Key highlights from the Union Budget that impact your investments and taxes.</p>
+        <ul class="small">
+            <li><strong>Tax Slabs:</strong> New regime income tax slabs with zero tax up to ₹12,75,000 for salaried individuals.</li>
+            <li><strong>TDS/TCS Changes:</strong> Updated threshold limits for TDS on rent, interest, dividends, etc.</li>
+            <li><strong>Capital Gains:</strong> Updated STCG/LTCG rates and indexation rules.</li>
+            <li><strong>NPS Vatsalya:</strong> New NPS accounts for minors.</li>
+            <li><strong>Action Links:</strong> Direct links to file ITR, use tax calculator, and access budget documents.</li>
         </ul>
     </div>
 </div>
@@ -244,7 +373,7 @@
         <ul class="small">
             <li><strong>Add Account:</strong> Store bank name, account type, last 4 digits, and current balance.</li>
             <li><strong>Update Balance:</strong> Quickly update balance inline from the investments page.</li>
-            <li><strong>AI Integration:</strong> Bank balance is included in net worth calculations and AI suggestions.</li>
+            <li><strong>Net Worth Integration:</strong> Bank balance is included in net worth calculations and AI suggestions.</li>
         </ul>
     </div>
 </div>
@@ -256,55 +385,9 @@
         <p>Track EPF, VPF, and GPF accounts with contribution details.</p>
         <ul class="small">
             <li><strong>PF Types:</strong> EPF (Employee PF), VPF (Voluntary PF), GPF (Government PF).</li>
-            <li><strong>Contributions:</strong> Track your monthly employee + employer contributions.</li>
+            <li><strong>Contributions:</strong> Track your monthly employee + employer contributions and UAN.</li>
             <li><strong>Balance:</strong> Total PF balance is shown in investments and included in net worth.</li>
             <li><strong>Interest Rate:</strong> Current EPF rate (8.25%) is auto-synced from Rate Monitor.</li>
-        </ul>
-    </div>
-</div>
-
-<!-- Tax Planning -->
-<div class="card mb-3" id="tax">
-    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">receipt</span>Tax Planning</h6></div>
-    <div class="card-body">
-        <p>Plan your tax savings and compare old vs new tax regimes.</p>
-        <ul class="small">
-            <li><strong>Tax Deductions:</strong> View available deductions under Section 80C, 80D, 80CCD, 24(b), etc.</li>
-            <li><strong>Auto-Mapping:</strong> Your existing investments (PPF, ELSS, NPS, insurance premiums) are auto-mapped to tax sections.</li>
-            <li><strong>Regime Comparison:</strong> Compare tax liability under Old Regime vs New Regime to pick the best option.</li>
-            <li><strong>Gap Analysis:</strong> See how much more you can invest to maximize tax savings.</li>
-        </ul>
-    </div>
-</div>
-
-<!-- Govt Schemes -->
-<div class="card mb-3" id="govtschemes">
-    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">account_balance</span>Government Schemes & Subsidies</h6></div>
-    <div class="card-body">
-        <p>Comprehensive directory of government schemes and subsidies across India.</p>
-        <ul class="small">
-            <li><strong>Central Schemes:</strong> PPF, NSC, SSY, SCSS, POMIS, KVP, NPS, APY, SGB, POTD, Post Office RD, Mahila Samman, PMVVY — with interest rates, tenure, and eligibility details.</li>
-            <li><strong>State Schemes:</strong> Filter by state to view state-specific schemes (Tamil Nadu, Karnataka, Kerala, Maharashtra, AP, Telangana, Gujarat).</li>
-            <li><strong>Central Subsidies:</strong> PM Awas Yojana (housing), PM Ujjwala (LPG), PM Kisan (farmer income), Mudra Yojana (business loans), Ayushman Bharat (health), PM Fasal Bima (crop insurance), PMJJBY/PMSBY (life & accident cover), PM Surya Ghar (solar), EV subsidies.</li>
-            <li><strong>State Subsidies:</strong> State-level subsidies — TN agriculture electricity, KA Gruha Jyothi/Lakshmi, MH Ladki Bahin, TS Rythu Bandhu, AP YSR Cheyutha, KL electricity subsidy.</li>
-            <li><strong>Apply Online:</strong> Each scheme has an "Apply Online" button that redirects to the official government portal.</li>
-            <li><strong>Search & Filter:</strong> Use the dropdown filter (All / Central / State / Subsidies) and search bar to find schemes quickly.</li>
-        </ul>
-        <div class="alert alert-info small mb-0 mt-2"><strong>Note:</strong> Bonds (Government & Private) have been moved to the <strong>Schemes & Bonds</strong> page for better organization.</div>
-    </div>
-</div>
-
-<!-- Indian Budget -->
-<div class="card mb-3" id="indianbudget">
-    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">receipt_long</span>Indian Budget</h6></div>
-    <div class="card-body">
-        <p>Key highlights from the Union Budget 2025-26 that impact your investments.</p>
-        <ul class="small">
-            <li><strong>Tax Slabs:</strong> New regime income tax slabs with zero tax up to ₹12,75,000 for salaried individuals.</li>
-            <li><strong>TDS/TCS Changes:</strong> Updated threshold limits for TDS on rent, interest, dividends, etc.</li>
-            <li><strong>Capital Gains:</strong> Updated STCG/LTCG rates and indexation rules.</li>
-            <li><strong>NPS Vatsalya:</strong> New NPS accounts for minors.</li>
-            <li><strong>Action Links:</strong> Direct links to file ITR, use tax calculator, and access budget documents.</li>
         </ul>
     </div>
 </div>
@@ -313,12 +396,13 @@
 <div class="card mb-3" id="calculators">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">calculate</span>Calculators</h6></div>
     <div class="card-body">
-        <p>Financial calculators for planning and analysis.</p>
+        <p>Built-in financial calculators — no external tools needed.</p>
         <ul class="small">
             <li><strong>SIP Calculator:</strong> Calculate future value of SIP investments with expected returns.</li>
+            <li><strong>Lumpsum Calculator:</strong> Calculate maturity for one-time investments.</li>
             <li><strong>EMI Calculator:</strong> Calculate monthly EMI for loans based on amount, tenure, and interest rate.</li>
-            <li><strong>FD Calculator:</strong> Calculate maturity amount for Fixed Deposits.</li>
-            <li><strong>Retirement Calculator:</strong> Estimate required retirement corpus based on current expenses and inflation.</li>
+            <li><strong>FD Calculator:</strong> Calculate maturity amount for Fixed Deposits with quarterly/annual compounding.</li>
+            <li><strong>Retirement Calculator:</strong> Estimate required retirement corpus based on current expenses, inflation, and years to retire.</li>
         </ul>
     </div>
 </div>
@@ -327,25 +411,57 @@
 <div class="card mb-3" id="suggestions">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">psychology</span>AI Suggestions</h6></div>
     <div class="card-body">
-        <p>Personalized AI-powered financial recommendations.</p>
+        <p>WealthPilot's proprietary AI engine generates personalized financial recommendations.</p>
         <ul class="small">
             <li><strong>Investment Plan:</strong> Based on your age, salary, and risk appetite, the AI suggests specific investments (SIPs, PPF, NPS, etc.) with exact monthly amounts.</li>
             <li><strong>Commodity Suggestions:</strong> Gold, Silver, and commodity investment options with trend analysis and apply links.</li>
             <li><strong>Asset Buying Plans:</strong> Recommends asset purchases (car, house, bike, land, farm) you can afford based on EMI capacity. Shows down payment, loan amount, tenure, and tips.</li>
-            <li><strong>Vehicle Buy Timing:</strong> AI suggests the best time to buy a car or bike based on seasonal patterns (festive discounts, year-end clearance, budget season). Shows tips for car/bike purchases.</li>
+            <li><strong>Vehicle Buy Timing:</strong> AI suggests the best time to buy a car or bike based on seasonal patterns (festive discounts, year-end clearance, budget season).</li>
             <li><strong>Retirement Planning:</strong> Shows required corpus, monthly SIP needed, and years to retirement.</li>
             <li><strong>Tax Saving Tips:</strong> Suggests tax-saving instruments under 80C, 80CCD, and 80D with lock-in periods and returns.</li>
             <li><strong>Investment Comparison Table:</strong> Compare all investment options by risk, return, tenure, and liquidity.</li>
+            <li><strong>Grocery Offers:</strong> Optional — toggle in Profile to see curated platform deals.</li>
             <li><strong>Apply Buttons:</strong> Each suggestion has an "Apply" button to directly open the relevant investment platform.</li>
         </ul>
-        <div class="alert alert-warning small mb-2">
-            <span class="material-icons-outlined me-1" style="font-size:16px">warning</span>
-            <strong>Note:</strong> If your salary is not set, Asset Buying Plans will show a prompt to update your Profile.
-        </div>
         <div class="alert alert-info small mb-0">
             <span class="material-icons-outlined me-1" style="font-size:16px">lightbulb</span>
-            <strong>Tip:</strong> Update your age, salary, and risk appetite in Profile for more accurate recommendations.
+            <strong>Tip:</strong> Update your age, salary, and risk appetite in Profile for more accurate recommendations. The AI recalculates on every visit.
         </div>
+    </div>
+</div>
+
+<!-- Business Ideas -->
+<div class="card mb-3" id="businessideas">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">store</span>Business Ideas & Govt Entrepreneurship Schemes</h6></div>
+    <div class="card-body">
+        <p>AI-powered business recommendations personalized to your profile.</p>
+        <ul class="small">
+            <li><strong>Personalized Suggestions:</strong> Business ideas based on your location, profession, savings, and risk appetite.</li>
+            <li><strong>Investment Range:</strong> Each idea shows required investment, expected returns, and risk level.</li>
+            <li><strong>Govt Schemes for Entrepreneurs:</strong> MUDRA loans, Stand-Up India, PMEGP, Startup India, and state-level schemes with direct apply links.</li>
+            <li><strong>Category Filter:</strong> Filter by business type — Food, Retail, Services, Tech, Agriculture, etc.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Notifications -->
+<div class="card mb-3" id="notifications">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">notifications</span>Notification Center</h6></div>
+    <div class="card-body">
+        <p>Smart alerts so you never miss a financial deadline.</p>
+        <ul class="small">
+            <li><strong>Auto-Generated Alerts:</strong> WealthPilot automatically creates notifications for:
+                <ul>
+                    <li>Insurance premiums due within 7 days</li>
+                    <li>Loan EMIs due within 7 days</li>
+                    <li>Financial goal deadlines within 30 days</li>
+                    <li>SIP due dates within 3 days</li>
+                </ul>
+            </li>
+            <li><strong>Notification Bell:</strong> The bell icon in the top navigation shows unread count, updated every 60 seconds.</li>
+            <li><strong>Mark as Read:</strong> Click individual notifications or use "Mark All Read" for bulk clearing.</li>
+            <li><strong>Color-Coded:</strong> Notifications are color-coded by category — warning (orange) for due payments, info (blue) for goals, danger (red) for urgent items.</li>
+        </ul>
     </div>
 </div>
 
@@ -355,15 +471,11 @@
     <div class="card-body">
         <p>Track your physical and financial assets.</p>
         <ul class="small">
-            <li><strong>Add Asset:</strong> Enter asset type (Real Estate, Vehicle, Electronics, Jewelry, etc.), name, purchase price, current value, and purchase date.</li>
+            <li><strong>9 Asset Categories:</strong> Car, Bike, House, Flat, Land, Farming Land, Gold Jewelry, Electronics, Other.</li>
             <li><strong>EMI Tracking:</strong> For financed assets, enter loan amount, EMI amount, and remaining months.</li>
             <li><strong>Appreciation/Depreciation:</strong> Track value changes over time.</li>
             <li><strong>Asset Distribution:</strong> View portfolio allocation across asset types.</li>
         </ul>
-        <div class="alert alert-warning small mb-0">
-            <span class="material-icons-outlined me-1" style="font-size:16px">warning</span>
-            <strong>Note:</strong> Leave optional fields (current value, EMI, loan amount) empty if not applicable — they default to 0.
-        </div>
     </div>
 </div>
 
@@ -371,12 +483,13 @@
 <div class="card mb-3" id="goals">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">flag</span>Financial Goals</h6></div>
     <div class="card-body">
-        <p>Set and track financial goals.</p>
+        <p>Set and track financial goals with AI-calculated SIP requirements.</p>
         <ul class="small">
             <li><strong>Create Goal:</strong> Set a goal name, target amount, target date, and current saved amount.</li>
             <li><strong>Progress Tracking:</strong> Visual progress bar shows how close you are to each goal.</li>
             <li><strong>Monthly SIP Needed:</strong> The system calculates the monthly savings needed to hit your target by the deadline.</li>
             <li><strong>Priority Setting:</strong> Mark goals as high, medium, or low priority.</li>
+            <li><strong>Deadline Alerts:</strong> Get notified 30 days before goal deadlines via the notification center.</li>
         </ul>
     </div>
 </div>
@@ -387,10 +500,10 @@
     <div class="card-body">
         <p>Comprehensive financial reports and analysis.</p>
         <ul class="small">
-            <li><strong>Monthly Report:</strong> Income vs expenses breakdown by month.</li>
-            <li><strong>Category Analysis:</strong> Spending patterns by category with charts.</li>
+            <li><strong>Monthly Report:</strong> Income vs expenses breakdown by month with charts.</li>
+            <li><strong>Category Analysis:</strong> Spending patterns by category.</li>
             <li><strong>Investment Performance:</strong> Returns analysis across all investment types.</li>
-            <li><strong>Net Worth Trend:</strong> Track how your overall net worth changes over time.</li>
+            <li><strong>Turnover Analysis:</strong> Track overall financial throughput over time.</li>
         </ul>
     </div>
 </div>
@@ -401,10 +514,12 @@
     <div class="card-body">
         <p>Manage your account settings and personal information.</p>
         <ul class="small">
-            <li><strong>Personal Info:</strong> Update name, email, age, and monthly salary.</li>
-            <li><strong>Risk Appetite:</strong> Set your investment risk preference (Conservative, Moderate, Aggressive) — this affects AI suggestions.</li>
-            <li><strong>Grocery Offers:</strong> Toggle to enable/disable grocery and shopping offers on the AI Suggestions page. Turn it on to see curated deals from platforms like BigBasket, Blinkit, Swiggy Instamart, etc.</li>
-            <li><strong>Change Password:</strong> Update your login password.</li>
+            <li><strong>Personal Info:</strong> Update name, email, age, monthly salary, and location.</li>
+            <li><strong>Risk Appetite:</strong> Set your investment risk preference (Conservative, Moderate, Aggressive) — this directly affects AI suggestions.</li>
+            <li><strong>Language:</strong> Choose your preferred language — English, Tamil (தமிழ்), Hindi (हिन्दी), or Telugu (తెలుగు).</li>
+            <li><strong>Grocery Offers:</strong> Toggle to enable/disable grocery and shopping offers on the AI Suggestions page.</li>
+            <li><strong>Theme:</strong> Switch between Dark and Light themes — your preference is saved automatically.</li>
+            <li><strong>Change Password:</strong> Update your login password securely.</li>
         </ul>
     </div>
 </div>
@@ -417,7 +532,7 @@
         <ul class="small">
             <li><strong>Submit Feedback:</strong> Rate the app (1-5 stars), choose a category (General, UI/Design, Features, Bug Report, Suggestion, Performance), and write your message.</li>
             <li><strong>Feedback History:</strong> View all your previously submitted feedback with dates, ratings, and categories.</li>
-            <li><strong>Admin View:</strong> Admins can view all user feedback and average rating on the Admin Panel.</li>
+            <li><strong>Admin Review:</strong> All feedback is reviewed by the WealthPilot team.</li>
         </ul>
     </div>
 </div>
@@ -430,15 +545,135 @@
         <ul class="small">
             <li><strong>Step 1:</strong> Click "Forgot Password?" on the Login page.</li>
             <li><strong>Step 2:</strong> Enter your registered email address.</li>
-            <li><strong>Step 3:</strong> A {{ config.OTP_LENGTH }}-digit OTP will be sent to your email (or displayed if SMTP is not configured).</li>
-            <li><strong>Step 4:</strong> Enter the OTP to verify your identity.</li>
-            <li><strong>Step 5:</strong> Set a new password (minimum 6 characters) and confirm it.</li>
-            <li><strong>Resend OTP:</strong> If you don't receive the OTP, click "Resend OTP" to get a new one.</li>
+            <li><strong>Step 3:</strong> A 6-digit OTP is sent to your email for identity verification.</li>
+            <li><strong>Step 4:</strong> Enter the OTP and set a new password (minimum 8 characters with uppercase and number).</li>
+            <li><strong>Resend OTP:</strong> If you don't receive it, click "Resend OTP" to get a new one (rate-limited for security).</li>
         </ul>
     </div>
 </div>
 
-<!-- Keyboard Shortcuts / Tips -->
+<!-- ============ SECURITY & PRIVACY ============ -->
+<div class="card mb-3" id="security">
+    <div class="card-header bg-danger text-white">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">security</span>Security & Privacy</h6>
+    </div>
+    <div class="card-body">
+        <p>WealthPilot is built with security as a core principle. Here's how we protect your data:</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-danger"><span class="material-icons-outlined me-1" style="font-size:16px">shield</span> Security Measures</h6>
+                <ul class="small">
+                    <li><strong>CSRF Protection:</strong> Every form and API call is protected against Cross-Site Request Forgery attacks.</li>
+                    <li><strong>Password Hashing:</strong> Passwords are hashed using industry-standard algorithms — we never store plaintext passwords.</li>
+                    <li><strong>OTP Verification:</strong> 6-digit OTP with 5-minute expiry for email verification and password resets.</li>
+                    <li><strong>Rate Limiting:</strong> Login and registration are rate-limited to prevent brute-force attacks.</li>
+                    <li><strong>Session Security:</strong> Sessions are managed securely with automatic expiry.</li>
+                    <li><strong>Input Validation:</strong> All user inputs are validated server-side to prevent injection attacks.</li>
+                    <li><strong>File Upload Security:</strong> Only approved file types (PDF, images) up to 16MB. All filenames are sanitized.</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary"><span class="material-icons-outlined me-1" style="font-size:16px">privacy_tip</span> Privacy Commitment</h6>
+                <ul class="small">
+                    <li><strong>No Third-Party Sharing:</strong> Your financial data is never sold, shared, or transmitted to any third-party service.</li>
+                    <li><strong>No Tracking:</strong> We don't use Google Analytics, Facebook Pixel, or any third-party tracking scripts.</li>
+                    <li><strong>No Ads:</strong> WealthPilot is completely ad-free.</li>
+                    <li><strong>Local Processing:</strong> All AI recommendations are processed by our own engine — no data sent to external AI services.</li>
+                    <li><strong>Minimal Data Collection:</strong> We only collect data you explicitly enter. No background data harvesting.</li>
+                    <li><strong>Admin Controlled:</strong> Only authorized administrators can access the admin panel.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ PWA / INSTALL AS APP ============ -->
+<div class="card mb-3" id="pwa">
+    <div class="card-header bg-success text-white">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">install_mobile</span>Install as App (PWA)</h6>
+    </div>
+    <div class="card-body">
+        <p>WealthPilot works as a Progressive Web App — install it on your device for a native app experience.</p>
+        <div class="row">
+            <div class="col-md-6">
+                <h6><span class="material-icons-outlined me-1" style="font-size:16px">phone_android</span> Mobile (Android/iOS)</h6>
+                <ol class="small">
+                    <li>Open WealthPilot in Chrome (Android) or Safari (iOS)</li>
+                    <li>Tap the browser menu (⋮ or Share icon)</li>
+                    <li>Select "Add to Home Screen" or "Install App"</li>
+                    <li>The app icon appears on your home screen</li>
+                </ol>
+            </div>
+            <div class="col-md-6">
+                <h6><span class="material-icons-outlined me-1" style="font-size:16px">laptop</span> Desktop (Windows/Mac/Linux)</h6>
+                <ol class="small">
+                    <li>Open WealthPilot in Chrome or Edge</li>
+                    <li>Click the install icon (⊕) in the address bar</li>
+                    <li>Click "Install" in the prompt</li>
+                    <li>WealthPilot opens as a standalone app window</li>
+                </ol>
+            </div>
+        </div>
+        <div class="alert alert-light border small mt-2 mb-0">
+            <strong>Benefits:</strong> Full-screen mode, offline-ready assets, faster loading, push notification support, and home screen icon — just like a native app, no app store needed.
+        </div>
+    </div>
+</div>
+
+<!-- ============ FAQ ============ -->
+<div class="card mb-4" id="faq">
+    <div class="card-header bg-dark text-white">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">quiz</span>Frequently Asked Questions</h6>
+    </div>
+    <div class="card-body">
+        <div class="accordion" id="faqAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">Is WealthPilot free to use?</button></h2>
+                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">Yes, the Starter plan is completely free with access to all core features — income, expenses, investments, insurance, SIPs, goals, AI suggestions, gold/silver rates, tax planning, and more. Premium features are available in Pro and Family plans.</div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">Where is my data stored?</button></h2>
+                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">Your data is stored securely on our servers. We use encrypted database storage and your passwords are hashed using industry-standard algorithms. Your data is never shared with any third party.</div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">How are gold & silver rates sourced?</button></h2>
+                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">WealthPilot's rate engine fetches and processes live bullion data to provide real-time rates for 5 gold purities, silver, and platinum. Data is refreshed every 5 minutes and includes ~80 trading days of chart history, plus extended 12-month and 5-year trend analysis generated by our proprietary algorithms.</div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">How does the AI engine work?</button></h2>
+                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">Our Financial Advisor AI engine is built in-house using machine learning algorithms. It analyzes your age, salary, risk appetite, existing investments, expenses, and financial goals to generate personalized recommendations. No data is sent to external AI services like ChatGPT or Gemini — everything runs on our own servers.</div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">Can I use WealthPilot on my phone?</button></h2>
+                <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">Absolutely! WealthPilot is a Progressive Web App (PWA). You can install it on your phone's home screen from Chrome (Android) or Safari (iOS) for a native app-like experience. It works great on tablets and desktops too.</div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">What languages are supported?</button></h2>
+                <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">WealthPilot currently supports English, Tamil (தமிழ்), Hindi (हिन्दी), and Telugu (తెలుగు). You can change your language preference in Profile settings. More languages will be added based on user demand.</div>
+                </div>
+            </div>
+            <div class="accordion-item">
+                <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">How do I contact support?</button></h2>
+                <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                    <div class="accordion-body small">Use the Feedback page to submit your query, bug report, or suggestion. Select the appropriate category and our team will review it. For urgent issues, rate the feedback as 1-star with "Bug Report" category to flag it for priority review.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tips & Best Practices -->
 <div class="card mb-4">
     <div class="card-header bg-dark text-white">
         <h6 class="mb-0"><span class="material-icons-outlined me-2">tips_and_updates</span>Tips & Best Practices</h6>
@@ -452,19 +687,26 @@
                     <li>Record premium payments promptly to maintain due reminders</li>
                     <li>Check AI Suggestions monthly — they adapt to your changing data</li>
                     <li>Use the 50/30/20 rule as a benchmark for healthy finances</li>
+                    <li>Check the notification bell regularly for upcoming due dates</li>
                 </ul>
             </div>
             <div class="col-md-6">
                 <ul class="small">
-                    <li>Set financial goals to stay motivated</li>
+                    <li>Set financial goals to stay motivated and track progress</li>
                     <li>Review Govt Schemes for safe government-backed investments</li>
                     <li>Compare Old vs New tax regime every year before filing ITR</li>
                     <li>Track all family members' investments for complete portfolio view</li>
-                    <li>External links open in a new tab — your app data is never affected</li>
+                    <li>Install the PWA for quick access from your phone</li>
+                    <li>Use the Gold & Silver page to time your commodity purchases</li>
                 </ul>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Version Info -->
+<div class="text-center text-muted small mb-4">
+    <p>WealthPilot v2.0 &nbsp;|&nbsp; Built with ❤ in India &nbsp;|&nbsp; &copy; {{ "now"|default("2026") }} WealthPilot. All rights reserved.</p>
 </div>
 
 {% endblock %}

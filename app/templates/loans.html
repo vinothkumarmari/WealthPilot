@@ -163,15 +163,18 @@
             <div class="card-footer d-flex gap-2">
                 {% if loan.is_active %}
                 <form method="POST" action="{{ url_for('main.record_loan_payment', id=loan.id) }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button class="btn btn-sm btn-success">
                         <span class="material-icons-outlined" style="font-size:16px">paid</span> Record Payment
                     </button>
                 </form>
                 {% endif %}
-                <a href="{{ url_for('main.delete_loan', id=loan.id) }}" class="btn btn-sm btn-outline-danger"
-                   onclick="return confirm('Delete this loan?')">
-                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                </a>
+                <form method="POST" action="{{ url_for('main.delete_loan', id=loan.id) }}" style="display:inline" onsubmit="return confirm('Delete this loan?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -221,6 +224,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ url_for('main.add_loan') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">

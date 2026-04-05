@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "7777:7777"
+    env_file:
+      - .env
+    volumes:
+      - db_data:/app/instance
+      - uploads:/app/app/uploads
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  uploads:

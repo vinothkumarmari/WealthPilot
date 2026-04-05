@@ -21,6 +21,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- CSRF Token for AJAX -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body>
     {% if current_user.is_authenticated %}
@@ -152,6 +154,10 @@
                 <span class="material-icons-outlined">menu</span>
             </button>
             <div class="topbar-right">
+                <a href="{{ url_for('main.notifications') }}" class="btn btn-link position-relative" title="Notifications" id="notifBell">
+                    <span class="material-icons-outlined">notifications</span>
+                    <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none" id="notifBadge" style="font-size:10px"></span>
+                </a>
                 <button class="btn btn-link" onclick="toggleTheme()" title="Toggle theme">
                     <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
                 </button>
@@ -180,6 +186,18 @@
         <div class="container-fluid px-4 py-3">
             {% block content %}{% endblock %}
         </div>
+
+        <!-- Footer -->
+        <div class="container-fluid px-4 py-3 mt-4 border-top">
+            <div class="d-flex justify-content-between align-items-center flex-wrap small text-muted">
+                <span>&copy; 2026 WealthPilot. All rights reserved.</span>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('main.privacy_policy') }}" class="text-muted text-decoration-none">Privacy Policy</a>
+                    <a href="{{ url_for('main.terms_of_service') }}" class="text-muted text-decoration-none">Terms of Service</a>
+                    <a href="{{ url_for('main.help_guide') }}" class="text-muted text-decoration-none">Help</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     {% else %}
@@ -202,6 +220,26 @@
                 console.log('SW registration failed:', err);
             });
         });
+    }
+    </script>
+    <!-- Notification Badge Updater -->
+    <script>
+    function updateNotifBadge() {
+        fetch('/notifications/count').then(r => r.json()).then(data => {
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                if (data.count > 0) {
+                    badge.textContent = data.count > 9 ? '9+' : data.count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+        }).catch(() => {});
+    }
+    if (document.getElementById('notifBell')) {
+        updateNotifBadge();
+        setInterval(updateNotifBadge, 60000);
     }
     </script>
 </body>

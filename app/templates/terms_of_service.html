@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Service - WealthPilot{% endblock %}
+{% block content %}
+{% include '_terms_content.html' %}
+{% endblock %}
+{% block public_content %}
+<div class="container py-4">
+{% include '_terms_content.html' %}
+</div>
+{% endblock %}

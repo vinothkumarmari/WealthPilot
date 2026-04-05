@@ -81,9 +81,12 @@
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateSip{{ sip.id }}">
                                     <span class="material-icons-outlined" style="font-size:16px">edit</span>
                                 </button>
-                                <a href="{{ url_for('main.delete_sip', id=sip.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this SIP?')">
-                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                                </a>
+                                <form method="POST" action="{{ url_for('main.delete_sip', id=sip.id) }}" style="display:inline" onsubmit="return confirm('Delete this SIP?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -142,6 +145,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('main.update_sip', id=sip.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Total Invested (₹)</label>
@@ -178,6 +182,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('main.add_sip') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">

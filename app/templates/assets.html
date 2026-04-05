@@ -62,9 +62,12 @@
                             <td>₹{{ a.emi_amount|inr }}</td>
                             <td>₹{{ a.loan_amount|inr }}</td>
                             <td>
-                                <a href="{{ url_for('main.delete_asset', id=a.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
-                                    <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                                </a>
+                                <form method="POST" action="{{ url_for('main.delete_asset', id=a.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% else %}
@@ -87,6 +90,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('main.add_asset') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">

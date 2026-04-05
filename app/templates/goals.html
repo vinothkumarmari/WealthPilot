@@ -23,9 +23,12 @@
                         <span class="badge bg-{{ 'danger' if goal.priority == 'high' else 'warning' if goal.priority == 'medium' else 'info' }}-subtle text-{{ 'danger' if goal.priority == 'high' else 'warning' if goal.priority == 'medium' else 'info' }}">{{ goal.priority|title }}</span>
                         {% if goal.category %}<span class="badge bg-primary-subtle text-primary">{{ goal.category }}</span>{% endif %}
                     </div>
-                    <a href="{{ url_for('main.delete_goal', id=goal.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete goal?')">
-                        <span class="material-icons-outlined" style="font-size:16px">delete</span>
-                    </a>
+                    <form method="POST" action="{{ url_for('main.delete_goal', id=goal.id) }}" style="display:inline" onsubmit="return confirm('Delete goal?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <span class="material-icons-outlined" style="font-size:16px">delete</span>
+                        </button>
+                    </form>
                 </div>
                 <div class="my-3">
                     <div class="d-flex justify-content-between mb-1">
@@ -40,6 +43,7 @@
                 <small class="text-muted"><span class="material-icons-outlined" style="font-size:14px">calendar_today</span> Target: {{ goal.target_date.strftime('%d %b %Y') }}</small>
                 {% endif %}
                 <form action="{{ url_for('main.update_goal', id=goal.id) }}" method="POST" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="input-group input-group-sm">
                         <input type="number" name="current_saved" class="form-control" value="{{ goal.current_saved }}" min="0" step="100">
                         <button type="submit" class="btn btn-outline-accent btn-sm">Update</button>
@@ -71,6 +75,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('main.add_goal') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">{{ t('Goal Name') }}</label>
