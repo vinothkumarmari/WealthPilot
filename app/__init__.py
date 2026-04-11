@@ -42,18 +42,29 @@ def create_app():
     app.logger.info('WealthPilot starting up...')
 
     # Load saved mail config before initializing Flask-Mail
+    # Priority: JSON file > environment variables > config.py defaults
     mail_config_path = os.path.join(app.instance_path, 'mail_config.json')
+    cfg = None
     if os.path.exists(mail_config_path):
         with open(mail_config_path, 'r') as f:
             cfg = json.load(f)
-        if cfg.get('mail_username'):
-            app.config['MAIL_SERVER'] = cfg.get('mail_server', 'smtp.gmail.com')
-            app.config['MAIL_PORT'] = int(cfg.get('mail_port', 587))
-            app.config['MAIL_USE_TLS'] = cfg.get('mail_use_tls', True)
-            app.config['MAIL_USE_SSL'] = False
-            app.config['MAIL_USERNAME'] = cfg['mail_username']
-            app.config['MAIL_PASSWORD'] = cfg.get('mail_password', '')
-            app.config['MAIL_DEFAULT_SENDER'] = cfg.get('mail_default_sender', cfg['mail_username'])
+    elif os.environ.get('MAIL_USERNAME'):
+        cfg = {
+            'mail_server': os.environ.get('MAIL_SERVER', 'smtp.gmail.com'),
+            'mail_port': int(os.environ.get('MAIL_PORT', 587)),
+            'mail_use_tls': True,
+            'mail_username': os.environ['MAIL_USERNAME'],
+            'mail_password': os.environ.get('MAIL_PASSWORD', ''),
+            'mail_default_sender': os.environ.get('MAIL_DEFAULT_SENDER', os.environ['MAIL_USERNAME']),
+        }
+    if cfg and cfg.get('mail_username'):
+        app.config['MAIL_SERVER'] = cfg.get('mail_server', 'smtp.gmail.com')
+        app.config['MAIL_PORT'] = int(cfg.get('mail_port', 587))
+        app.config['MAIL_USE_TLS'] = cfg.get('mail_use_tls', True)
+        app.config['MAIL_USE_SSL'] = False
+        app.config['MAIL_USERNAME'] = cfg['mail_username']
+        app.config['MAIL_PASSWORD'] = cfg.get('mail_password', '')
+        app.config['MAIL_DEFAULT_SENDER'] = cfg.get('mail_default_sender', cfg['mail_username'])
 
     # Initialize extensions
     db.init_app(app)
