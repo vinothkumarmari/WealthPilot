@@ -26,9 +26,11 @@ class Config:
     DB_NAME = 'Vnit'
     DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
     _db_url = os.environ.get('DATABASE_URL', f'sqlite:///{DB_NAME}.db')
-    # Render.com provides postgres:// but SQLAlchemy requires postgresql://
+    # Render.com provides postgres:// — convert to postgresql+psycopg:// for SQLAlchemy + psycopg3
     if _db_url.startswith('postgres://'):
-        _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+        _db_url = _db_url.replace('postgres://', 'postgresql+psycopg://', 1)
+    elif _db_url.startswith('postgresql://'):
+        _db_url = _db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
