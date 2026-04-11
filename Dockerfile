@@ -18,7 +18,8 @@ COPY . .
 RUN mkdir -p instance
 
 # Expose port
-EXPOSE 7777
+EXPOSE ${PORT:-7777}
 
-# Run with gunicorn
-CMD ["gunicorn", "run:application", "--bind", "0.0.0.0:7777", "--workers", "2", "--timeout", "120"]
+# Run with gunicorn (PORT set by hosting platform, defaults to 7777)
+ENV PORT=7777
+CMD gunicorn run:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120

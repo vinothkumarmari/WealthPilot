@@ -8,10 +8,23 @@ services:
     env_file:
       - .env
     volumes:
-      - db_data:/app/instance
       - uploads:/app/app/uploads
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wealthpilot
+      POSTGRES_USER: wealthpilot
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wealthpilot_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
-  db_data:
+  pgdata:
   uploads:

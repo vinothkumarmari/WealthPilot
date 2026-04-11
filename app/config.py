@@ -25,7 +25,11 @@ class Config:
     # Database Configuration
     DB_NAME = 'Vnit'
     DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', f'sqlite:///{DB_NAME}.db')
+    _db_url = os.environ.get('DATABASE_URL', f'sqlite:///{DB_NAME}.db')
+    # Render.com provides postgres:// but SQLAlchemy requires postgresql://
+    if _db_url.startswith('postgres://'):
+        _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # App Port
