@@ -35,11 +35,14 @@ def service_worker():
 MAIL_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'instance', 'mail_config.json')
 
 def load_mail_config():
-    """Load saved SMTP settings from JSON file, falling back to environment variables."""
+    """Load SMTP settings: JSON file first, then env vars, then empty."""
+    # Try JSON file first
     if os.path.exists(MAIL_CONFIG_PATH):
         with open(MAIL_CONFIG_PATH, 'r') as f:
-            return json.load(f)
-    # Fall back to environment variables (for Render / production deployments)
+            cfg = json.load(f)
+        if cfg.get('mail_username'):
+            return cfg
+    # Fall back to environment variables (Render / production)
     env_username = os.environ.get('MAIL_USERNAME', '')
     if env_username:
         return {

@@ -42,13 +42,15 @@ def create_app():
     app.logger.info('WealthPilot starting up...')
 
     # Load saved mail config before initializing Flask-Mail
-    # Priority: JSON file > environment variables > config.py defaults
+    # Priority: JSON file (with valid username) > environment variables > config.py defaults
     mail_config_path = os.path.join(app.instance_path, 'mail_config.json')
     cfg = None
     if os.path.exists(mail_config_path):
         with open(mail_config_path, 'r') as f:
-            cfg = json.load(f)
-    elif os.environ.get('MAIL_USERNAME'):
+            loaded = json.load(f)
+        if loaded.get('mail_username'):
+            cfg = loaded
+    if not cfg and os.environ.get('MAIL_USERNAME'):
         cfg = {
             'mail_server': os.environ.get('MAIL_SERVER', 'smtp.gmail.com'),
             'mail_port': int(os.environ.get('MAIL_PORT', 587)),
