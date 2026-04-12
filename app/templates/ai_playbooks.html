@@ -6,11 +6,34 @@
     <p class="text-muted mb-0">In-app strategies for marketing, business execution, financial thinking, and growth opportunities.</p>
 </div>
 
+{% if (data.profile.monthly_salary or 0) <= 0 %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <span class="material-icons-outlined me-2">info</span>
+    <div>
+        <strong>Salary is not set.</strong>
+        Add your monthly salary in <a href="{{ url_for('main.profile') }}" class="alert-link">Profile Settings</a> for more accurate playbook budgets and channel recommendations.
+    </div>
+</div>
+{% endif %}
+
 <div class="row mb-4">
     <div class="col-12">
         <div class="card bg-gradient-accent text-white">
             <div class="card-body d-flex flex-wrap justify-content-around align-items-center py-3">
-                <div class="text-center px-3"><small>Salary Band</small><h5>₹{{ "{:,.0f}".format(data.profile.monthly_salary) }}/mo</h5></div>
+                <div class="text-center px-3">
+                    <small>Salary Band</small>
+                    <h5>
+                        {% if (data.profile.monthly_salary or 0) <= 0 %}
+                        Not set
+                        {% elif data.profile.monthly_salary < 50000 %}
+                        Starter (Below ₹50K/mo)
+                        {% elif data.profile.monthly_salary < 150000 %}
+                        Growth (₹50K - ₹1.5L/mo)
+                        {% else %}
+                        Scale (₹1.5L+/mo)
+                        {% endif %}
+                    </h5>
+                </div>
                 <div class="text-center px-3"><small>Profession</small><h5>{{ data.profile.profession }}</h5></div>
                 <div class="text-center px-3"><small>State</small><h5>{{ data.profile.state }}</h5></div>
                 <div class="text-center px-3"><small>Risk</small><h5>{{ data.profile.risk_appetite|title }}</h5></div>
