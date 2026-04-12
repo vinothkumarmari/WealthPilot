@@ -856,31 +856,8 @@ def export_csv(data_type):
 @main.route('/delete-account', methods=['GET', 'POST'])
 @login_required
 def delete_account():
-    if current_user.is_admin:
-        flash('Admin account cannot be deleted from here.', 'danger')
-        return redirect(url_for('main.profile'))
-    
-    if request.method == 'POST':
-        password = request.form.get('password', '')
-        confirm_text = request.form.get('confirm_text', '').strip()
-        
-        if not check_password_hash(current_user.password_hash, password):
-            flash('Incorrect password. Account not deleted.', 'danger')
-            return render_template('delete_account.html')
-        
-        if confirm_text != 'DELETE':
-            flash('Please type DELETE to confirm.', 'danger')
-            return render_template('delete_account.html')
-        
-        user = current_user._get_current_object()
-        logout_user()
-        session.clear()
-        db.session.delete(user)
-        db.session.commit()
-        flash('Your account and all data have been permanently deleted.', 'info')
-        return redirect(url_for('main.index'))
-    
-    return render_template('delete_account.html')
+    flash('Account deletion is currently disabled. Please contact support for account closure requests.', 'warning')
+    return redirect(url_for('main.profile'))
 
 
 # ======================== DASHBOARD ========================

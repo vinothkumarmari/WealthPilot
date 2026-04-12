@@ -173,6 +173,13 @@ class FinancialAdvisor:
             
         suggestions = []
         monthly_investable = monthly_salary * 0.20  # 20% of salary for investments
+        # Keep recommendations practical even for low/unstable salary inputs.
+        practical_min = 500
+
+        def build_range(base_amount):
+            low = max(practical_min, round(base_amount * 0.8, -1))
+            high = max(low, round(base_amount * 1.2, -1))
+            return int(low), int(high)
         
         risk_map = {
             'low': ['low'],
@@ -200,99 +207,116 @@ class FinancialAdvisor:
         
         # Core suggestions
         if age < 30:
+            sip_base = max(monthly_investable * 0.4, practical_min)
+            sip_min, sip_max = build_range(sip_base)
             suggestions.append({
                 'title': 'Start SIP in Index Funds',
-                'description': f'At age {age}, you have time for compounding. Invest ₹{monthly_investable * 0.4:,.0f}/month in Nifty 50 Index Fund.',
-                'amount': monthly_investable * 0.4,
+                'description': f'At age {age}, you have time for compounding. Suggested SIP range: ₹{sip_min:,.0f} to ₹{sip_max:,.0f}/month in Nifty 50 Index Fund.',
+                'amount': sip_base,
+                'min_amount': sip_min,
+                'max_amount': sip_max,
                 'type': 'equity',
                 'priority': 'high',
                 'icon': 'trending_up',
-                'apply_url': 'https://www.mutualfundssahihai.com/en',
-                'apply_label': 'Start SIP'
             })
+            efund = max(monthly_salary * 6, monthly_salary * 3)
             suggestions.append({
                 'title': 'Emergency Fund in Liquid Fund',
-                'description': f'Build 6 months expenses (₹{monthly_salary * 6:,.0f}) in a Liquid Mutual Fund for emergencies.',
-                'amount': monthly_salary * 6,
+                'description': f'Build an emergency fund target between 3-6 months expenses (₹{max(monthly_salary * 3, 0):,.0f} to ₹{max(monthly_salary * 6, 0):,.0f}).',
+                'amount': efund,
+                'min_amount': int(max(monthly_salary * 3, 0)),
+                'max_amount': int(max(monthly_salary * 6, 0)),
                 'type': 'safety',
                 'priority': 'high',
                 'icon': 'shield',
-                'apply_url': 'https://www.mutualfundssahihai.com/en',
-                'apply_label': 'Invest Now'
             })
+            ppf_base = max(min(monthly_investable * 0.2, 12500), practical_min)
+            ppf_min, ppf_max = build_range(ppf_base)
             suggestions.append({
                 'title': 'PPF for Tax Saving + Growth',
-                'description': f'Invest ₹{min(monthly_investable * 0.2, 12500):,.0f}/month in PPF for tax-free returns at 7.1%.',
-                'amount': min(monthly_investable * 0.2, 12500),
+                'description': f'Invest ₹{ppf_min:,.0f} to ₹{ppf_max:,.0f}/month in PPF for tax-efficient long-term growth.',
+                'amount': ppf_base,
+                'min_amount': ppf_min,
+                'max_amount': ppf_max,
                 'type': 'debt',
                 'priority': 'medium',
                 'icon': 'savings',
-                'apply_url': 'https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx',
-                'apply_label': 'Open PPF'
             })
         elif age < 45:
+            mf_base = max(monthly_investable * 0.35, practical_min)
+            mf_min, mf_max = build_range(mf_base)
             suggestions.append({
                 'title': 'Diversified Mutual Fund SIP',
-                'description': f'Invest ₹{monthly_investable * 0.35:,.0f}/month in Large+Mid Cap Hybrid Funds.',
-                'amount': monthly_investable * 0.35,
+                'description': f'Invest ₹{mf_min:,.0f} to ₹{mf_max:,.0f}/month in Large+Mid Cap Hybrid Funds.',
+                'amount': mf_base,
+                'min_amount': mf_min,
+                'max_amount': mf_max,
                 'type': 'equity',
                 'priority': 'high',
                 'icon': 'trending_up',
-                'apply_url': 'https://www.mutualfundssahihai.com/en',
-                'apply_label': 'Start SIP'
             })
+            nps_base = max(monthly_investable * 0.15, practical_min)
+            nps_min, nps_max = build_range(nps_base)
             suggestions.append({
                 'title': 'NPS for Retirement',
-                'description': f'Invest ₹{monthly_investable * 0.15:,.0f}/month in NPS Tier 1 for additional ₹50,000 tax deduction.',
-                'amount': monthly_investable * 0.15,
+                'description': f'NPS contribution range: ₹{nps_min:,.0f} to ₹{nps_max:,.0f}/month for retirement + tax benefits.',
+                'amount': nps_base,
+                'min_amount': nps_min,
+                'max_amount': nps_max,
                 'type': 'retirement',
                 'priority': 'high',
                 'icon': 'elderly',
-                'apply_url': 'https://www.npscra.nsdl.co.in/nps-702.html',
-                'apply_label': 'Open NPS'
             })
         else:
+            fd_base = max(monthly_investable * 0.3, practical_min)
+            fd_min, fd_max = build_range(fd_base)
             suggestions.append({
                 'title': 'Fixed Deposit Ladder',
-                'description': f'Create FD ladder with ₹{monthly_investable * 0.3:,.0f}/month across 1-5 year terms.',
-                'amount': monthly_investable * 0.3,
+                'description': f'Create FD ladder with ₹{fd_min:,.0f} to ₹{fd_max:,.0f}/month across 1-5 year terms.',
+                'amount': fd_base,
+                'min_amount': fd_min,
+                'max_amount': fd_max,
                 'type': 'debt',
                 'priority': 'high',
                 'icon': 'account_balance',
-                'apply_url': 'https://www.indiapost.gov.in/Financial/pages/content/post-office-saving-schemes.aspx',
-                'apply_label': 'Open FD'
             })
+            scss_base = max(monthly_investable * 0.25, practical_min)
+            scss_min, scss_max = build_range(scss_base)
             suggestions.append({
                 'title': 'Senior Citizen Savings Scheme',
-                'description': 'Consider SCSS offering 8.2% returns with quarterly interest payout.',
-                'amount': monthly_investable * 0.25,
+                'description': f'SCSS contribution range: ₹{scss_min:,.0f} to ₹{scss_max:,.0f}/month equivalent for steady income.',
+                'amount': scss_base,
+                'min_amount': scss_min,
+                'max_amount': scss_max,
                 'type': 'debt',
                 'priority': 'high',
                 'icon': 'savings',
-                'apply_url': 'https://www.nsiindia.gov.in/InternalPage.aspx?Id_Pk=88',
-                'apply_label': 'Apply SCSS'
             })
         
         # Gold & Silver suggestions (for all ages)
+        sgb_base = max(monthly_investable * 0.1, practical_min)
+        sgb_min, sgb_max = build_range(sgb_base)
         suggestions.append({
             'title': 'Sovereign Gold Bond (SGB)',
-            'description': f'Invest ₹{monthly_investable * 0.1:,.0f}/month in SGBs for gold exposure + 2.5% annual interest.',
-            'amount': monthly_investable * 0.1,
+            'description': f'SGB allocation range: ₹{sgb_min:,.0f} to ₹{sgb_max:,.0f}/month for gold exposure + 2.5% annual interest.',
+            'amount': sgb_base,
+            'min_amount': sgb_min,
+            'max_amount': sgb_max,
             'type': 'commodity',
             'priority': 'medium',
             'icon': 'paid',
-            'apply_url': 'https://www.rbi.org.in/Scripts/Faqsgoldbond.aspx',
-            'apply_label': 'Buy SGB'
         })
+        silver_base = max(monthly_investable * 0.05, practical_min)
+        silver_min, silver_max = build_range(silver_base)
         suggestions.append({
             'title': 'Silver ETF',
-            'description': f'Allocate ₹{monthly_investable * 0.05:,.0f}/month to Silver ETF for portfolio diversification.',
-            'amount': monthly_investable * 0.05,
+            'description': f'Silver ETF range: ₹{silver_min:,.0f} to ₹{silver_max:,.0f}/month for diversification.',
+            'amount': silver_base,
+            'min_amount': silver_min,
+            'max_amount': silver_max,
             'type': 'commodity',
             'priority': 'low',
             'icon': 'diamond',
-            'apply_url': 'https://www.mutualfundssahihai.com/en',
-            'apply_label': 'Buy ETF'
         })
         
         # Available investment options table
