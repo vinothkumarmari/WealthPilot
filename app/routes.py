@@ -1055,11 +1055,13 @@ def dashboard():
 
     net_worth = total_assets_value + total_investments_all + float(total_bank_balance) - total_debts
 
-    # Future readiness quick summary (2040+ planner preview for dashboard)
-    future_data = advisor.get_future_readiness_2040(
+    # Future readiness quick summary (target-year planner preview for dashboard)
+    future_target_year = current_user.future_target_year or 2040
+    future_data = advisor.get_future_readiness_plan(
         monthly_salary=current_user.monthly_salary or effective_salary or 0,
         age=current_user.age or 30,
         risk_appetite=current_user.risk_appetite or 'moderate',
+        target_year=future_target_year,
     )
     future_target = float(future_data['plan']['monthly_investment_target'])
     current_investing = float(monthly_sip + monthly_premiums + monthly_scheme)
@@ -1074,7 +1076,7 @@ def dashboard():
             'done': float(total_bank_balance) >= emergency_target,
         },
         {
-            'title': 'Monthly investing is on 2040 target',
+            'title': f'Monthly investing is on {future_target_year} target',
             'done': current_investing >= future_target,
         },
         {
@@ -1115,6 +1117,7 @@ def dashboard():
         future_current_investing=current_investing,
         future_monthly_target=future_target,
         future_emergency_target=emergency_target,
+        future_target_year=future_target_year,
     )
 
 
@@ -1193,6 +1196,9 @@ def profile():
         current_user.risk_appetite = request.form.get('risk_appetite', 'moderate')
         current_user.profession = request.form.get('profession', '').strip()
         current_user.state = request.form.get('state', '').strip()
+        current_year = datetime.now().year
+        requested_target_year = request.form.get('future_target_year', type=int)
+        current_user.future_target_year = min(2100, max(current_year + 1, requested_target_year or (current_user.future_target_year or 2040)))
         current_user.enable_grocery_offers = request.form.get('enable_grocery_offers') == 'on'
         current_user.enable_future_monthly_reminders = request.form.get('enable_future_monthly_reminders') == 'on'
         current_user.enable_future_quarterly_reminders = request.form.get('enable_future_quarterly_reminders') == 'on'
@@ -1697,10 +1703,11 @@ def ai_playbooks():
 @main.route('/future-planner')
 @login_required
 def future_planner():
-    data = advisor.get_future_readiness_2040(
+    data = advisor.get_future_readiness_plan(
         monthly_salary=current_user.monthly_salary or 0,
         age=current_user.age or 30,
         risk_appetite=current_user.risk_appetite or 'moderate',
+        target_year=current_user.future_target_year or 2040,
     )
     return render_template('future_planner.html', data=data)
 
@@ -3336,17 +3343,20 @@ def _generate_notifications(user):
 
     # Future Planner monthly reminder (once per month)
     month_start = today.replace(day=1)
+    target_year = user.future_target_year or 2040
+    monthly_title = f'Future Planner {target_year}+ Monthly Check'
     future_existing = Notification.query.filter(
         Notification.user_id == user.id,
-        Notification.title == 'Future Planner 2040+ Monthly Check',
+        Notification.title == monthly_title,
         Notification.created_at >= month_start
     ).first()
     if getattr(user, 'enable_future_monthly_reminders', True) and not future_existing:
         monthly_salary = float(user.monthly_salary or 0)
-        future = advisor.get_future_readiness_2040(
+        future = advisor.get_future_readiness_plan(
             monthly_salary=monthly_salary,
             age=user.age or 30,
             risk_appetite=user.risk_appetite or 'moderate',
+            target_year=target_year,
         )
         target = float(future['plan']['monthly_investment_target'])
         bank_balance = db.session.query(db.func.sum(BankAccount.balance)).filter_by(user_id=user.id).scalar() or 0
@@ -3354,8 +3364,9 @@ def _generate_notifications(user):
 
         new_notifs.append(Notification(
             user_id=user.id,
-            title='Future Planner 2040+ Monthly Check',
+            title=monthly_title,
             message=(
+                f"Target year: {target_year}. "
                 f"Monthly target: ₹{target:,.0f}. "
                 f"Bank reserve: ₹{float(bank_balance):,.0f}. "
                 f"Suggested top-up: ₹{float(suggested_topup):,.0f}."
@@ -3369,7 +3380,7 @@ def _generate_notifications(user):
     quarter = ((today.month - 1) // 3) + 1
     quarter_start_month = ((quarter - 1) * 3) + 1
     quarter_start = date(today.year, quarter_start_month, 1)
-    quarter_title = f'Future Planner 2040+ Q{quarter} Review'
+    quarter_title = f'Future Planner {target_year}+ Q{quarter} Review'
     quarter_existing = Notification.query.filter(
         Notification.user_id == user.id,
         Notification.title == quarter_title,
@@ -3380,7 +3391,7 @@ def _generate_notifications(user):
             1: 'Rebalance allocation and update annual income growth assumptions.',
             2: 'Increase SIP/top-up by 5-10% and review emergency fund coverage.',
             3: 'Review debt burden and reduce high-interest liabilities aggressively.',
-            4: 'Run year-end audit: net worth, corpus progress, and 2040 target gap.',
+            4: f'Run year-end audit: net worth, corpus progress, and {target_year} target gap.',
         }
         action = quarter_actions.get(quarter, 'Review your 2040 roadmap and adjust monthly contributions.')
 

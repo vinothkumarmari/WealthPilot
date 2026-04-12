@@ -60,6 +60,11 @@
                                 <option value="high" {% if current_user.risk_appetite == 'high' %}selected{% endif %}>{{ t('High - Growth Focused') }}</option>
                             </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Future Planning Target Year') }}</label>
+                            <input type="number" name="future_target_year" class="form-control" min="2027" max="2100" value="{{ current_user.future_target_year or 2040 }}">
+                            <small class="text-muted">Choose your long-term planning year (for example 2040, 2045, 2050).</small>
+                        </div>
                     </div>
                     <hr>
                     <h6 class="mb-3">{{ t('Language Preference') }}</h6>

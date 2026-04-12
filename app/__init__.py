@@ -229,6 +229,9 @@ def _ensure_user_columns(app):
                 if 'enable_future_monthly_reminders' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN enable_future_monthly_reminders BOOLEAN DEFAULT 1"))
                     app.logger.info('Added column: user.enable_future_monthly_reminders')
+                if 'future_target_year' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN future_target_year INTEGER DEFAULT 2040"))
+                    app.logger.info('Added column: user.future_target_year')
                 if 'enable_future_quarterly_reminders' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN enable_future_quarterly_reminders BOOLEAN DEFAULT 1"))
                     app.logger.info('Added column: user.enable_future_quarterly_reminders')
@@ -244,6 +247,9 @@ def _ensure_user_columns(app):
                 if 'enable_future_monthly_reminders' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_future_monthly_reminders BOOLEAN DEFAULT TRUE"))
                     app.logger.info('Added column: user.enable_future_monthly_reminders')
+                if 'future_target_year' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN future_target_year INTEGER DEFAULT 2040"))
+                    app.logger.info('Added column: user.future_target_year')
                 if 'enable_future_quarterly_reminders' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_future_quarterly_reminders BOOLEAN DEFAULT TRUE"))
                     app.logger.info('Added column: user.enable_future_quarterly_reminders')

@@ -317,7 +317,7 @@
                 </div>
                 <small class="text-muted d-block mb-2">₹{{ total_bank_balance|inr }} / ₹{{ future_emergency_target|inr }}</small>
 
-                <div class="small text-muted mb-2">{{ t('Target by 2040') }}: ₹{{ future_data.plan.inflation_adjusted_corpus_2040|inr }} ({{ t('inflation adjusted') }})</div>
+                <div class="small text-muted mb-2">{{ t('Target by') }} {{ future_target_year }}: ₹{{ future_data.plan.inflation_adjusted_corpus_target|inr }} ({{ t('inflation adjusted') }})</div>
 
                 {% for item in future_checklist %}
                 <div class="d-flex justify-content-between align-items-center border-top py-2 small">

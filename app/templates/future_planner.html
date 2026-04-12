@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
-{% block title %}Future Planner 2040+ - WealthPilot{% endblock %}
+{% block title %}Future Planner {{ data.profile.target_year }}+ - WealthPilot{% endblock %}
 {% block content %}
 <div class="page-header mb-3">
-    <h4><span class="material-icons-outlined">rocket_launch</span> Future Planner 2040+</h4>
+    <h4><span class="material-icons-outlined">rocket_launch</span> Future Planner {{ data.profile.target_year }}+</h4>
     <p class="text-muted mb-0">Build a long-horizon strategy for wealth, resilience, and financial freedom in the AI-first economy.</p>
 </div>
 
@@ -13,7 +13,7 @@
                 <div class="text-center px-3"><small>Current Age</small><h5>{{ data.profile.age }}</h5></div>
                 <div class="text-center px-3"><small>Risk</small><h5>{{ data.profile.risk_appetite|title }}</h5></div>
                 <div class="text-center px-3"><small>Monthly Salary</small><h5>₹{{ "{:,.0f}".format(data.profile.monthly_salary) }}</h5></div>
-                <div class="text-center px-3"><small>Years to 2040</small><h5>{{ data.profile.years_to_2040 }}</h5></div>
+                <div class="text-center px-3"><small>Years to {{ data.profile.target_year }}</small><h5>{{ data.profile.years_to_target }}</h5></div>
             </div>
         </div>
     </div>
@@ -39,8 +39,8 @@
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100">
             <div class="card-body">
-                <small class="text-muted">Projected Corpus by 2040</small>
-                <h4 class="text-info">₹{{ "{:,.0f}".format(data.plan.projected_corpus_2040) }}</h4>
+                <small class="text-muted">Projected Corpus by {{ data.profile.target_year }}</small>
+                <h4 class="text-info">₹{{ "{:,.0f}".format(data.plan.projected_corpus_target) }}</h4>
             </div>
         </div>
     </div>
@@ -48,7 +48,7 @@
         <div class="card h-100">
             <div class="card-body">
                 <small class="text-muted">Inflation-Adjusted Corpus</small>
-                <h4 class="text-warning">₹{{ "{:,.0f}".format(data.plan.inflation_adjusted_corpus_2040) }}</h4>
+                <h4 class="text-warning">₹{{ "{:,.0f}".format(data.plan.inflation_adjusted_corpus_target) }}</h4>
             </div>
         </div>
     </div>
@@ -91,7 +91,7 @@
 <div class="row mb-3">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><strong>2040 Milestones</strong></div>
+            <div class="card-header"><strong>{{ data.profile.target_year }} Milestones</strong></div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">

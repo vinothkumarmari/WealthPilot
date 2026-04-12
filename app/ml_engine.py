@@ -777,11 +777,13 @@ class FinancialAdvisor:
             'opportunity_catalog': opportunity_catalog,
         }
 
-    def get_future_readiness_2040(self, monthly_salary, age, risk_appetite='moderate'):
-        """Return a long-horizon (2040+) financial readiness plan."""
+    def get_future_readiness_plan(self, monthly_salary, age, risk_appetite='moderate', target_year=2040):
+        """Return a long-horizon financial readiness plan for a chosen target year."""
         monthly_salary = max(float(monthly_salary or 0), 0)
         age = max(int(age or 30), 18)
-        years_to_2040 = max(0, 2040 - datetime.now().year)
+        current_year = datetime.now().year
+        target_year = max(current_year + 1, int(target_year or 2040))
+        years_to_target = max(0, target_year - current_year)
 
         base_investable = monthly_salary * 0.25
         emergency_fund_target = monthly_salary * 6
@@ -797,7 +799,7 @@ class FinancialAdvisor:
             allocation = {'growth_equity': 50, 'stable_debt': 30, 'alternatives': 20}
             expected_return = 0.10
 
-        years = max(years_to_2040, 1)
+        years = max(years_to_target, 1)
         real_return = ((1 + expected_return) / (1 + inflation_assumption)) - 1
 
         monthly_rate = expected_return / 12
@@ -827,7 +829,7 @@ class FinancialAdvisor:
                 'action': 'Allocate part of gains to future themes: AI infra, climate-tech, and healthcare innovation funds.',
             },
             {
-                'year': 2040,
+                'year': target_year,
                 'goal': 'Freedom Layer',
                 'action': 'Target FI runway: annual passive income >= 70% of projected lifestyle cost.',
             },
@@ -845,7 +847,9 @@ class FinancialAdvisor:
                 'monthly_salary': monthly_salary,
                 'age': age,
                 'risk_appetite': risk_appetite,
-                'years_to_2040': years_to_2040,
+                'target_year': target_year,
+                'years_to_target': years_to_target,
+                'years_to_2040': years_to_target,
             },
             'plan': {
                 'monthly_investment_target': round(base_investable),
@@ -853,12 +857,18 @@ class FinancialAdvisor:
                 'expected_return_pct': round(expected_return * 100, 1),
                 'real_return_pct': round(real_return * 100, 1),
                 'allocation': allocation,
+                'projected_corpus_target': round(future_value),
+                'inflation_adjusted_corpus_target': round(inflation_adjusted_corpus),
                 'projected_corpus_2040': round(future_value),
                 'inflation_adjusted_corpus_2040': round(inflation_adjusted_corpus),
             },
             'milestones': milestones,
             'future_risks': future_risks,
         }
+
+    def get_future_readiness_2040(self, monthly_salary, age, risk_appetite='moderate'):
+        """Backward-compatible wrapper for existing calls."""
+        return self.get_future_readiness_plan(monthly_salary, age, risk_appetite, target_year=2040)
     
     def get_tax_saving_suggestions(self, annual_salary):
         """Tax saving investment suggestions"""

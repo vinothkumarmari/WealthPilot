@@ -20,6 +20,7 @@ class User(UserMixin, db.Model):
     budget_wants_pct = db.Column(db.Float, default=30)
     budget_savings_pct = db.Column(db.Float, default=20)
     enable_grocery_offers = db.Column(db.Boolean, default=False)
+    future_target_year = db.Column(db.Integer, default=2040)
     enable_future_monthly_reminders = db.Column(db.Boolean, default=True)
     enable_future_quarterly_reminders = db.Column(db.Boolean, default=True)
     enable_only_critical_notifications = db.Column(db.Boolean, default=False)
