@@ -163,7 +163,7 @@ def admin_required(f):
 
 
 def _sync_user_salary(user):
-    """Auto-update user's monthly/annual salary from Salary-type income records."""
+    """Auto-update salary from Salary income records without clobbering manual profile salary."""
     salary_total = db.session.query(db.func.sum(Income.amount)).filter_by(
         user_id=user.id, income_type='Salary'
     ).scalar() or 0
@@ -172,8 +172,9 @@ def _sync_user_salary(user):
         user.monthly_salary = salary_total / salary_count
         user.annual_salary = user.monthly_salary * 12
     else:
-        user.monthly_salary = 0
-        user.annual_salary = 0
+        # Keep user-entered profile salary when no Salary income rows are present.
+        if user.monthly_salary and user.monthly_salary > 0:
+            user.annual_salary = user.monthly_salary * 12
 
 
 # ======================== AUTH ROUTES ========================
