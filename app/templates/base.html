@@ -107,7 +107,7 @@
             </a>
             <a href="{{ url_for('main.future_planner') }}" class="nav-link {% if request.endpoint == 'main.future_planner' %}active{% endif %}">
                 <span class="material-icons-outlined">rocket_launch</span>
-                <span>{{ t('Future Planner 2040+') }}</span>
+                <span>Future Planner {{ current_user.future_target_year or 2040 }}+</span>
             </a>
             <a href="{{ url_for('main.business_ideas') }}" class="nav-link {% if request.endpoint == 'main.business_ideas' %}active{% endif %}">
                 <span class="material-icons-outlined">lightbulb</span>
