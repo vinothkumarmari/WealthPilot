@@ -11,6 +11,7 @@ from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal,
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
+from sqlalchemy import or_
 import json
 import re
 import os
@@ -348,7 +349,8 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        user = User.query.filter_by(username=username).first()
+        lookup = username.lower()
+        user = User.query.filter(or_(User.username == username, User.email == lookup)).first()
         
         if user:
             # Check account lockout
