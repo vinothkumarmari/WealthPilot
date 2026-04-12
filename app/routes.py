@@ -1060,7 +1060,7 @@ def dashboard():
     net_worth = total_assets_value + total_investments_all + float(total_bank_balance) - total_debts
 
     # Future readiness quick summary (target-year planner preview for dashboard)
-    future_target_year = current_user.future_target_year or 2040
+    future_target_year = getattr(current_user, 'future_target_year', 2040) or 2040
     try:
         future_data = advisor.get_future_readiness_plan(
             monthly_salary=current_user.monthly_salary or effective_salary or 0,
@@ -1331,6 +1331,20 @@ def expenses():
     expense_history = [{'amount': float(e.amount), 'date': str(e.date)} for e in all_expenses[:12]]
     trend = advisor.predict_expense_trend(expense_history)
 
+    # Template expects 50/30/20 budget_analysis block.
+    budget_analysis = advisor.get_budget_analysis(
+        salary,
+        expenses_dict,
+        ratios={
+            'needs': current_user.budget_needs_pct or 50,
+            'wants': current_user.budget_wants_pct or 30,
+            'savings': current_user.budget_savings_pct or 20,
+        }
+    )
+
+    if not trend:
+        trend = {'trend': 'stable', 'trend_icon': 'trending_flat', 'prediction': None}
+
     return render_template('expenses.html',
         expenses=all_expenses,
         total=total,
@@ -1345,7 +1359,8 @@ def expenses():
         monthly_history=json.dumps(monthly_history),
         commitments=commitments,
         remaining_after=remaining_after,
-        trend=trend
+        trend=trend,
+        budget_analysis=budget_analysis,
     )
 
 
