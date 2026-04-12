@@ -776,6 +776,89 @@ class FinancialAdvisor:
             'financial_ideologies': financial_ideologies,
             'opportunity_catalog': opportunity_catalog,
         }
+
+    def get_future_readiness_2040(self, monthly_salary, age, risk_appetite='moderate'):
+        """Return a long-horizon (2040+) financial readiness plan."""
+        monthly_salary = max(float(monthly_salary or 0), 0)
+        age = max(int(age or 30), 18)
+        years_to_2040 = max(0, 2040 - datetime.now().year)
+
+        base_investable = monthly_salary * 0.25
+        emergency_fund_target = monthly_salary * 6
+        inflation_assumption = 0.06
+
+        if risk_appetite == 'high':
+            allocation = {'growth_equity': 60, 'stable_debt': 20, 'alternatives': 20}
+            expected_return = 0.115
+        elif risk_appetite == 'low':
+            allocation = {'growth_equity': 35, 'stable_debt': 45, 'alternatives': 20}
+            expected_return = 0.085
+        else:
+            allocation = {'growth_equity': 50, 'stable_debt': 30, 'alternatives': 20}
+            expected_return = 0.10
+
+        years = max(years_to_2040, 1)
+        real_return = ((1 + expected_return) / (1 + inflation_assumption)) - 1
+
+        monthly_rate = expected_return / 12
+        total_months = years * 12
+        if monthly_rate > 0:
+            future_value = base_investable * (((1 + monthly_rate) ** total_months - 1) / monthly_rate) * (1 + monthly_rate)
+        else:
+            future_value = base_investable * total_months
+
+        inflation_multiplier = (1 + inflation_assumption) ** years
+        inflation_adjusted_corpus = future_value / max(inflation_multiplier, 1)
+
+        milestones = [
+            {
+                'year': datetime.now().year + 1,
+                'goal': 'Stability Layer',
+                'action': 'Build 6-month emergency fund and clear high-interest debt first.',
+            },
+            {
+                'year': datetime.now().year + 3,
+                'goal': 'Automation Layer',
+                'action': 'Automate SIP, EPF/NPS, and yearly step-up by 10-12%.',
+            },
+            {
+                'year': datetime.now().year + 7,
+                'goal': 'Opportunity Layer',
+                'action': 'Allocate part of gains to future themes: AI infra, climate-tech, and healthcare innovation funds.',
+            },
+            {
+                'year': 2040,
+                'goal': 'Freedom Layer',
+                'action': 'Target FI runway: annual passive income >= 70% of projected lifestyle cost.',
+            },
+        ]
+
+        future_risks = [
+            'AI disruption risk: keep re-skilling budget each year',
+            'Healthcare inflation: maintain health cover and top-up plan',
+            'Climate/energy shocks: diversify geography and sectors',
+            'Currency/global risk: allocate a small international sleeve',
+        ]
+
+        return {
+            'profile': {
+                'monthly_salary': monthly_salary,
+                'age': age,
+                'risk_appetite': risk_appetite,
+                'years_to_2040': years_to_2040,
+            },
+            'plan': {
+                'monthly_investment_target': round(base_investable),
+                'emergency_fund_target': round(emergency_fund_target),
+                'expected_return_pct': round(expected_return * 100, 1),
+                'real_return_pct': round(real_return * 100, 1),
+                'allocation': allocation,
+                'projected_corpus_2040': round(future_value),
+                'inflation_adjusted_corpus_2040': round(inflation_adjusted_corpus),
+            },
+            'milestones': milestones,
+            'future_risks': future_risks,
+        }
     
     def get_tax_saving_suggestions(self, annual_salary):
         """Tax saving investment suggestions"""

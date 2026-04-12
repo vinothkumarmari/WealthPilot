@@ -12,6 +12,7 @@ from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
 from sqlalchemy import or_
+from sqlalchemy.exc import OperationalError
 import json
 import re
 import os
@@ -856,7 +857,7 @@ def export_csv(data_type):
 @main.route('/delete-account', methods=['GET', 'POST'])
 @login_required
 def delete_account():
-    flash('Account deletion is currently disabled. Please contact support for account closure requests.', 'warning')
+    flash('Delete account permission has been removed for users. Please contact support for account closure requests.', 'warning')
     return redirect(url_for('main.profile'))
 
 
@@ -1054,6 +1055,34 @@ def dashboard():
 
     net_worth = total_assets_value + total_investments_all + float(total_bank_balance) - total_debts
 
+    # Future readiness quick summary (2040+ planner preview for dashboard)
+    future_data = advisor.get_future_readiness_2040(
+        monthly_salary=current_user.monthly_salary or effective_salary or 0,
+        age=current_user.age or 30,
+        risk_appetite=current_user.risk_appetite or 'moderate',
+    )
+    future_target = float(future_data['plan']['monthly_investment_target'])
+    current_investing = float(monthly_sip + monthly_premiums + monthly_scheme)
+    investment_progress = min(100, int((current_investing / future_target) * 100)) if future_target > 0 else 0
+    emergency_target = float(future_data['plan']['emergency_fund_target'])
+    emergency_progress = min(100, int((float(total_bank_balance) / emergency_target) * 100)) if emergency_target > 0 else 0
+    future_score = int(round((investment_progress * 0.55) + (emergency_progress * 0.30) + (max(0.0, min(100.0, health.savings_rate)) * 0.15)))
+
+    future_checklist = [
+        {
+            'title': 'Emergency fund is 6 months ready',
+            'done': float(total_bank_balance) >= emergency_target,
+        },
+        {
+            'title': 'Monthly investing is on 2040 target',
+            'done': current_investing >= future_target,
+        },
+        {
+            'title': 'Savings rate is healthy (20%+)',
+            'done': health.savings_rate >= 20,
+        },
+    ]
+
     return render_template('dashboard.html',
         total_income=total_income,
         total_expenses=total_expenses,
@@ -1078,6 +1107,14 @@ def dashboard():
         total_loan_outstanding=total_loan_outstanding,
         total_bank_balance=float(total_bank_balance),
         total_pf_balance=float(total_pf_balance),
+        future_data=future_data,
+        future_score=future_score,
+        future_checklist=future_checklist,
+        future_investment_progress=investment_progress,
+        future_emergency_progress=emergency_progress,
+        future_current_investing=current_investing,
+        future_monthly_target=future_target,
+        future_emergency_target=emergency_target,
     )
 
 
@@ -1157,6 +1194,9 @@ def profile():
         current_user.profession = request.form.get('profession', '').strip()
         current_user.state = request.form.get('state', '').strip()
         current_user.enable_grocery_offers = request.form.get('enable_grocery_offers') == 'on'
+        current_user.enable_future_monthly_reminders = request.form.get('enable_future_monthly_reminders') == 'on'
+        current_user.enable_future_quarterly_reminders = request.form.get('enable_future_quarterly_reminders') == 'on'
+        current_user.enable_only_critical_notifications = request.form.get('enable_only_critical_notifications') == 'on'
         lang = request.form.get('language', 'en')
         if lang in ('en', 'ta', 'hi', 'te'):
             current_user.language = lang
@@ -1652,6 +1692,17 @@ def ai_playbooks():
         risk_appetite=current_user.risk_appetite or 'moderate',
     )
     return render_template('ai_playbooks.html', data=data)
+
+
+@main.route('/future-planner')
+@login_required
+def future_planner():
+    data = advisor.get_future_readiness_2040(
+        monthly_salary=current_user.monthly_salary or 0,
+        age=current_user.age or 30,
+        risk_appetite=current_user.risk_appetite or 'moderate',
+    )
+    return render_template('future_planner.html', data=data)
 
 
 # ======================== BUSINESS IDEAS ========================
@@ -3237,25 +3288,26 @@ def _generate_notifications(user):
             except (ValueError, AttributeError):
                 pass
 
-    # Goal deadline approaching (within 30 days)
-    goals = FinancialGoal.query.filter_by(user_id=user.id).all()
-    for goal in goals:
-        if goal.target_date:
-            days_left = (goal.target_date - today).days
-            if 0 < days_left <= 30 and goal.current_saved < goal.target_amount:
-                remaining = goal.target_amount - goal.current_saved
-                existing = Notification.query.filter(
-                    Notification.user_id == user.id,
-                    Notification.title.contains(goal.goal_name),
-                    Notification.created_at >= today - timedelta(days=7)
-                ).first()
-                if not existing:
-                    new_notifs.append(Notification(
-                        user_id=user.id,
-                        title=f'Goal Deadline: {goal.goal_name}',
-                        message=f'₹{remaining:,.0f} remaining with {days_left} days left',
-                        category='info', icon='flag', link='/goals'
-                    ))
+    # Goal deadline approaching (within 30 days) - optional non-critical alert
+    if not getattr(user, 'enable_only_critical_notifications', False):
+        goals = FinancialGoal.query.filter_by(user_id=user.id).all()
+        for goal in goals:
+            if goal.target_date:
+                days_left = (goal.target_date - today).days
+                if 0 < days_left <= 30 and goal.current_saved < goal.target_amount:
+                    remaining = goal.target_amount - goal.current_saved
+                    existing = Notification.query.filter(
+                        Notification.user_id == user.id,
+                        Notification.title.contains(goal.goal_name),
+                        Notification.created_at >= today - timedelta(days=7)
+                    ).first()
+                    if not existing:
+                        new_notifs.append(Notification(
+                            user_id=user.id,
+                            title=f'Goal Deadline: {goal.goal_name}',
+                            message=f'₹{remaining:,.0f} remaining with {days_left} days left',
+                            category='info', icon='flag', link='/goals'
+                        ))
 
     # SIP reminder (day of month)
     sips = SIP.query.filter_by(user_id=user.id).all()
@@ -3281,6 +3333,65 @@ def _generate_notifications(user):
                         ))
             except (ValueError, AttributeError):
                 pass
+
+    # Future Planner monthly reminder (once per month)
+    month_start = today.replace(day=1)
+    future_existing = Notification.query.filter(
+        Notification.user_id == user.id,
+        Notification.title == 'Future Planner 2040+ Monthly Check',
+        Notification.created_at >= month_start
+    ).first()
+    if getattr(user, 'enable_future_monthly_reminders', True) and not future_existing:
+        monthly_salary = float(user.monthly_salary or 0)
+        future = advisor.get_future_readiness_2040(
+            monthly_salary=monthly_salary,
+            age=user.age or 30,
+            risk_appetite=user.risk_appetite or 'moderate',
+        )
+        target = float(future['plan']['monthly_investment_target'])
+        bank_balance = db.session.query(db.func.sum(BankAccount.balance)).filter_by(user_id=user.id).scalar() or 0
+        suggested_topup = max(0.0, target - (monthly_salary * 0.10)) if monthly_salary > 0 else target
+
+        new_notifs.append(Notification(
+            user_id=user.id,
+            title='Future Planner 2040+ Monthly Check',
+            message=(
+                f"Monthly target: ₹{target:,.0f}. "
+                f"Bank reserve: ₹{float(bank_balance):,.0f}. "
+                f"Suggested top-up: ₹{float(suggested_topup):,.0f}."
+            ),
+            category='info',
+            icon='rocket_launch',
+            link='/future-planner'
+        ))
+
+    # Future Planner quarterly review reminder (once per quarter)
+    quarter = ((today.month - 1) // 3) + 1
+    quarter_start_month = ((quarter - 1) * 3) + 1
+    quarter_start = date(today.year, quarter_start_month, 1)
+    quarter_title = f'Future Planner 2040+ Q{quarter} Review'
+    quarter_existing = Notification.query.filter(
+        Notification.user_id == user.id,
+        Notification.title == quarter_title,
+        Notification.created_at >= quarter_start
+    ).first()
+    if getattr(user, 'enable_future_quarterly_reminders', True) and not quarter_existing:
+        quarter_actions = {
+            1: 'Rebalance allocation and update annual income growth assumptions.',
+            2: 'Increase SIP/top-up by 5-10% and review emergency fund coverage.',
+            3: 'Review debt burden and reduce high-interest liabilities aggressively.',
+            4: 'Run year-end audit: net worth, corpus progress, and 2040 target gap.',
+        }
+        action = quarter_actions.get(quarter, 'Review your 2040 roadmap and adjust monthly contributions.')
+
+        new_notifs.append(Notification(
+            user_id=user.id,
+            title=quarter_title,
+            message=f'Quarterly review due. {action}',
+            category='info',
+            icon='event_note',
+            link='/future-planner'
+        ))
 
     if new_notifs:
         db.session.add_all(new_notifs)
@@ -3321,6 +3432,10 @@ def mark_all_notifications_read():
 @main.route('/notifications/count')
 @login_required
 def notification_count():
-    _generate_notifications(current_user)
-    count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
-    return jsonify(count=count)
+    try:
+        _generate_notifications(current_user)
+        count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+        return jsonify(count=count)
+    except OperationalError:
+        db.session.rollback()
+        return jsonify(count=0)

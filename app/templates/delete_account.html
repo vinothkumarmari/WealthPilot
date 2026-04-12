@@ -5,23 +5,16 @@
 <div class="container-fluid py-4">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
-            <div class="card shadow-sm border-danger">
+            <div class="card shadow-sm border-warning">
                 <div class="card-body p-4">
                     <div class="text-center mb-4">
-                        <span class="material-icons-outlined text-danger" style="font-size: 48px;">warning</span>
-                        <h4 class="mt-2 fw-bold text-danger">Delete Account</h4>
-                        <p class="text-muted small">This action is <strong>permanent and irreversible</strong></p>
+                        <span class="material-icons-outlined text-warning" style="font-size: 48px;">lock</span>
+                        <h4 class="mt-2 fw-bold text-warning">Account Deletion Disabled</h4>
+                        <p class="text-muted small">This action is no longer available for users.</p>
                     </div>
 
-                    <div class="alert alert-danger">
-                        <strong>Warning:</strong> Deleting your account will permanently remove:
-                        <ul class="mb-0 mt-2">
-                            <li>All your income, expense, and budget records</li>
-                            <li>All investments, SIPs, policies, and schemes</li>
-                            <li>All assets, loans, goals, and provident funds</li>
-                            <li>All notifications and feedback</li>
-                            <li>Your profile and login credentials</li>
-                        </ul>
+                    <div class="alert alert-warning">
+                        <strong>Notice:</strong> For security and compliance reasons, account deletion permission has been removed from self-service.
                     </div>
 
                     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -34,41 +27,19 @@
                     {% endfor %}
                     {% endif %}
                     {% endwith %}
-
-                    <form method="POST" action="{{ url_for('main.delete_account') }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label fw-semibold">Enter Your Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-
-                        <div class="mb-4">
-                            <label for="confirm_text" class="form-label fw-semibold">Type <code>DELETE</code> to confirm</label>
-                            <input type="text" class="form-control" id="confirm_text" name="confirm_text" required
-                                   placeholder="Type DELETE here" autocomplete="off">
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
-                                <span class="material-icons-outlined" style="vertical-align: middle; font-size: 18px;">delete_forever</span>
-                                Permanently Delete My Account
-                            </button>
-                            <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary">
-                                <span class="material-icons-outlined" style="vertical-align: middle; font-size: 18px;">arrow_back</span>
-                                Cancel — Back to Profile
-                            </a>
-                        </div>
-                    </form>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.help_guide') }}" class="btn btn-outline-warning">
+                            <span class="material-icons-outlined" style="vertical-align: middle; font-size: 18px;">support_agent</span>
+                            Contact Support for Account Closure
+                        </a>
+                        <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary">
+                            <span class="material-icons-outlined" style="vertical-align: middle; font-size: 18px;">arrow_back</span>
+                            Back to Profile
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-document.getElementById('confirm_text').addEventListener('input', function() {
-    document.getElementById('deleteBtn').disabled = this.value !== 'DELETE';
-});
-</script>
 {% endblock %}

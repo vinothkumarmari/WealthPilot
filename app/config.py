@@ -33,6 +33,10 @@ class Config:
         _db_url = _db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 180,
+    }
     
     # App Port
     APP_PORT = int(os.environ.get('PORT', 7777))

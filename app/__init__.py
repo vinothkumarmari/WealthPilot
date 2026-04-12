@@ -14,6 +14,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash
+from sqlalchemy import text
 from .models import db
 from .config import Config
 
@@ -147,25 +148,29 @@ def create_app():
     # Session idle timeout
     @app.before_request
     def check_session_timeout():
-        if current_user.is_authenticated:
-            now = datetime.now(timezone.utc)
-            last = session.get('_last_activity')
-            timeout = app.config.get('SESSION_IDLE_TIMEOUT', 1800)
-            if last:
-                from datetime import datetime as dt
-                try:
-                    last_dt = dt.fromisoformat(last)
-                    if (now - last_dt).total_seconds() > timeout:
-                        from flask_login import logout_user
-                        logout_user()
-                        session.clear()
-                        from flask import flash
-                        flash('Session expired due to inactivity. Please log in again.', 'warning')
-                        return
-                except (ValueError, TypeError):
-                    pass
-            session['_last_activity'] = now.isoformat()
-            session.permanent = True
+        try:
+            if current_user.is_authenticated:
+                now = datetime.now(timezone.utc)
+                last = session.get('_last_activity')
+                timeout = app.config.get('SESSION_IDLE_TIMEOUT', 1800)
+                if last:
+                    from datetime import datetime as dt
+                    try:
+                        last_dt = dt.fromisoformat(last)
+                        if (now - last_dt).total_seconds() > timeout:
+                            from flask_login import logout_user
+                            logout_user()
+                            session.clear()
+                            from flask import flash
+                            flash('Session expired due to inactivity. Please log in again.', 'warning')
+                            return
+                    except (ValueError, TypeError):
+                        pass
+                session['_last_activity'] = now.isoformat()
+                session.permanent = True
+        except Exception as e:
+            db.session.rollback()
+            app.logger.warning(f'Session timeout check skipped due to transient error: {e}')
 
     # Error handlers
     @app.errorhandler(404)
@@ -180,6 +185,7 @@ def create_app():
     # Create database tables and seed admin
     with app.app_context():
         db.create_all()
+        _ensure_user_columns(app)
         _seed_admin(app)
 
     return app
@@ -209,3 +215,41 @@ def _seed_admin(app):
         admin.is_verified = True
         app.logger.info(f'Admin account "{Config.ADMIN_USERNAME}" credentials updated from env.')
     db.session.commit()
+
+
+def _ensure_user_columns(app):
+    """Best-effort schema patch for newly added User preference columns."""
+    try:
+        engine = db.engine
+        with engine.connect() as conn:
+            dialect = engine.dialect.name
+            if dialect == 'sqlite':
+                rows = conn.execute(text("PRAGMA table_info(user)")).fetchall()
+                cols = {r[1] for r in rows}
+                if 'enable_future_monthly_reminders' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN enable_future_monthly_reminders BOOLEAN DEFAULT 1"))
+                    app.logger.info('Added column: user.enable_future_monthly_reminders')
+                if 'enable_future_quarterly_reminders' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN enable_future_quarterly_reminders BOOLEAN DEFAULT 1"))
+                    app.logger.info('Added column: user.enable_future_quarterly_reminders')
+                if 'enable_only_critical_notifications' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN enable_only_critical_notifications BOOLEAN DEFAULT 0"))
+                    app.logger.info('Added column: user.enable_only_critical_notifications')
+                conn.commit()
+            else:
+                rows = conn.execute(text(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name='user'"
+                )).fetchall()
+                cols = {r[0] for r in rows}
+                if 'enable_future_monthly_reminders' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_future_monthly_reminders BOOLEAN DEFAULT TRUE"))
+                    app.logger.info('Added column: user.enable_future_monthly_reminders')
+                if 'enable_future_quarterly_reminders' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_future_quarterly_reminders BOOLEAN DEFAULT TRUE"))
+                    app.logger.info('Added column: user.enable_future_quarterly_reminders')
+                if 'enable_only_critical_notifications' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_only_critical_notifications BOOLEAN DEFAULT FALSE"))
+                    app.logger.info('Added column: user.enable_only_critical_notifications')
+                conn.commit()
+    except Exception as e:
+        app.logger.warning(f'Could not auto-patch user reminder columns: {e}')

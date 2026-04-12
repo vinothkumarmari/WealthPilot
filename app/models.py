@@ -20,6 +20,9 @@ class User(UserMixin, db.Model):
     budget_wants_pct = db.Column(db.Float, default=30)
     budget_savings_pct = db.Column(db.Float, default=20)
     enable_grocery_offers = db.Column(db.Boolean, default=False)
+    enable_future_monthly_reminders = db.Column(db.Boolean, default=True)
+    enable_future_quarterly_reminders = db.Column(db.Boolean, default=True)
+    enable_only_critical_notifications = db.Column(db.Boolean, default=False)
     profession = db.Column(db.String(100))  # IT, Doctor, Teacher, Farmer, etc.
     state = db.Column(db.String(50))  # Indian state for state-specific schemes
     language = db.Column(db.String(5), default='en')  # en, ta, hi, te

@@ -87,6 +87,39 @@
                                 <small class="d-block text-muted">Get notified about grocery deals from BigBasket, Blinkit, Zepto etc.</small>
                             </div>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="enable_future_monthly_reminders" id="futureMonthlyToggle"
+                                       {% if current_user.enable_future_monthly_reminders is not defined or current_user.enable_future_monthly_reminders %}checked{% endif %}>
+                                <label class="form-check-label" for="futureMonthlyToggle">
+                                    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">rocket_launch</span>
+                                    {{ t('Enable Future Planner Monthly Reminder') }}
+                                </label>
+                                <small class="d-block text-muted">Monthly checklist reminder for your 2040+ financial plan.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="enable_future_quarterly_reminders" id="futureQuarterlyToggle"
+                                       {% if current_user.enable_future_quarterly_reminders is not defined or current_user.enable_future_quarterly_reminders %}checked{% endif %}>
+                                <label class="form-check-label" for="futureQuarterlyToggle">
+                                    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">event_note</span>
+                                    {{ t('Enable Future Planner Quarterly Review') }}
+                                </label>
+                                <small class="d-block text-muted">Quarterly review reminders with next-step actions for 2040 roadmap.</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="enable_only_critical_notifications" id="criticalOnlyToggle"
+                                       {% if current_user.enable_only_critical_notifications %}checked{% endif %}>
+                                <label class="form-check-label" for="criticalOnlyToggle">
+                                    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">notifications_active</span>
+                                    {{ t('Only Critical Notifications') }}
+                                </label>
+                                <small class="d-block text-muted">Keeps due alerts and Future Planner reminders. Hides non-critical goal deadline alerts.</small>
+                            </div>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-accent">
                         <span class="material-icons-outlined">save</span> {{ t('Update Profile') }}
@@ -125,13 +158,6 @@
                     <a href="{{ url_for('main.export_csv', data_type='sips') }}" class="btn btn-sm btn-outline-primary">SIPs</a>
                     <a href="{{ url_for('main.export_csv', data_type='goals') }}" class="btn btn-sm btn-outline-primary">Goals</a>
                 </div>
-                <hr>
-                {% if not current_user.is_admin %}
-                <a href="{{ url_for('main.delete_account') }}" class="btn btn-sm btn-outline-danger w-100">
-                    <span class="material-icons-outlined" style="font-size: 16px; vertical-align: middle;">delete_forever</span>
-                    {{ t('Delete Account') }}
-                </a>
-                {% endif %}
             </div>
         </div>
     </div>

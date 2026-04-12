@@ -105,6 +105,10 @@
                 <span class="material-icons-outlined">menu_book</span>
                 <span>{{ t('AI Playbooks') }}</span>
             </a>
+            <a href="{{ url_for('main.future_planner') }}" class="nav-link {% if request.endpoint == 'main.future_planner' %}active{% endif %}">
+                <span class="material-icons-outlined">rocket_launch</span>
+                <span>{{ t('Future Planner 2040+') }}</span>
+            </a>
             <a href="{{ url_for('main.business_ideas') }}" class="nav-link {% if request.endpoint == 'main.business_ideas' %}active{% endif %}">
                 <span class="material-icons-outlined">lightbulb</span>
                 <span>{{ t('Business Ideas') }}</span>

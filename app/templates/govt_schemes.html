@@ -49,6 +49,11 @@
     </div>
 </div>
 
+<div id="inAppOnlyNotice" class="alert alert-warning d-none" role="alert">
+    <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">info</span>
+    External redirection is disabled. Use the scheme card information here and contact your nearest authorized office/bank to proceed offline.
+</div>
+
 <!-- Central Government Schemes -->
 <div class="scheme-section" data-type="central">
     <h5 class="mb-3"><span class="material-icons-outlined">flag</span> Central Government Schemes</h5>
@@ -998,6 +1003,28 @@ function filterSchemes() {
         }
     });
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const notice = document.getElementById('inAppOnlyNotice');
+    const externalLinks = document.querySelectorAll('a[href^="http://"], a[href^="https://"]');
+
+    externalLinks.forEach(function (link) {
+        const originalLabel = link.textContent.trim();
+        link.dataset.originalHref = link.getAttribute('href') || '';
+        link.setAttribute('href', '#');
+        link.removeAttribute('target');
+        link.removeAttribute('rel');
+        link.setAttribute('aria-label', (originalLabel ? originalLabel + '. ' : '') + 'External navigation disabled');
+
+        link.addEventListener('click', function (event) {
+            event.preventDefault();
+            if (notice) {
+                notice.classList.remove('d-none');
+                notice.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
+});
 </script>
 {% endblock %}
 
