@@ -1642,6 +1642,18 @@ def suggestions():
     )
 
 
+@main.route('/ai-playbooks')
+@login_required
+def ai_playbooks():
+    data = advisor.get_ai_playbooks(
+        monthly_salary=current_user.monthly_salary or 0,
+        profession=current_user.profession or '',
+        state=current_user.state or '',
+        risk_appetite=current_user.risk_appetite or 'moderate',
+    )
+    return render_template('ai_playbooks.html', data=data)
+
+
 # ======================== BUSINESS IDEAS ========================
 
 @main.route('/business-ideas')

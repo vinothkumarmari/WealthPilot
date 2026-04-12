@@ -642,6 +642,7 @@ class FinancialAdvisor:
     def _get_car_segments(self, budget):
         """Get car segments based on budget"""
         segments = []
+
         if budget >= 500000:
             segments.append({'segment': 'Hatchback', 'range': '₹4-8 Lakh', 'examples': 'Swift, i20, Baleno'})
         if budget >= 800000:
@@ -655,6 +656,126 @@ class FinancialAdvisor:
         if not segments:
             segments.append({'segment': 'Entry Level', 'range': '₹3-5 Lakh', 'examples': 'Alto, S-Presso, Kwid'})
         return segments
+
+    def get_ai_playbooks(self, monthly_salary, profession='', state='', risk_appetite='moderate'):
+        """Return in-app strategy playbooks with no external redirects."""
+        revenue_band = 'starter' if monthly_salary < 50000 else 'growth' if monthly_salary < 150000 else 'scale'
+        marketing_budget = max(5000, monthly_salary * 0.08)
+
+        if revenue_band == 'starter':
+            channel_split = [
+                {'channel': 'WhatsApp + Referrals', 'min_pct': 30, 'max_pct': 45},
+                {'channel': 'Instagram Reels', 'min_pct': 25, 'max_pct': 35},
+                {'channel': 'Local SEO + Google Business', 'min_pct': 20, 'max_pct': 30},
+                {'channel': 'Performance Ads', 'min_pct': 10, 'max_pct': 20},
+            ]
+        elif revenue_band == 'growth':
+            channel_split = [
+                {'channel': 'Meta Ads (Lead + Retargeting)', 'min_pct': 30, 'max_pct': 40},
+                {'channel': 'Google Search Ads', 'min_pct': 20, 'max_pct': 30},
+                {'channel': 'Content/SEO', 'min_pct': 20, 'max_pct': 30},
+                {'channel': 'Referral Programs', 'min_pct': 10, 'max_pct': 20},
+            ]
+        else:
+            channel_split = [
+                {'channel': 'Performance Ads (Multi-channel)', 'min_pct': 35, 'max_pct': 50},
+                {'channel': 'Brand + Content Engine', 'min_pct': 20, 'max_pct': 30},
+                {'channel': 'Affiliate/Partnership', 'min_pct': 15, 'max_pct': 25},
+                {'channel': 'Retention CRM Journeys', 'min_pct': 10, 'max_pct': 20},
+            ]
+
+        marketing_strategies = {
+            'monthly_budget_range': {
+                'min': int(marketing_budget * 0.8),
+                'max': int(marketing_budget * 1.2),
+            },
+            'channel_split': channel_split,
+            'kpi_targets': [
+                {'metric': 'Lead Conversion Rate', 'target': '8% - 15%'},
+                {'metric': 'Customer Acquisition Cost', 'target': 'Below 1.5x average order profit'},
+                {'metric': 'Retention (90-day)', 'target': '35% - 50%'},
+                {'metric': 'ROAS', 'target': '2.5x - 4x'},
+            ],
+            'execution_calendar': [
+                'Week 1: Define offer + audience + campaign objective',
+                'Week 2: Launch 2 ad variants + 1 organic content theme',
+                'Week 3: Pause weak creatives, scale best performer by 20%',
+                'Week 4: Publish insights and double down on winning channel',
+            ],
+        }
+
+        business_techniques = [
+            {
+                'title': 'Margin-First Pricing',
+                'action': 'Set floor price by cost + minimum target margin, then test 3-tier pricing.',
+                'impact_window': '30-45 days',
+            },
+            {
+                'title': 'Cash-Flow Discipline',
+                'action': 'Split inflow: 50% operations, 20% growth, 20% reserve, 10% founder draw.',
+                'impact_window': 'Immediate',
+            },
+            {
+                'title': 'Inventory Velocity Control',
+                'action': 'Tag SKUs as fast/slow/dead stock and move dead stock with bundle offers.',
+                'impact_window': '30-60 days',
+            },
+            {
+                'title': 'Debt-to-Revenue Guardrail',
+                'action': 'Keep monthly EMI commitments below 25% of monthly revenue inflow.',
+                'impact_window': 'Continuous',
+            },
+            {
+                'title': 'Repeat-Revenue System',
+                'action': 'Create subscription or membership-like recurring package for top service.',
+                'impact_window': '60-90 days',
+            },
+        ]
+
+        financial_ideologies = [
+            {'name': 'Liquidity First', 'meaning': 'Keep 3-6 months emergency reserves before aggressive expansion.'},
+            {'name': 'Risk Layering', 'meaning': 'Mix low-risk, moderate-risk, and growth bets instead of all-in allocation.'},
+            {'name': 'Goal-Based Capital', 'meaning': 'Map each rupee to explicit goals: runway, growth, protection, wealth.'},
+            {'name': 'Tax-Aware Strategy', 'meaning': 'Prioritize post-tax returns, not just headline return percentages.'},
+            {'name': 'Data Over Emotion', 'meaning': 'Review weekly KPIs and act on numbers, not market noise.'},
+        ]
+
+        opportunity_catalog = {
+            'govt_schemes': [
+                {'name': 'PMMY (Mudra)', 'for': 'Micro/small business loans', 'benefit': 'Collateral-free up to applicable limits'},
+                {'name': 'Stand-Up India', 'for': 'Women/SC/ST entrepreneurs', 'benefit': 'Bank-supported startup funding'},
+                {'name': 'Atal Pension Yojana', 'for': 'Long-term pension planning', 'benefit': 'Defined pension after 60'},
+            ],
+            'bonds_and_savings': [
+                {'name': 'Government Bonds', 'risk': 'Low', 'range': '6.5% - 7.5%'},
+                {'name': 'Sovereign Gold Bond', 'risk': 'Low', 'range': 'Gold appreciation + 2.5%'},
+                {'name': 'NSC / KVP / PPF', 'risk': 'Low', 'range': '7.1% - 7.7%'},
+            ],
+            'post_office_products': [
+                {'name': 'PPF', 'tenure': '15 years', 'tax': 'EEE'},
+                {'name': 'SCSS', 'tenure': '5 years', 'tax': '80C + taxable interest'},
+                {'name': 'MIS', 'tenure': '5 years', 'tax': 'Interest taxable'},
+            ],
+            'business_playbooks': [
+                {'name': 'Local Services Growth', 'focus': 'Referrals + Google Business + WhatsApp retention'},
+                {'name': 'E-commerce Growth', 'focus': 'AOV bundles + retargeting + email automation'},
+                {'name': 'Consulting Growth', 'focus': 'Offer ladder + authority content + case studies'},
+            ],
+        }
+
+        return {
+            'profile': {
+                'monthly_salary': monthly_salary,
+                'profession': profession or 'General',
+                'state': state or 'India',
+                'risk_appetite': risk_appetite,
+                'revenue_band': revenue_band,
+            },
+            'marketing_strategies': marketing_strategies,
+            'business_techniques': business_techniques,
+            'financial_ideologies': financial_ideologies,
+            'opportunity_catalog': opportunity_catalog,
+        }
     
     def get_tax_saving_suggestions(self, annual_salary):
         """Tax saving investment suggestions"""

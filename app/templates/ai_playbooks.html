@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block title %}AI Playbooks - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header mb-3">
+    <h4><span class="material-icons-outlined">menu_book</span> AI Playbooks</h4>
+    <p class="text-muted mb-0">In-app strategies for marketing, business execution, financial thinking, and growth opportunities.</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-gradient-accent text-white">
+            <div class="card-body d-flex flex-wrap justify-content-around align-items-center py-3">
+                <div class="text-center px-3"><small>Salary Band</small><h5>₹{{ "{:,.0f}".format(data.profile.monthly_salary) }}/mo</h5></div>
+                <div class="text-center px-3"><small>Profession</small><h5>{{ data.profile.profession }}</h5></div>
+                <div class="text-center px-3"><small>State</small><h5>{{ data.profile.state }}</h5></div>
+                <div class="text-center px-3"><small>Risk</small><h5>{{ data.profile.risk_appetite|title }}</h5></div>
+                <div class="text-center px-3"><small>Growth Stage</small><h5>{{ data.profile.revenue_band|title }}</h5></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">campaign</span> Marketing Strategies</h5>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-2">Monthly Budget Range</h6>
+                <h4 class="text-primary">₹{{ "{:,.0f}".format(data.marketing_strategies.monthly_budget_range.min) }} - ₹{{ "{:,.0f}".format(data.marketing_strategies.monthly_budget_range.max) }}</h4>
+                <small class="text-muted">Suggested spend band based on your profile.</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-2">Channel Allocation (Min-Max)</h6>
+                {% for c in data.marketing_strategies.channel_split %}
+                <div class="d-flex justify-content-between border-bottom py-2 small">
+                    <span>{{ c.channel }}</span>
+                    <strong>{{ c.min_pct }}% - {{ c.max_pct }}%</strong>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-2">KPI Targets</h6>
+                {% for k in data.marketing_strategies.kpi_targets %}
+                <div class="py-1 small"><strong>{{ k.metric }}:</strong> {{ k.target }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-2">30-Day Execution Calendar</h6>
+                {% for item in data.marketing_strategies.execution_calendar %}
+                <div class="py-1 small">• {{ item }}</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">business_center</span> Business Techniques</h5>
+    </div>
+    {% for b in data.business_techniques %}
+    <div class="col-md-6 col-xl-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-2">{{ b.title }}</h6>
+                <p class="small text-muted mb-2">{{ b.action }}</p>
+                <span class="badge bg-info-subtle text-info">Impact: {{ b.impact_window }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">psychology_alt</span> Financial AI Ideologies</h5>
+    </div>
+    {% for i in data.financial_ideologies %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="mb-1">{{ i.name }}</h6>
+                <p class="small text-muted mb-0">{{ i.meaning }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="section-title"><span class="material-icons-outlined">account_balance</span> In-App Opportunity Catalog</h5>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><strong>Govt Schemes</strong></div>
+            <div class="card-body">
+                {% for s in data.opportunity_catalog.govt_schemes %}
+                <div class="small py-2 border-bottom">
+                    <strong>{{ s.name }}</strong><br>
+                    <span class="text-muted">For: {{ s.for }} | Benefit: {{ s.benefit }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><strong>Bonds & Savings</strong></div>
+            <div class="card-body">
+                {% for s in data.opportunity_catalog.bonds_and_savings %}
+                <div class="small py-2 border-bottom">
+                    <strong>{{ s.name }}</strong><br>
+                    <span class="text-muted">Risk: {{ s.risk }} | Return: {{ s.range }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><strong>Post Office Products</strong></div>
+            <div class="card-body">
+                {% for s in data.opportunity_catalog.post_office_products %}
+                <div class="small py-2 border-bottom">
+                    <strong>{{ s.name }}</strong><br>
+                    <span class="text-muted">Tenure: {{ s.tenure }} | Tax: {{ s.tax }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><strong>Business Playbooks</strong></div>
+            <div class="card-body">
+                {% for s in data.opportunity_catalog.business_playbooks %}
+                <div class="small py-2 border-bottom">
+                    <strong>{{ s.name }}</strong><br>
+                    <span class="text-muted">Focus: {{ s.focus }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
