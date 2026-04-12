@@ -1061,18 +1061,33 @@ def dashboard():
 
     # Future readiness quick summary (target-year planner preview for dashboard)
     future_target_year = current_user.future_target_year or 2040
-    future_data = advisor.get_future_readiness_plan(
-        monthly_salary=current_user.monthly_salary or effective_salary or 0,
-        age=current_user.age or 30,
-        risk_appetite=current_user.risk_appetite or 'moderate',
-        target_year=future_target_year,
-    )
-    future_target = float(future_data['plan']['monthly_investment_target'])
-    current_investing = float(monthly_sip + monthly_premiums + monthly_scheme)
-    investment_progress = min(100, int((current_investing / future_target) * 100)) if future_target > 0 else 0
-    emergency_target = float(future_data['plan']['emergency_fund_target'])
-    emergency_progress = min(100, int((float(total_bank_balance) / emergency_target) * 100)) if emergency_target > 0 else 0
-    future_score = int(round((investment_progress * 0.55) + (emergency_progress * 0.30) + (max(0.0, min(100.0, health.savings_rate)) * 0.15)))
+    try:
+        future_data = advisor.get_future_readiness_plan(
+            monthly_salary=current_user.monthly_salary or effective_salary or 0,
+            age=current_user.age or 30,
+            risk_appetite=current_user.risk_appetite or 'moderate',
+            target_year=future_target_year,
+        )
+        future_target = float(future_data['plan']['monthly_investment_target'])
+        current_investing = float(monthly_sip + monthly_premiums + monthly_scheme)
+        investment_progress = min(100, int((current_investing / future_target) * 100)) if future_target > 0 else 0
+        emergency_target = float(future_data['plan']['emergency_fund_target'])
+        emergency_progress = min(100, int((float(total_bank_balance) / emergency_target) * 100)) if emergency_target > 0 else 0
+        future_score = int(round((investment_progress * 0.55) + (emergency_progress * 0.30) + (max(0.0, min(100.0, health.savings_rate)) * 0.15)))
+    except Exception:
+        future_data = {
+            'plan': {
+                'monthly_investment_target': 0,
+                'emergency_fund_target': 0,
+                'inflation_adjusted_corpus_target': 0,
+            }
+        }
+        future_target = 0.0
+        current_investing = 0.0
+        investment_progress = 0
+        emergency_target = 0.0
+        emergency_progress = 0
+        future_score = 0
 
     future_checklist = [
         {
@@ -1914,6 +1929,14 @@ def admin_panel():
     all_feedbacks = Feedback.query.order_by(Feedback.created_at.desc()).all()
     avg_rating = db.session.query(db.func.avg(Feedback.rating)).scalar() or 0
 
+    # Current subscription per user (based on latest paid transaction)
+    from .models import PaymentTransaction
+    latest_paid_by_user = {}
+    paid_txns = PaymentTransaction.query.filter_by(status='paid').order_by(PaymentTransaction.paid_at.desc(), PaymentTransaction.created_at.desc()).all()
+    for txn in paid_txns:
+        if txn.user_id not in latest_paid_by_user:
+            latest_paid_by_user[txn.user_id] = txn.plan_code
+
     return render_template('admin_panel.html',
         users=users,
         total_users=total_users,
@@ -1924,8 +1947,49 @@ def admin_panel():
         total_investments=float(total_investments),
         mail_cfg=mail_cfg,
         feedbacks=all_feedbacks,
-        avg_rating=round(float(avg_rating), 1)
+        avg_rating=round(float(avg_rating), 1),
+        user_plan_map=latest_paid_by_user,
+        plan_pricing=PLAN_PRICING,
     )
+
+
+@main.route('/admin/subscription/<int:id>', methods=['POST'])
+@admin_required
+def admin_update_subscription(id):
+    user = db.session.get(User, id)
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    if user.is_admin:
+        flash('Owner/admin subscription cannot be modified from this panel.', 'warning')
+        return redirect(url_for('main.admin_panel'))
+
+    plan_code = (request.form.get('plan_code') or '').strip()
+    from .models import PaymentTransaction
+
+    if plan_code == 'free':
+        PaymentTransaction.query.filter_by(user_id=user.id, status='paid').update({'status': 'archived'})
+        db.session.commit()
+        flash(f'Subscription for {user.username} set to Free.', 'success')
+        return redirect(url_for('main.admin_panel'))
+
+    plan = PLAN_PRICING.get(plan_code)
+    if not plan:
+        flash('Invalid subscription plan selected.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+
+    txn = PaymentTransaction(
+        user_id=user.id,
+        plan_code=plan_code,
+        amount=plan['amount_paise'],
+        currency=Config.RAZORPAY_CURRENCY,
+        status='paid',
+        paid_at=datetime.now(timezone.utc),
+    )
+    db.session.add(txn)
+    db.session.commit()
+    flash(f'Subscription for {user.username} updated to {plan["name"]}.', 'success')
+    return redirect(url_for('main.admin_panel'))
 
 
 @main.route('/admin/delete-user/<int:id>', methods=['POST'])

@@ -168,6 +168,7 @@
                         <th>Full Name</th>
                         <th>Email</th>
                         <th>Mobile</th>
+                        <th>Plan</th>
                         <th>Status</th>
                         <th>Role</th>
                         <th>Joined</th>
@@ -182,6 +183,16 @@
                         <td>{{ user.full_name or '-' }}</td>
                         <td>{{ user.email }}</td>
                         <td>{{ user.mobile or '-' }}</td>
+                        <td>
+                            {% set plan_code = user_plan_map.get(user.id, 'free') %}
+                            {% if plan_code == 'pro_monthly' %}
+                            <span class="badge bg-primary">Pro</span>
+                            {% elif plan_code == 'family_monthly' %}
+                            <span class="badge bg-success">Family</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Free</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if user.is_verified %}
                             <span class="badge bg-success">Verified</span>
@@ -210,6 +221,17 @@
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
                                     <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('main.admin_update_subscription', id=user.id) }}" style="display:inline" class="ms-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="plan_code" class="form-select form-select-sm d-inline-block" style="width:130px; min-width:130px;">
+                                    <option value="free" {% if plan_code == 'free' %}selected{% endif %}>Free</option>
+                                    <option value="pro_monthly" {% if plan_code == 'pro_monthly' %}selected{% endif %}>Pro</option>
+                                    <option value="family_monthly" {% if plan_code == 'family_monthly' %}selected{% endif %}>Family</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary" title="Update Subscription">
+                                    <span class="material-icons-outlined" style="font-size: 16px;">workspace_premium</span>
                                 </button>
                             </form>
                             {% else %}
