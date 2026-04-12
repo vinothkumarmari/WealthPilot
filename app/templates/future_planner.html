@@ -6,6 +6,16 @@
     <p class="text-muted mb-0">Build a long-horizon strategy for wealth, resilience, and financial freedom in the AI-first economy.</p>
 </div>
 
+{% if (data.profile.monthly_salary or 0) <= 0 %}
+<div class="alert alert-warning d-flex align-items-start" role="alert">
+    <span class="material-icons-outlined me-2">info</span>
+    <div>
+        <strong>Targets are currently zero because monthly salary is not set.</strong>
+        Update your salary in <a href="{{ url_for('main.profile') }}" class="alert-link">Profile Settings</a> to generate personalized Future Planner targets.
+    </div>
+</div>
+{% endif %}
+
 <div class="row mb-4">
     <div class="col-12">
         <div class="card bg-gradient-accent text-white">
