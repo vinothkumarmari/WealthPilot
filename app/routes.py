@@ -354,8 +354,12 @@ def login():
         
         if user:
             # Check account lockout
-            if user.locked_until and user.locked_until > datetime.now(timezone.utc):
-                remaining = int((user.locked_until - datetime.now(timezone.utc)).total_seconds() / 60) + 1
+            now_utc = datetime.now(timezone.utc)
+            locked_until = user.locked_until
+            if locked_until and locked_until.tzinfo is None:
+                locked_until = locked_until.replace(tzinfo=timezone.utc)
+            if locked_until and locked_until > now_utc:
+                remaining = int((locked_until - now_utc).total_seconds() / 60) + 1
                 flash(f'Account locked due to too many failed attempts. Try again in {remaining} minute(s).', 'danger')
                 return render_template('login.html')
             
