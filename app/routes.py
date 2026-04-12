@@ -187,7 +187,34 @@ def index():
 
 @main.route('/pricing')
 def pricing():
-    return render_template('pricing.html')
+    current_plan_code = 'starter'
+    suggested_plan_code = 'pro_monthly'
+
+    if current_user.is_authenticated:
+        from .models import PaymentTransaction
+        latest_paid = PaymentTransaction.query.filter_by(
+            user_id=current_user.id,
+            status='paid'
+        ).order_by(
+            PaymentTransaction.paid_at.desc(),
+            PaymentTransaction.created_at.desc()
+        ).first()
+
+        if latest_paid and latest_paid.plan_code in PLAN_PRICING:
+            current_plan_code = latest_paid.plan_code
+
+        if current_plan_code == 'starter':
+            suggested_plan_code = 'pro_monthly'
+        elif current_plan_code == 'pro_monthly':
+            suggested_plan_code = 'family_monthly'
+        else:
+            suggested_plan_code = None
+
+    return render_template(
+        'pricing.html',
+        current_plan_code=current_plan_code,
+        suggested_plan_code=suggested_plan_code,
+    )
 
 
 @main.route('/register', methods=['GET', 'POST'])

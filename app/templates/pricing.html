@@ -43,6 +43,9 @@
         .back-link { color: var(--accent-light); text-decoration: none; }
         .back-link:hover { color: white; }
         .compare-badge { font-size: 11px; background: #2a2a4a; padding: 2px 8px; border-radius: 4px; color: #a29bfe; }
+        .plan-state { font-size: 11px; border-radius: 999px; padding: 4px 10px; font-weight: 700; letter-spacing: 0.3px; display: inline-block; margin-top: 8px; }
+        .plan-current { background: rgba(0, 184, 148, 0.2); color: #55efc4; border: 1px solid rgba(85, 239, 196, 0.35); }
+        .plan-suggested { background: rgba(108, 92, 231, 0.2); color: #c9c2ff; border: 1px solid rgba(162, 155, 254, 0.4); }
     </style>
 </head>
 <body>
@@ -71,6 +74,19 @@
         <div class="container">
             <h1>Simple, Transparent <span class="accent">Pricing</span></h1>
             <p class="text-secondary mt-3 mb-0" style="max-width:600px; margin:auto;">Start free. Upgrade when you need advanced AI insights, unlimited exports, and priority support.</p>
+            {% if current_user.is_authenticated %}
+            <p class="small mt-3 mb-0" style="color:#a29bfe;">
+                Current plan:
+                <strong>
+                    {% if current_plan_code == 'pro_monthly' %}WealthPilot Pro
+                    {% elif current_plan_code == 'family_monthly' %}WealthPilot Family
+                    {% else %}WealthPilot Starter{% endif %}
+                </strong>
+                {% if suggested_plan_code %}
+                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}WealthPilot Family{% else %}WealthPilot Pro{% endif %}</strong></span>
+                {% endif %}
+            </p>
+            {% endif %}
         </div>
     </section>
 
@@ -85,6 +101,11 @@
                             <span class="material-icons-outlined" style="font-size:48px; color: #00b894;">rocket_launch</span>
                             <h4 class="mt-2 fw-bold">Starter</h4>
                             <div class="price">₹0 <small>/forever</small></div>
+                            {% if current_user.is_authenticated and current_plan_code == 'starter' %}
+                            <span class="plan-state plan-current">Current Plan</span>
+                            {% elif current_user.is_authenticated and suggested_plan_code == 'starter' %}
+                            <span class="plan-state plan-suggested">Suggested Plan</span>
+                            {% endif %}
                         </div>
                         <ul class="feature-list">
                             <li><span class="material-icons-outlined check">check_circle</span> Track income, expenses & budget</li>
@@ -100,7 +121,11 @@
                         </ul>
                         <div class="text-center mt-4">
                             {% if current_user.is_authenticated %}
-                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-accent w-100">Continue with Free Plan</a>
+                                {% if current_plan_code == 'starter' %}
+                                <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                                {% else %}
+                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-accent w-100">Downgrade to Free</a>
+                                {% endif %}
                             {% else %}
                             <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Get Started Free</a>
                             {% endif %}
@@ -116,6 +141,11 @@
                             <h4 class="mt-2 fw-bold">Pro</h4>
                             <div class="price">₹99 <small>/month</small></div>
                             <span class="compare-badge">Save ₹189 with yearly</span>
+                            {% if current_user.is_authenticated and current_plan_code == 'pro_monthly' %}
+                            <span class="plan-state plan-current">Current Plan</span>
+                            {% elif current_user.is_authenticated and suggested_plan_code == 'pro_monthly' %}
+                            <span class="plan-state plan-suggested">Suggested Plan</span>
+                            {% endif %}
                         </div>
                         <ul class="feature-list">
                             <li><span class="material-icons-outlined check">check_circle</span> <strong>Everything in Starter</strong></li>
@@ -131,7 +161,11 @@
                         </ul>
                         <div class="text-center mt-4">
                             {% if current_user.is_authenticated %}
-                            <button class="btn btn-accent w-100 buy-plan-btn" data-plan="pro_monthly">Buy Pro Monthly</button>
+                                {% if current_plan_code == 'pro_monthly' %}
+                                <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                                {% else %}
+                                <button class="btn btn-accent w-100 buy-plan-btn" data-plan="pro_monthly">Buy Pro Monthly</button>
+                                {% endif %}
                             {% else %}
                             <a href="{{ url_for('main.register') }}" class="btn btn-accent w-100">Start 14-Day Free Trial</a>
                             {% endif %}
@@ -147,6 +181,11 @@
                             <h4 class="mt-2 fw-bold">Family</h4>
                             <div class="price">₹199 <small>/month</small></div>
                             <span class="compare-badge">Up to 5 members</span>
+                            {% if current_user.is_authenticated and current_plan_code == 'family_monthly' %}
+                            <span class="plan-state plan-current">Current Plan</span>
+                            {% elif current_user.is_authenticated and suggested_plan_code == 'family_monthly' %}
+                            <span class="plan-state plan-suggested">Suggested Plan</span>
+                            {% endif %}
                         </div>
                         <ul class="feature-list">
                             <li><span class="material-icons-outlined check">check_circle</span> <strong>Everything in Pro</strong></li>
@@ -162,7 +201,11 @@
                         </ul>
                         <div class="text-center mt-4">
                             {% if current_user.is_authenticated %}
-                            <button class="btn btn-outline-accent w-100 buy-plan-btn" data-plan="family_monthly">Buy Family Monthly</button>
+                                {% if current_plan_code == 'family_monthly' %}
+                                <button class="btn btn-outline-secondary w-100" disabled>Current Plan</button>
+                                {% else %}
+                                <button class="btn btn-outline-accent w-100 buy-plan-btn" data-plan="family_monthly">Buy Family Monthly</button>
+                                {% endif %}
                             {% else %}
                             <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Start Family Trial</a>
                             {% endif %}
