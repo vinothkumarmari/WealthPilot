@@ -107,16 +107,24 @@ def send_otp_email(user_email, otp_code):
             apply_mail_config(current_app._get_current_object())
 
         username = current_app.config.get('MAIL_USERNAME', '')
-        if username:
-            msg = Message(
-                subject='WealthPilot - Email Verification OTP',
-                recipients=[user_email],
-                body=f'Your OTP for WealthPilot registration is: {otp_code}\n'
-                     f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
-                     f'Do not share this code with anyone.'
-            )
-            mail.send(msg)
-            return True
+        if not username:
+            current_app.logger.warning('SMTP not configured: MAIL_USERNAME is empty')
+            return False
+
+        # Use the authenticated username as sender (Gmail requires this)
+        sender = current_app.config.get('MAIL_DEFAULT_SENDER', username)
+        msg = Message(
+            subject='WealthPilot - Email Verification OTP',
+            sender=sender,
+            recipients=[user_email],
+            body=f'Your OTP for WealthPilot registration is: {otp_code}\n'
+                 f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
+                 f'Do not share this code with anyone.'
+        )
+        current_app.logger.info(f'Sending OTP email to {user_email} via {current_app.config.get("MAIL_SERVER")}:{current_app.config.get("MAIL_PORT")} as {sender}')
+        mail.send(msg)
+        current_app.logger.info(f'OTP email sent successfully to {user_email}')
+        return True
     except Exception as e:
         current_app.logger.error(f'Failed to send OTP email to {user_email}: {e}')
         print(f'[MAIL ERROR] Failed to send email to {user_email}: {e}')

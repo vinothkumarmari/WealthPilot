@@ -186,7 +186,7 @@ def create_app():
 
 
 def _seed_admin(app):
-    """Create default admin account if not exists."""
+    """Create or update default admin account from env vars."""
     from .models import User
     admin = User.query.filter_by(username=Config.ADMIN_USERNAME).first()
     if not admin:
@@ -199,4 +199,13 @@ def _seed_admin(app):
             is_verified=True
         )
         db.session.add(admin)
-        db.session.commit()
+        app.logger.info(f'Admin account "{Config.ADMIN_USERNAME}" created.')
+    else:
+        # Update admin credentials from env vars on each restart
+        admin.email = Config.ADMIN_EMAIL
+        admin.full_name = Config.ADMIN_FULL_NAME
+        admin.password_hash = generate_password_hash(Config.ADMIN_PASSWORD)
+        admin.is_admin = True
+        admin.is_verified = True
+        app.logger.info(f'Admin account "{Config.ADMIN_USERNAME}" credentials updated from env.')
+    db.session.commit()
