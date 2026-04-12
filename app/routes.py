@@ -18,6 +18,7 @@ import re
 import os
 import io
 import csv
+import threading
 import secrets
 import hmac
 import hashlib
@@ -136,6 +137,19 @@ def send_otp_email(user_email, otp_code):
     return False
 
 
+def queue_otp_email(app, user_email, otp_code):
+    """Send OTP email in a background thread so user flow is not blocked by SMTP latency."""
+    def _worker():
+        try:
+            with app.app_context():
+                send_otp_email(user_email, otp_code)
+        except Exception:
+            # Keep registration/login flow resilient even if async email fails.
+            pass
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
 def admin_required(f):
     """Decorator to restrict routes to admin users only."""
     @wraps(f)
@@ -179,6 +193,7 @@ def pricing():
 @main.route('/register', methods=['GET', 'POST'])
 @limiter.limit('10 per minute')
 def register():
+    from flask import current_app
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     if request.method == 'POST':
@@ -236,11 +251,8 @@ def register():
                 existing.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
                 db.session.commit()
                 session['pending_user_id'] = existing.id
-                email_sent = send_otp_email(email, otp)
-                if email_sent:
-                    flash('Account already registered but not verified. New OTP sent to your email.', 'info')
-                else:
-                    flash('OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+                queue_otp_email(current_app._get_current_object(), email, otp)
+                flash('Account already registered but not verified. OTP is being sent to your email.', 'info')
                 return redirect(url_for('main.verify_otp'))
             else:
                 flash('Username or email already registered. Please login with your credentials.', 'danger')
@@ -265,14 +277,10 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        # Send OTP email
-        email_sent = send_otp_email(email, otp)
+        # Send OTP email asynchronously to avoid blocking registration response.
+        queue_otp_email(current_app._get_current_object(), email, otp)
         session['pending_user_id'] = user.id
-
-        if email_sent:
-            flash(f'OTP sent to {email}. Please verify your email.', 'info')
-        else:
-            flash('OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+        flash(f'OTP is being sent to {email}. Please verify your email.', 'info')
 
         return redirect(url_for('main.verify_otp'))
     return render_template('register.html')
@@ -324,6 +332,7 @@ def verify_otp():
 @main.route('/resend-otp')
 @limiter.limit('3 per minute')
 def resend_otp():
+    from flask import current_app
     user_id = session.get('pending_user_id')
     if not user_id:
         flash('No pending verification.', 'danger')
@@ -339,11 +348,8 @@ def resend_otp():
     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
     db.session.commit()
 
-    email_sent = send_otp_email(user.email, otp)
-    if email_sent:
-        flash(f'New OTP sent to {user.email}.', 'info')
-    else:
-        flash('OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+    queue_otp_email(current_app._get_current_object(), user.email, otp)
+    flash(f'New OTP is being sent to {user.email}.', 'info')
 
     return redirect(url_for('main.verify_otp'))
 
@@ -351,6 +357,7 @@ def resend_otp():
 @main.route('/login', methods=['GET', 'POST'])
 @limiter.limit('10 per minute')
 def login():
+    from flask import current_app
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
     if request.method == 'POST':
@@ -384,11 +391,8 @@ def login():
                     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
                     db.session.commit()
                     session['pending_user_id'] = user.id
-                    email_sent = send_otp_email(user.email, otp)
-                    if email_sent:
-                        flash('Email not verified. New OTP sent to your email.', 'warning')
-                    else:
-                        flash('Email not verified. OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+                    queue_otp_email(current_app._get_current_object(), user.email, otp)
+                    flash('Email not verified. New OTP is being sent to your email.', 'warning')
                     return redirect(url_for('main.verify_otp'))
                 login_user(user, remember=request.form.get('remember'))
                 session['_last_activity'] = datetime.now(timezone.utc).isoformat()

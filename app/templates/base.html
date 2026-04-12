@@ -178,6 +178,19 @@
             </div>
         </div>
 
+        {% if subscription_banner %}
+        <div class="container-fluid px-4 pt-2" id="subscriptionBannerWrap" data-banner-key="{{ subscription_banner.banner_key }}">
+            <div class="alert alert-info d-flex justify-content-between align-items-start mb-2" id="subscriptionBanner" role="alert">
+                <div class="me-2">
+                    <strong>Current plan:</strong> {{ subscription_banner.current_plan }}.
+                    <strong class="ms-2">Suggested:</strong> {{ subscription_banner.suggested_plan }} ({{ subscription_banner.price }}) to {{ subscription_banner.reason }}.
+                    <a href="{{ subscription_banner.pricing_url }}" class="ms-2 fw-semibold text-decoration-none">View plans</a>
+                </div>
+                <button type="button" class="btn-close" aria-label="Close" onclick="dismissSubscriptionBanner()"></button>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -222,6 +235,28 @@
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script>
+    function dismissSubscriptionBanner() {
+        const wrap = document.getElementById('subscriptionBannerWrap');
+        if (!wrap) return;
+        const key = wrap.getAttribute('data-banner-key');
+        if (key) {
+            try { localStorage.setItem(key, '1'); } catch (e) {}
+        }
+        wrap.remove();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const wrap = document.getElementById('subscriptionBannerWrap');
+        if (!wrap) return;
+        const key = wrap.getAttribute('data-banner-key');
+        if (!key) return;
+        try {
+            if (localStorage.getItem(key) === '1') {
+                wrap.remove();
+            }
+        } catch (e) {}
+    });
+
     // Auto-initialize DataTables on all tables with class 'wp-datatable'
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof jQuery !== 'undefined' && jQuery.fn.DataTable) {

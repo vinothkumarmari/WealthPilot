@@ -111,9 +111,50 @@ def create_app():
     @app.context_processor
     def inject_translations():
         lang = 'en'
+        subscription_banner = None
         if _cu and _cu.is_authenticated:
             lang = getattr(_cu, 'language', 'en') or 'en'
-        return {'t': get_translator(lang), 'current_lang': lang, 'LANGUAGES': LANGUAGES}
+            from .models import PaymentTransaction
+            latest_paid = PaymentTransaction.query.filter_by(user_id=_cu.id, status='paid').order_by(PaymentTransaction.paid_at.desc()).first()
+
+            current_plan = 'Free'
+            suggestion = {
+                'plan_code': 'pro_monthly',
+                'plan_name': 'WealthPilot Pro',
+                'price': '₹99/month',
+                'reason': 'unlock premium analytics and faster wealth insights',
+            }
+            if latest_paid and latest_paid.plan_code == 'pro_monthly':
+                current_plan = 'WealthPilot Pro'
+                suggestion = {
+                    'plan_code': 'family_monthly',
+                    'plan_name': 'WealthPilot Family',
+                    'price': '₹199/month',
+                    'reason': 'add family members and shared financial dashboards',
+                }
+            elif latest_paid and latest_paid.plan_code == 'family_monthly':
+                current_plan = 'WealthPilot Family'
+                suggestion = None
+            elif latest_paid:
+                current_plan = latest_paid.plan_code
+
+            if suggestion:
+                banner_key = f"sub-banner-{_cu.id}-{current_plan}-{suggestion['plan_code']}"
+                subscription_banner = {
+                    'current_plan': current_plan,
+                    'suggested_plan': suggestion['plan_name'],
+                    'price': suggestion['price'],
+                    'reason': suggestion['reason'],
+                    'pricing_url': '/pricing',
+                    'banner_key': banner_key,
+                }
+
+        return {
+            't': get_translator(lang),
+            'current_lang': lang,
+            'LANGUAGES': LANGUAGES,
+            'subscription_banner': subscription_banner,
+        }
 
     # User loader
     from .models import User
