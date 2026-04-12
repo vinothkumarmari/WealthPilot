@@ -1100,7 +1100,7 @@ def dashboard():
         },
         {
             'title': 'Savings rate is healthy (20%+)',
-            'done': health.savings_rate >= 20,
+            'done': (health.get('savings_rate', 0) >= 20),
         },
     ]
 
