@@ -47,4 +47,10 @@ services:
         sync: false
       - key: SESSION_IDLE_TIMEOUT
         value: "1800"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
     healthCheckPath: /health

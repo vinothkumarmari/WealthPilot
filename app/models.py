@@ -264,3 +264,17 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     link = db.Column(db.String(200))  # optional URL to navigate to
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class PaymentTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan_code = db.Column(db.String(20), nullable=False)  # pro_monthly, family_monthly
+    amount = db.Column(db.Integer, nullable=False)  # paise
+    currency = db.Column(db.String(10), default='INR')
+    status = db.Column(db.String(20), default='created')  # created, paid, failed
+    razorpay_order_id = db.Column(db.String(80), unique=True)
+    razorpay_payment_id = db.Column(db.String(80), unique=True)
+    razorpay_signature = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    paid_at = db.Column(db.DateTime)

@@ -18,6 +18,9 @@ import os
 import io
 import csv
 import secrets
+import hmac
+import hashlib
+import requests
 from werkzeug.utils import secure_filename
 
 main = Blueprint('main', __name__)
@@ -211,7 +214,10 @@ def register():
             flash('Password must contain at least one number.', 'danger')
             return render_template('register.html')
 
-        existing = User.query.filter((User.username == username) | (User.email == email)).first()
+        lookup_username = username.lower()
+        existing = User.query.filter(
+            (db.func.lower(User.username) == lookup_username) | (db.func.lower(User.email) == email)
+        ).first()
         if existing:
             if not existing.is_verified:
                 # Unverified user — update credentials and resend OTP
@@ -350,7 +356,9 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         lookup = username.lower()
-        user = User.query.filter(or_(User.username == username, User.email == lookup)).first()
+        user = User.query.filter(
+            or_(db.func.lower(User.username) == lookup, db.func.lower(User.email) == lookup)
+        ).first()
         
         if user:
             # Check account lockout
@@ -396,6 +404,136 @@ def login():
                 db.session.commit()
         flash('Invalid credentials.', 'danger')
     return render_template('login.html')
+
+
+# ======================== BILLING & PAYMENTS ========================
+
+PLAN_PRICING = {
+    'pro_monthly': {'amount_paise': 9900, 'name': 'WealthPilot Pro (Monthly)'},
+    'family_monthly': {'amount_paise': 19900, 'name': 'WealthPilot Family (Monthly)'},
+}
+
+
+@main.route('/billing/create-order', methods=['POST'])
+@login_required
+def create_billing_order():
+    if not Config.RAZORPAY_KEY_ID or not Config.RAZORPAY_KEY_SECRET:
+        return jsonify({'success': False, 'message': 'Payment gateway is not configured.'}), 503
+
+    plan_code = request.form.get('plan_code', '').strip()
+    plan = PLAN_PRICING.get(plan_code)
+    if not plan:
+        return jsonify({'success': False, 'message': 'Invalid plan selected.'}), 400
+
+    payload = {
+        'amount': plan['amount_paise'],
+        'currency': Config.RAZORPAY_CURRENCY,
+        'receipt': f'wp_{current_user.id}_{secrets.token_hex(6)}',
+        'notes': {
+            'user_id': str(current_user.id),
+            'plan_code': plan_code,
+            'email': current_user.email,
+        }
+    }
+    try:
+        resp = requests.post(
+            'https://api.razorpay.com/v1/orders',
+            auth=(Config.RAZORPAY_KEY_ID, Config.RAZORPAY_KEY_SECRET),
+            json=payload,
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        from .models import PaymentTransaction
+        txn = PaymentTransaction(
+            user_id=current_user.id,
+            plan_code=plan_code,
+            amount=plan['amount_paise'],
+            currency=Config.RAZORPAY_CURRENCY,
+            status='created',
+            razorpay_order_id=data.get('id')
+        )
+        db.session.add(txn)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'key': Config.RAZORPAY_KEY_ID,
+            'order_id': data.get('id'),
+            'amount': plan['amount_paise'],
+            'currency': Config.RAZORPAY_CURRENCY,
+            'plan_name': plan['name'],
+            'user_name': current_user.full_name or current_user.username,
+            'user_email': current_user.email,
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Unable to create payment order: {e}'}), 502
+
+
+@main.route('/billing/verify', methods=['POST'])
+@login_required
+def verify_billing_payment():
+    if not Config.RAZORPAY_KEY_SECRET:
+        return jsonify({'success': False, 'message': 'Payment verification is not configured.'}), 503
+
+    order_id = request.form.get('razorpay_order_id', '').strip()
+    payment_id = request.form.get('razorpay_payment_id', '').strip()
+    signature = request.form.get('razorpay_signature', '').strip()
+    if not order_id or not payment_id or not signature:
+        return jsonify({'success': False, 'message': 'Missing payment verification fields.'}), 400
+
+    payload = f'{order_id}|{payment_id}'.encode('utf-8')
+    expected = hmac.new(
+        Config.RAZORPAY_KEY_SECRET.encode('utf-8'), payload, hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        return jsonify({'success': False, 'message': 'Invalid payment signature.'}), 400
+
+    from .models import PaymentTransaction
+    txn = PaymentTransaction.query.filter_by(
+        user_id=current_user.id, razorpay_order_id=order_id
+    ).first()
+    if not txn:
+        return jsonify({'success': False, 'message': 'Payment record not found.'}), 404
+
+    txn.razorpay_payment_id = payment_id
+    txn.razorpay_signature = signature
+    txn.status = 'paid'
+    txn.paid_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Payment verified successfully.'})
+
+
+@main.route('/billing/webhook/razorpay', methods=['POST'])
+@csrf.exempt
+def razorpay_webhook():
+    if not Config.RAZORPAY_WEBHOOK_SECRET:
+        return jsonify({'success': False, 'message': 'Webhook secret missing.'}), 503
+
+    body = request.get_data() or b''
+    signature = request.headers.get('X-Razorpay-Signature', '')
+    expected = hmac.new(
+        Config.RAZORPAY_WEBHOOK_SECRET.encode('utf-8'), body, hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        return jsonify({'success': False, 'message': 'Invalid webhook signature.'}), 400
+
+    event = request.get_json(silent=True) or {}
+    if event.get('event') == 'payment.captured':
+        payment = (event.get('payload', {}).get('payment', {}) or {}).get('entity', {})
+        order_id = payment.get('order_id')
+        payment_id = payment.get('id')
+        if order_id and payment_id:
+            from .models import PaymentTransaction
+            txn = PaymentTransaction.query.filter_by(razorpay_order_id=order_id).first()
+            if txn and txn.status != 'paid':
+                txn.razorpay_payment_id = payment_id
+                txn.status = 'paid'
+                txn.paid_at = datetime.now(timezone.utc)
+                db.session.commit()
+
+    return jsonify({'success': True})
 
 
 @main.route('/forgot-password', methods=['GET', 'POST'])
