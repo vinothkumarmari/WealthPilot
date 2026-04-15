@@ -101,8 +101,8 @@ def generate_otp():
     return ''.join([str(secrets.randbelow(10)) for _ in range(Config.OTP_LENGTH)])
 
 
-def send_otp_email(user_email, otp_code):
-    """Send OTP via email. Falls back to flash message if SMTP not configured."""
+def send_otp_email(user_email, otp_code, purpose='registration'):
+    """Send OTP via email with purpose-specific content."""
     from flask import current_app
     from app import mail
     from flask_mail import Message
@@ -119,13 +119,56 @@ def send_otp_email(user_email, otp_code):
 
         # Use the authenticated username as sender (Gmail requires this)
         sender = current_app.config.get('MAIL_DEFAULT_SENDER', username)
+
+        templates = {
+            'registration': {
+                'subject': 'WealthPilot - Complete Your Registration (OTP)',
+                'body': (
+                    f'Your OTP for new WealthPilot registration is: {otp_code}\n'
+                    f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
+                    'Do not share this code with anyone.'
+                ),
+            },
+            'login': {
+                'subject': 'WealthPilot - Login Verification OTP',
+                'body': (
+                    f'Your OTP for WealthPilot login is: {otp_code}\n'
+                    f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
+                    'If this was not you, please reset your password immediately.'
+                ),
+            },
+            'password_change': {
+                'subject': 'WealthPilot - Confirm Password Change (OTP)',
+                'body': (
+                    f'Your OTP to confirm password change is: {otp_code}\n'
+                    f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
+                    'If you did not request this, do not share the OTP and secure your account.'
+                ),
+            },
+            'password_reset': {
+                'subject': 'WealthPilot - Password Reset OTP',
+                'body': (
+                    f'Your OTP for password reset is: {otp_code}\n'
+                    f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
+                    'If you did not request this, ignore this email.'
+                ),
+            },
+            'email_change': {
+                'subject': 'WealthPilot - Verify New Email Address (OTP)',
+                'body': (
+                    f'Your OTP to verify this new email address is: {otp_code}\n'
+                    f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
+                    'Your account email will be updated only after successful verification.'
+                ),
+            },
+        }
+        template = templates.get(purpose, templates['registration'])
+
         msg = Message(
-            subject='WealthPilot - Email Verification OTP',
+            subject=template['subject'],
             sender=sender,
             recipients=[user_email],
-            body=f'Your OTP for WealthPilot registration is: {otp_code}\n'
-                 f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
-                 f'Do not share this code with anyone.'
+            body=template['body']
         )
         current_app.logger.info(f'Sending OTP email to {user_email} via {current_app.config.get("MAIL_SERVER")}:{current_app.config.get("MAIL_PORT")} as {sender}')
         mail.send(msg)
@@ -137,12 +180,12 @@ def send_otp_email(user_email, otp_code):
     return False
 
 
-def queue_otp_email(app, user_email, otp_code):
+def queue_otp_email(app, user_email, otp_code, purpose='registration'):
     """Send OTP email in a background thread so user flow is not blocked by SMTP latency."""
     def _worker():
         try:
             with app.app_context():
-                send_otp_email(user_email, otp_code)
+                send_otp_email(user_email, otp_code, purpose=purpose)
         except Exception:
             # Keep registration/login flow resilient even if async email fails.
             pass
@@ -298,7 +341,7 @@ def register():
                 existing.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
                 db.session.commit()
                 session['pending_user_id'] = existing.id
-                email_sent = send_otp_email(email, otp)
+                email_sent = send_otp_email(email, otp, purpose='registration')
                 if email_sent:
                     flash('Account already registered but not verified. OTP has been sent to your email.', 'info')
                 else:
@@ -327,7 +370,7 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        email_sent = send_otp_email(email, otp)
+        email_sent = send_otp_email(email, otp, purpose='registration')
         session['pending_user_id'] = user.id
         if email_sent:
             flash(f'OTP sent to {email}. Please verify your email.', 'info')
@@ -399,7 +442,7 @@ def resend_otp():
     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
     db.session.commit()
 
-    email_sent = send_otp_email(user.email, otp)
+    email_sent = send_otp_email(user.email, otp, purpose='registration')
     if email_sent:
         flash(f'New OTP sent to {user.email}.', 'info')
     else:
@@ -442,7 +485,7 @@ def login():
                 if not user.is_verified:
                     otp = _issue_user_otp(user)
                     session['pending_user_id'] = user.id
-                    email_sent = send_otp_email(user.email, otp)
+                    email_sent = send_otp_email(user.email, otp, purpose='registration')
                     if email_sent:
                         flash('Email not verified. New OTP has been sent to your email.', 'warning')
                     else:
@@ -453,7 +496,7 @@ def login():
                 session['pending_login_user_id'] = user.id
                 session['pending_login_remember'] = bool(request.form.get('remember'))
                 session['pending_login_force_logout'] = bool(user.active_session_nonce)
-                email_sent = send_otp_email(user.email, otp)
+                email_sent = send_otp_email(user.email, otp, purpose='login')
                 if email_sent:
                     flash('OTP sent to your email. Please verify to complete login.', 'info')
                 else:
@@ -544,7 +587,7 @@ def resend_login_otp():
         return redirect(url_for('main.login'))
 
     otp = _issue_user_otp(user)
-    email_sent = send_otp_email(user.email, otp)
+    email_sent = send_otp_email(user.email, otp, purpose='login')
     if email_sent:
         flash(f'New login OTP sent to {user.email}.', 'info')
     else:
@@ -711,27 +754,7 @@ def forgot_password():
         db.session.commit()
         session['reset_user_id'] = user.id
 
-        from flask import current_app
-        from flask_mail import Message as MailMessage
-        email_sent = False
-        try:
-            cfg = load_mail_config()
-            if cfg.get('mail_username'):
-                apply_mail_config(current_app._get_current_object())
-            username = current_app.config.get('MAIL_USERNAME', '')
-            if username:
-                msg = MailMessage(
-                    subject='WealthPilot - Password Reset OTP',
-                    recipients=[email],
-                    body=f'Your OTP for password reset is: {otp}\n'
-                         f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
-                         f'If you did not request this, ignore this email.'
-                )
-                mail.send(msg)
-                email_sent = True
-        except Exception as e:
-            current_app.logger.error(f'Failed to send password reset email to {email}: {e}')
-            print(f'[MAIL ERROR] Failed to send password reset email to {email}: {e}')
+        email_sent = send_otp_email(email, otp, purpose='password_reset')
 
         if email_sent:
             flash(f'OTP sent to {email}. Please check your inbox.', 'info')
@@ -837,7 +860,7 @@ def resend_reset_otp():
     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
     db.session.commit()
 
-    email_sent = send_otp_email(user.email, otp)
+    email_sent = send_otp_email(user.email, otp, purpose='password_reset')
     if email_sent:
         flash(f'New OTP sent to {user.email}.', 'info')
     else:
@@ -895,7 +918,7 @@ def change_password():
         otp = _issue_user_otp(current_user)
         session['pending_change_password_user_id'] = current_user.id
         session['pending_change_password_new_pw'] = new_pw
-        email_sent = send_otp_email(current_user.email, otp)
+        email_sent = send_otp_email(current_user.email, otp, purpose='password_change')
         if email_sent:
             flash('OTP sent to your email. Verify OTP to complete password change.', 'info')
         else:
@@ -953,7 +976,7 @@ def resend_change_password_otp():
         return redirect(url_for('main.change_password'))
 
     otp = _issue_user_otp(current_user)
-    email_sent = send_otp_email(current_user.email, otp)
+    email_sent = send_otp_email(current_user.email, otp, purpose='password_change')
     if email_sent:
         flash(f'New OTP sent to {current_user.email}.', 'info')
     else:
@@ -1478,7 +1501,7 @@ def profile():
 
         if current_user.pending_email:
             session['pending_email_change_user_id'] = current_user.id
-            email_sent = send_otp_email(current_user.pending_email, otp)
+            email_sent = send_otp_email(current_user.pending_email, otp, purpose='email_change')
             if email_sent:
                 flash(f'Profile updated. OTP sent to {current_user.pending_email} to verify your new email.', 'info')
             else:
@@ -1534,7 +1557,7 @@ def resend_email_change_otp():
         return redirect(url_for('main.profile'))
 
     otp = _issue_user_otp(current_user)
-    email_sent = send_otp_email(current_user.pending_email, otp)
+    email_sent = send_otp_email(current_user.pending_email, otp, purpose='email_change')
     if email_sent:
         flash(f'New OTP sent to {current_user.pending_email}.', 'info')
     else:
