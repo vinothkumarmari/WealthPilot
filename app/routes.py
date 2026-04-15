@@ -101,6 +101,44 @@ def generate_otp():
     return ''.join([str(secrets.randbelow(10)) for _ in range(Config.OTP_LENGTH)])
 
 
+def _hash_otp(otp_code):
+    """Hash OTP before storing it in DB."""
+    secret = (Config.SECRET_KEY or 'wealthpilot-otp-secret').encode('utf-8')
+    return hmac.new(secret, str(otp_code).encode('utf-8'), hashlib.sha256).hexdigest()
+
+
+def _parse_float_form(field_name, *, min_value=None, default=None):
+    """Parse float input from request form with clear validation errors."""
+    raw = request.form.get(field_name, None)
+    if (raw is None or str(raw).strip() == '') and default is not None:
+        value = float(default)
+    else:
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            raise ValueError(f'Please enter a valid number for {field_name.replace("_", " ")}.')
+    if min_value is not None and value < min_value:
+        raise ValueError(f'{field_name.replace("_", " ").capitalize()} must be at least {min_value}.')
+    return value
+
+
+def _parse_int_form(field_name, *, min_value=None, max_value=None, default=None):
+    """Parse integer input from request form with clear validation errors."""
+    raw = request.form.get(field_name, None)
+    if (raw is None or str(raw).strip() == '') and default is not None:
+        value = int(default)
+    else:
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            raise ValueError(f'Please enter a valid integer for {field_name.replace("_", " ")}.')
+    if min_value is not None and value < min_value:
+        raise ValueError(f'{field_name.replace("_", " ").capitalize()} must be at least {min_value}.')
+    if max_value is not None and value > max_value:
+        raise ValueError(f'{field_name.replace("_", " ").capitalize()} must be at most {max_value}.')
+    return value
+
+
 def send_otp_email(user_email, otp_code, purpose='registration'):
     """Send OTP via email with purpose-specific content."""
     from flask import current_app
@@ -196,8 +234,10 @@ def queue_otp_email(app, user_email, otp_code, purpose='registration'):
 def _issue_user_otp(user, *, commit=True):
     """Generate and set a fresh OTP for a user."""
     otp = generate_otp()
-    user.otp_code = otp
+    user.otp_code = _hash_otp(otp)
     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
+    user.otp_attempts = 0
+    user.otp_locked_until = None
     if commit:
         db.session.commit()
     return otp
@@ -205,10 +245,33 @@ def _issue_user_otp(user, *, commit=True):
 
 def _is_valid_user_otp(user, entered_otp):
     """Validate OTP value and expiry for the given user."""
-    if user.otp_code != entered_otp:
+    now_utc = datetime.now(timezone.utc)
+    otp_locked_until = getattr(user, 'otp_locked_until', None)
+    if otp_locked_until and otp_locked_until.tzinfo is None:
+        otp_locked_until = otp_locked_until.replace(tzinfo=timezone.utc)
+    if otp_locked_until and otp_locked_until > now_utc:
+        minutes_left = int((otp_locked_until - now_utc).total_seconds() / 60) + 1
+        return False, f'Too many invalid OTP attempts. Try again in {minutes_left} minute(s).'
+
+    stored = user.otp_code or ''
+    entered_hash = _hash_otp(entered_otp)
+    is_match = hmac.compare_digest(stored, entered_hash) or hmac.compare_digest(stored, entered_otp)
+    if not is_match:
+        user.otp_attempts = int(getattr(user, 'otp_attempts', 0) or 0) + 1
+        max_attempts = int(getattr(Config, 'OTP_MAX_FAILED_ATTEMPTS', 5))
+        lock_minutes = int(getattr(Config, 'OTP_LOCKOUT_MINUTES', 10))
+        if user.otp_attempts >= max_attempts:
+            user.otp_locked_until = now_utc + timedelta(minutes=lock_minutes)
+            db.session.commit()
+            return False, f'Too many invalid OTP attempts. Try again in {lock_minutes} minute(s).'
+        db.session.commit()
         return False, 'Invalid OTP. Please try again.'
-    if user.otp_expiry and user.otp_expiry.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+
+    if user.otp_expiry and user.otp_expiry.replace(tzinfo=timezone.utc) < now_utc:
         return False, 'OTP has expired. Please request a new one.'
+
+    user.otp_attempts = 0
+    user.otp_locked_until = None
     return True, ''
 
 
@@ -336,10 +399,7 @@ def register():
                 existing.monthly_salary = monthly_salary
                 existing.annual_salary = monthly_salary * 12
                 existing.risk_appetite = request.form.get('risk_appetite', 'moderate')
-                otp = generate_otp()
-                existing.otp_code = otp
-                existing.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
-                db.session.commit()
+                otp = _issue_user_otp(existing)
                 session['pending_user_id'] = existing.id
                 email_sent = send_otp_email(email, otp, purpose='registration')
                 if email_sent:
@@ -364,8 +424,10 @@ def register():
             annual_salary=monthly_salary * 12,
             risk_appetite=request.form.get('risk_appetite', 'moderate'),
             is_verified=False,
-            otp_code=otp,
-            otp_expiry=datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
+            otp_code=_hash_otp(otp),
+            otp_expiry=datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES),
+            otp_attempts=0,
+            otp_locked_until=None
         )
         db.session.add(user)
         db.session.commit()
@@ -382,6 +444,7 @@ def register():
 
 
 @main.route('/verify-otp', methods=['GET', 'POST'])
+@limiter.limit('10 per 10 minutes')
 def verify_otp():
     user_id = session.get('pending_user_id')
     if not user_id:
@@ -437,10 +500,7 @@ def resend_otp():
         session.pop('pending_user_id', None)
         return redirect(url_for('main.register'))
 
-    otp = generate_otp()
-    user.otp_code = otp
-    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
-    db.session.commit()
+    otp = _issue_user_otp(user)
 
     email_sent = send_otp_email(user.email, otp, purpose='registration')
     if email_sent:
@@ -520,6 +580,7 @@ def login():
 
 
 @main.route('/verify-login-otp', methods=['GET', 'POST'])
+@limiter.limit('10 per 10 minutes')
 def verify_login_otp():
     user_id = session.get('pending_login_user_id')
     if not user_id:
@@ -748,10 +809,7 @@ def forgot_password():
             flash('No verified account found with that email.', 'danger')
             return render_template('forgot_password.html', prefill_email=email)
 
-        otp = generate_otp()
-        user.otp_code = otp
-        user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
-        db.session.commit()
+        otp = _issue_user_otp(user)
         session['reset_user_id'] = user.id
 
         email_sent = send_otp_email(email, otp, purpose='password_reset')
@@ -814,6 +872,7 @@ def reset_password():
 
 
 @main.route('/verify-reset-otp-ajax', methods=['POST'])
+@limiter.limit('10 per 10 minutes')
 def verify_reset_otp_ajax():
     user_id = session.get('reset_user_id')
     if not user_id:
@@ -829,11 +888,9 @@ def verify_reset_otp_ajax():
     if not entered_otp:
         return jsonify({'success': False, 'message': 'Please enter the OTP.'})
 
-    if user.otp_code != entered_otp:
-        return jsonify({'success': False, 'message': 'Invalid OTP. Please try again.'})
-
-    if user.otp_expiry and user.otp_expiry.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-        return jsonify({'success': False, 'message': 'OTP has expired. Please request a new one.'})
+    ok, msg = _is_valid_user_otp(user, entered_otp)
+    if not ok:
+        return jsonify({'success': False, 'message': msg})
 
     # OTP valid — mark verified in session
     session['reset_otp_verified'] = True
@@ -844,6 +901,7 @@ def verify_reset_otp_ajax():
 
 
 @main.route('/resend-reset-otp')
+@limiter.limit('3 per minute')
 def resend_reset_otp():
     user_id = session.get('reset_user_id')
     if not user_id:
@@ -855,10 +913,7 @@ def resend_reset_otp():
         session.pop('reset_user_id', None)
         return redirect(url_for('main.forgot_password'))
 
-    otp = generate_otp()
-    user.otp_code = otp
-    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
-    db.session.commit()
+    otp = _issue_user_otp(user)
 
     email_sent = send_otp_email(user.email, otp, purpose='password_reset')
     if email_sent:
@@ -932,6 +987,7 @@ def change_password():
 
 @main.route('/verify-change-password-otp', methods=['GET', 'POST'])
 @login_required
+@limiter.limit('10 per 10 minutes')
 def verify_change_password_otp():
     user_id = session.get('pending_change_password_user_id')
     new_pw = session.get('pending_change_password_new_pw')
@@ -1400,11 +1456,17 @@ def income():
 @main.route('/income/add', methods=['POST'])
 @login_required
 def add_income():
+    try:
+        amount = _parse_float_form('amount', min_value=0.01)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.income'))
+
     inc = Income(
         user_id=current_user.id,
         source=request.form['source'],
         income_type=request.form['income_type'],
-        amount=float(request.form['amount']),
+        amount=amount,
         frequency=request.form.get('frequency', 'monthly'),
         date=datetime.strptime(request.form['date'], '%Y-%m-%d').date() if request.form.get('date') else date.today(),
         description=request.form.get('description', '')
@@ -1515,6 +1577,7 @@ def profile():
 
 @main.route('/verify-email-change-otp', methods=['GET', 'POST'])
 @login_required
+@limiter.limit('10 per 10 minutes')
 def verify_email_change_otp():
     user_id = session.get('pending_email_change_user_id')
     if not user_id or user_id != current_user.id or not current_user.pending_email:
@@ -1701,9 +1764,14 @@ def expenses():
 @main.route('/expenses/update-ratios', methods=['POST'])
 @login_required
 def update_budget_ratios():
-    needs = float(request.form.get('needs_pct', 50))
-    wants = float(request.form.get('wants_pct', 30))
-    savings = float(request.form.get('savings_pct', 20))
+    try:
+        needs = _parse_float_form('needs_pct', min_value=0, default=50)
+        wants = _parse_float_form('wants_pct', min_value=0, default=30)
+        savings = _parse_float_form('savings_pct', min_value=0, default=20)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.expenses'))
+
     # Normalize to 100%
     total_pct = needs + wants + savings
     if total_pct > 0:
@@ -1721,10 +1789,16 @@ def update_budget_ratios():
 @main.route('/expenses/add', methods=['POST'])
 @login_required
 def add_expense():
+    try:
+        amount = _parse_float_form('amount', min_value=0.01)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.expenses'))
+
     expense = Expense(
         user_id=current_user.id,
         category=request.form['category'],
-        amount=float(request.form['amount']),
+        amount=amount,
         date=datetime.strptime(request.form['date'], '%Y-%m-%d').date() if request.form.get('date') else date.today(),
         description=request.form.get('description', ''),
         is_recurring=bool(request.form.get('is_recurring'))
@@ -1821,14 +1895,22 @@ def investments():
 @main.route('/investments/add', methods=['POST'])
 @login_required
 def add_investment():
+    try:
+        amount_invested = _parse_float_form('amount_invested', min_value=0.01)
+        current_value = _parse_float_form('current_value', min_value=0, default=0)
+        expected_return_rate = _parse_float_form('expected_return_rate', default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.investments'))
+
     inv = Investment(
         user_id=current_user.id,
         investment_type=request.form['investment_type'],
         platform=request.form.get('platform', ''),
         name=request.form['name'],
-        amount_invested=float(request.form['amount_invested']),
-        current_value=float(request.form.get('current_value', 0)),
-        expected_return_rate=float(request.form.get('expected_return_rate', 0)),
+        amount_invested=amount_invested,
+        current_value=current_value,
+        expected_return_rate=expected_return_rate,
         start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else date.today(),
         maturity_date=datetime.strptime(request.form['maturity_date'], '%Y-%m-%d').date() if request.form.get('maturity_date') else None,
         member=request.form.get('member', 'Self'),
@@ -1858,15 +1940,24 @@ def delete_investment(id):
 @main.route('/add-pf', methods=['POST'])
 @login_required
 def add_pf():
+    try:
+        employee_contribution = _parse_float_form('employee_contribution', min_value=0, default=0)
+        employer_contribution = _parse_float_form('employer_contribution', min_value=0, default=0)
+        total_balance = _parse_float_form('total_balance', min_value=0, default=0)
+        interest_rate = _parse_float_form('interest_rate', min_value=0, default=8.25)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.investments'))
+
     pf = ProvidentFund(
         user_id=current_user.id,
         pf_type=request.form.get('pf_type', 'EPF'),
         uan_number=request.form.get('uan_number', '').strip(),
         employer=request.form.get('employer', '').strip(),
-        employee_contribution=float(request.form.get('employee_contribution') or 0),
-        employer_contribution=float(request.form.get('employer_contribution') or 0),
-        total_balance=float(request.form.get('total_balance') or 0),
-        interest_rate=float(request.form.get('interest_rate') or 8.25),
+        employee_contribution=employee_contribution,
+        employer_contribution=employer_contribution,
+        total_balance=total_balance,
+        interest_rate=interest_rate,
         start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else None,
         notes=request.form.get('notes', '').strip()
     )
@@ -1894,13 +1985,20 @@ def delete_pf(id):
 @main.route('/add-bank-account', methods=['POST'])
 @login_required
 def add_bank_account():
+    try:
+        balance = _parse_float_form('balance', min_value=0, default=0)
+        interest_rate = _parse_float_form('interest_rate', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.investments'))
+
     acct = BankAccount(
         user_id=current_user.id,
         bank_name=request.form.get('bank_name', '').strip(),
         account_type=request.form.get('account_type', 'Savings'),
         account_number_last4=request.form.get('account_number_last4', '').strip()[-4:],
-        balance=float(request.form.get('balance') or 0),
-        interest_rate=float(request.form.get('interest_rate') or 0),
+        balance=balance,
+        interest_rate=interest_rate,
         notes=request.form.get('notes', '').strip()
     )
     db.session.add(acct)
@@ -1916,7 +2014,11 @@ def update_bank_balance(id):
     if acct.user_id != current_user.id:
         flash('Unauthorized.', 'danger')
         return redirect(url_for('main.investments'))
-    acct.balance = float(request.form.get('balance') or 0)
+    try:
+        acct.balance = _parse_float_form('balance', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.investments'))
     db.session.commit()
     flash(f'{acct.bank_name} balance updated!', 'success')
     return redirect(url_for('main.investments'))
@@ -2135,16 +2237,26 @@ def assets():
 @main.route('/assets/add', methods=['POST'])
 @login_required
 def add_asset():
+    try:
+        purchase_price = _parse_float_form('purchase_price', min_value=0, default=0)
+        current_value = _parse_float_form('current_value', min_value=0, default=0)
+        emi_amount = _parse_float_form('emi_amount', min_value=0, default=0)
+        emi_remaining_months = _parse_int_form('emi_remaining_months', min_value=0, default=0)
+        loan_amount = _parse_float_form('loan_amount', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.assets'))
+
     asset = Asset(
         user_id=current_user.id,
         asset_type=request.form['asset_type'],
         name=request.form['name'],
-        purchase_price=float(request.form.get('purchase_price') or 0),
-        current_value=float(request.form.get('current_value') or 0),
+        purchase_price=purchase_price,
+        current_value=current_value,
         purchase_date=datetime.strptime(request.form['purchase_date'], '%Y-%m-%d').date() if request.form.get('purchase_date') else date.today(),
-        emi_amount=float(request.form.get('emi_amount') or 0),
-        emi_remaining_months=int(request.form.get('emi_remaining_months') or 0),
-        loan_amount=float(request.form.get('loan_amount') or 0),
+        emi_amount=emi_amount,
+        emi_remaining_months=emi_remaining_months,
+        loan_amount=loan_amount,
         notes=request.form.get('notes', '')
     )
     db.session.add(asset)
@@ -2178,11 +2290,18 @@ def goals():
 @main.route('/goals/add', methods=['POST'])
 @login_required
 def add_goal():
+    try:
+        target_amount = _parse_float_form('target_amount', min_value=0.01)
+        current_saved = _parse_float_form('current_saved', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.goals'))
+
     goal = FinancialGoal(
         user_id=current_user.id,
         goal_name=request.form['goal_name'],
-        target_amount=float(request.form['target_amount']),
-        current_saved=float(request.form.get('current_saved', 0)),
+        target_amount=target_amount,
+        current_saved=current_saved,
         target_date=datetime.strptime(request.form['target_date'], '%Y-%m-%d').date() if request.form.get('target_date') else None,
         priority=request.form.get('priority', 'medium'),
         category=request.form.get('category', '')
@@ -2200,7 +2319,11 @@ def update_goal(id):
     if goal.user_id != current_user.id:
         flash('Unauthorized.', 'danger')
         return redirect(url_for('main.goals'))
-    goal.current_saved = float(request.form.get('current_saved', goal.current_saved))
+    try:
+        goal.current_saved = _parse_float_form('current_saved', min_value=0, default=goal.current_saved)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.goals'))
     db.session.commit()
     flash('Goal updated!', 'success')
     return redirect(url_for('main.goals'))
@@ -2486,15 +2609,22 @@ def policies():
 @main.route('/policies/add', methods=['POST'])
 @login_required
 def add_policy():
-    premium = float(request.form.get('premium_amount') or 0)
-    total_installments_paid = int(request.form.get('installments_paid') or 0)
+    try:
+        premium = _parse_float_form('premium_amount', min_value=0.01, default=0)
+        total_installments_paid = _parse_int_form('installments_paid', min_value=0, default=0)
+        sum_assured = _parse_float_form('sum_assured', min_value=0, default=0)
+        maturity_value = _parse_float_form('maturity_value', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.policies'))
+
     policy = InsurancePolicy(
         user_id=current_user.id,
         policy_type=request.form['policy_type'],
         provider=request.form['provider'],
         policy_name=request.form['policy_name'],
         policy_number=request.form.get('policy_number', ''),
-        sum_assured=float(request.form.get('sum_assured') or 0),
+        sum_assured=sum_assured,
         premium_amount=premium,
         premium_frequency=request.form.get('premium_frequency', 'monthly'),
         start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else date.today(),
@@ -2502,7 +2632,7 @@ def add_policy():
         nominee=request.form.get('nominee', ''),
         status=request.form.get('status', 'active'),
         total_paid=premium * total_installments_paid,
-        maturity_value=float(request.form.get('maturity_value') or 0),
+        maturity_value=maturity_value,
         member=request.form.get('member', 'Self'),
         notes=request.form.get('notes', '')
     )
@@ -2536,14 +2666,23 @@ def update_policy(id):
     policy.policy_type = request.form.get('policy_type', policy.policy_type)
     policy.policy_name = request.form.get('policy_name', policy.policy_name)
     policy.policy_number = request.form.get('policy_number', policy.policy_number)
-    policy.premium_amount = float(request.form.get('premium_amount') or policy.premium_amount)
+    try:
+        policy.premium_amount = _parse_float_form('premium_amount', min_value=0.01, default=policy.premium_amount)
+        policy.sum_assured = _parse_float_form('sum_assured', min_value=0, default=0)
+        policy.maturity_value = _parse_float_form('maturity_value', min_value=0, default=0)
+        policy.total_paid = _parse_float_form('total_paid', min_value=0, default=policy.total_paid)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.policies'))
+
     policy.premium_frequency = request.form.get('premium_frequency', policy.premium_frequency)
     if request.form.get('premium_due_day'):
-        policy.premium_due_day = int(request.form.get('premium_due_day') or 0)
-    policy.sum_assured = float(request.form.get('sum_assured') or 0)
-    policy.maturity_value = float(request.form.get('maturity_value') or 0)
+        try:
+            policy.premium_due_day = _parse_int_form('premium_due_day', min_value=1, max_value=31)
+        except ValueError as e:
+            flash(str(e), 'danger')
+            return redirect(url_for('main.policies'))
     policy.nominee = request.form.get('nominee', policy.nominee)
-    policy.total_paid = float(request.form.get('total_paid') or policy.total_paid)
     policy.status = request.form.get('status', policy.status)
     policy.notes = request.form.get('notes', policy.notes)
     if request.form.get('start_date'):
@@ -2761,7 +2900,10 @@ def lookup_premium():
 @login_required
 def record_premium_payment():
     policy_id = request.form.get('policy_id', type=int)
-    amount = float(request.form.get('amount') or 0)
+    try:
+        amount = _parse_float_form('amount', min_value=0.01, default=0)
+    except ValueError:
+        return jsonify(success=False, message='Please enter a valid amount greater than 0.')
     payment_date_str = request.form.get('payment_date', '').strip()
     note = request.form.get('note', '').strip()
 
@@ -2860,9 +3002,15 @@ def schemes():
 @main.route('/schemes/add', methods=['POST'])
 @login_required
 def add_scheme():
-    installment = float(request.form.get('installment_amount') or 0)
-    total_inst = int(request.form.get('total_installments') or 0)
-    paid_inst = int(request.form.get('paid_installments') or 0)
+    try:
+        installment = _parse_float_form('installment_amount', min_value=0.01, default=0)
+        total_inst = _parse_int_form('total_installments', min_value=0, default=0)
+        paid_inst = _parse_int_form('paid_installments', min_value=0, default=0)
+        maturity_value = _parse_float_form('maturity_value', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.schemes'))
+
     scheme = Scheme(
         user_id=current_user.id,
         scheme_type=request.form['scheme_type'],
@@ -2873,7 +3021,7 @@ def add_scheme():
         total_installments=total_inst,
         paid_installments=paid_inst,
         total_paid=installment * paid_inst,
-        maturity_value=float(request.form.get('maturity_value') or 0),
+        maturity_value=maturity_value,
         bonus_benefit=request.form.get('bonus_benefit', ''),
         start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else date.today(),
         maturity_date=datetime.strptime(request.form['maturity_date'], '%Y-%m-%d').date() if request.form.get('maturity_date') else None,
@@ -2894,7 +3042,11 @@ def update_scheme(id):
     if scheme.user_id != current_user.id:
         flash('Unauthorized.', 'danger')
         return redirect(url_for('main.schemes'))
-    scheme.paid_installments = int(request.form.get('paid_installments', scheme.paid_installments))
+    try:
+        scheme.paid_installments = _parse_int_form('paid_installments', min_value=0, default=scheme.paid_installments)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.schemes'))
     scheme.total_paid = scheme.installment_amount * scheme.paid_installments
     scheme.status = request.form.get('status', scheme.status)
     if scheme.paid_installments >= scheme.total_installments and scheme.total_installments > 0:
@@ -3058,19 +3210,27 @@ def sips():
 @main.route('/sips/add', methods=['POST'])
 @login_required
 def add_sip():
-    months = int(request.form.get('months_invested') or 0)
-    sip_amount = float(request.form.get('sip_amount') or 0)
+    try:
+        months = _parse_int_form('months_invested', min_value=0, default=0)
+        sip_amount = _parse_float_form('sip_amount', min_value=0.01, default=0)
+        sip_date = _parse_int_form('sip_date', min_value=1, max_value=31, default=1)
+        expected_return = _parse_float_form('expected_return', default=12.0)
+        current_value = _parse_float_form('current_value', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.sips'))
+
     sip = SIP(
         user_id=current_user.id,
         fund_name=request.form['fund_name'],
         platform=request.form.get('platform', ''),
         sip_amount=sip_amount,
         frequency=request.form.get('frequency', 'monthly'),
-        sip_date=int(request.form.get('sip_date') or 1),
+        sip_date=sip_date,
         start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date() if request.form.get('start_date') else date.today(),
-        expected_return=float(request.form.get('expected_return') or 12.0),
+        expected_return=expected_return,
         total_invested=sip_amount * months,
-        current_value=float(request.form.get('current_value') or 0),
+        current_value=current_value,
         member=request.form.get('member', 'Self'),
         notes=request.form.get('notes', '')
     )
@@ -3087,8 +3247,12 @@ def update_sip(id):
     if sip.user_id != current_user.id:
         flash('Unauthorized.', 'danger')
         return redirect(url_for('main.sips'))
-    sip.current_value = float(request.form.get('current_value') or sip.current_value)
-    sip.total_invested = float(request.form.get('total_invested') or sip.total_invested)
+    try:
+        sip.current_value = _parse_float_form('current_value', min_value=0, default=sip.current_value)
+        sip.total_invested = _parse_float_form('total_invested', min_value=0, default=sip.total_invested)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.sips'))
     sip.is_active = request.form.get('is_active') != '0'
     db.session.commit()
     flash('SIP updated!', 'success')
@@ -3332,10 +3496,14 @@ def loans():
 @main.route('/add-loan', methods=['POST'])
 @login_required
 def add_loan():
-    principal = float(request.form.get('principal_amount') or 0)
-    interest_rate = float(request.form.get('interest_rate') or 0)
-    tenure_months = int(request.form.get('tenure_months') or 0)
-    emi_amount = float(request.form.get('emi_amount') or 0)
+    try:
+        principal = _parse_float_form('principal_amount', min_value=0.01, default=0)
+        interest_rate = _parse_float_form('interest_rate', min_value=0, default=0)
+        tenure_months = _parse_int_form('tenure_months', min_value=1, default=0)
+        emi_amount = _parse_float_form('emi_amount', min_value=0, default=0)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.loans'))
 
     # Auto-calculate EMI if not provided
     if emi_amount == 0 and principal > 0 and interest_rate > 0 and tenure_months > 0:
@@ -3343,7 +3511,12 @@ def add_loan():
         emi_amount = principal * r * (1 + r) ** tenure_months / ((1 + r) ** tenure_months - 1)
         emi_amount = round(emi_amount, 2)
 
-    paid_months = int(request.form.get('paid_months') or 0)
+    try:
+        paid_months = _parse_int_form('paid_months', min_value=0, default=0)
+        emi_day = _parse_int_form('emi_day', min_value=1, max_value=31, default=5)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.loans'))
     total_paid = emi_amount * paid_months
     outstanding = (emi_amount * (tenure_months - paid_months)) if tenure_months > paid_months else 0
 
@@ -3366,7 +3539,7 @@ def add_loan():
         outstanding_balance=outstanding,
         start_date=start_date,
         end_date=end_date,
-        emi_day=int(request.form.get('emi_day') or 5),
+        emi_day=emi_day,
         notes=request.form.get('notes', '').strip()
     )
     db.session.add(loan)
@@ -3650,7 +3823,7 @@ def send_reminders():
         mail.send(msg)
         return jsonify(success=True, message=f'Reminder sent to {current_user.email} — {len(dues)} due(s)')
     except Exception as e:
-        return jsonify(success=True, message=f'{len(dues)} dues found. Email not sent (mail not configured). Dues: {"; ".join(dues)}')
+        return jsonify(success=False, message=f'{len(dues)} dues found, but email was not sent. Please verify SMTP/network settings. Dues: {"; ".join(dues)}')
 
 
 # ======================== NOTIFICATIONS ========================

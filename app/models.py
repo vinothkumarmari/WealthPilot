@@ -31,6 +31,8 @@ class User(UserMixin, db.Model):
     is_verified = db.Column(db.Boolean, default=False)
     otp_code = db.Column(db.String(10))
     otp_expiry = db.Column(db.DateTime)
+    otp_attempts = db.Column(db.Integer, default=0)
+    otp_locked_until = db.Column(db.DateTime)
     pending_email = db.Column(db.String(120))
     profile_photo = db.Column(db.String(255))
     active_session_nonce = db.Column(db.String(64))

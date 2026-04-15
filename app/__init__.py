@@ -310,6 +310,12 @@ def _ensure_user_columns(app):
                 if 'active_session_updated_at' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN active_session_updated_at DATETIME"))
                     app.logger.info('Added column: user.active_session_updated_at')
+                if 'otp_attempts' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN otp_attempts INTEGER DEFAULT 0"))
+                    app.logger.info('Added column: user.otp_attempts')
+                if 'otp_locked_until' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN otp_locked_until DATETIME"))
+                    app.logger.info('Added column: user.otp_locked_until')
                 conn.commit()
             else:
                 rows = conn.execute(text(
@@ -340,6 +346,12 @@ def _ensure_user_columns(app):
                 if 'active_session_updated_at' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN active_session_updated_at TIMESTAMP"))
                     app.logger.info('Added column: user.active_session_updated_at')
+                if 'otp_attempts' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN otp_attempts INTEGER DEFAULT 0"))
+                    app.logger.info('Added column: user.otp_attempts')
+                if 'otp_locked_until' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN otp_locked_until TIMESTAMP"))
+                    app.logger.info('Added column: user.otp_locked_until')
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')
