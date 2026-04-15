@@ -150,6 +150,25 @@ def queue_otp_email(app, user_email, otp_code):
     threading.Thread(target=_worker, daemon=True).start()
 
 
+def _issue_user_otp(user, *, commit=True):
+    """Generate and set a fresh OTP for a user."""
+    otp = generate_otp()
+    user.otp_code = otp
+    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
+    if commit:
+        db.session.commit()
+    return otp
+
+
+def _is_valid_user_otp(user, entered_otp):
+    """Validate OTP value and expiry for the given user."""
+    if user.otp_code != entered_otp:
+        return False, 'Invalid OTP. Please try again.'
+    if user.otp_expiry and user.otp_expiry.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+        return False, 'OTP has expired. Please request a new one.'
+    return True, ''
+
+
 def admin_required(f):
     """Decorator to restrict routes to admin users only."""
     @wraps(f)
@@ -334,23 +353,22 @@ def verify_otp():
             flash('Please enter the OTP.', 'danger')
             return render_template('verify_otp.html', email=user.email)
 
-        # Check OTP validity
-        if user.otp_code != entered_otp:
-            flash('Invalid OTP. Please try again.', 'danger')
-            return render_template('verify_otp.html', email=user.email)
-
-        if user.otp_expiry and user.otp_expiry.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
-            flash('OTP has expired. Please request a new one.', 'danger')
+        ok, msg = _is_valid_user_otp(user, entered_otp)
+        if not ok:
+            flash(msg, 'danger')
             return render_template('verify_otp.html', email=user.email)
 
         # Verify user
         user.is_verified = True
         user.otp_code = None
         user.otp_expiry = None
+        user.active_session_nonce = secrets.token_hex(24)
+        user.active_session_updated_at = datetime.now(timezone.utc)
         db.session.commit()
 
         session.pop('pending_user_id', None)
         login_user(user)
+        session['_session_nonce'] = user.active_session_nonce
         flash('Email verified! Account created successfully!', 'success')
         return redirect(url_for('main.dashboard'))
 
@@ -414,18 +432,19 @@ def login():
                 db.session.commit()
                 
                 if not user.is_verified:
-                    otp = generate_otp()
-                    user.otp_code = otp
-                    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
-                    db.session.commit()
+                    otp = _issue_user_otp(user)
                     session['pending_user_id'] = user.id
                     queue_otp_email(current_app._get_current_object(), user.email, otp)
                     flash('Email not verified. New OTP is being sent to your email.', 'warning')
                     return redirect(url_for('main.verify_otp'))
-                login_user(user, remember=request.form.get('remember'))
-                session['_last_activity'] = datetime.now(timezone.utc).isoformat()
-                flash('Login successful!', 'success')
-                return redirect(url_for('main.dashboard'))
+
+                otp = _issue_user_otp(user)
+                session['pending_login_user_id'] = user.id
+                session['pending_login_remember'] = bool(request.form.get('remember'))
+                session['pending_login_force_logout'] = bool(user.active_session_nonce)
+                queue_otp_email(current_app._get_current_object(), user.email, otp)
+                flash('OTP is being sent to your email. Please verify to complete login.', 'info')
+                return redirect(url_for('main.verify_login_otp'))
             else:
                 # Increment failed login count
                 user.failed_login_count = (user.failed_login_count or 0) + 1
@@ -437,6 +456,79 @@ def login():
                 db.session.commit()
         flash('Invalid credentials.', 'danger')
     return render_template('login.html')
+
+
+@main.route('/verify-login-otp', methods=['GET', 'POST'])
+def verify_login_otp():
+    user_id = session.get('pending_login_user_id')
+    if not user_id:
+        flash('No pending login verification. Please log in again.', 'warning')
+        return redirect(url_for('main.login'))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.pop('pending_login_user_id', None)
+        session.pop('pending_login_remember', None)
+        session.pop('pending_login_force_logout', None)
+        flash('User not found. Please login again.', 'danger')
+        return redirect(url_for('main.login'))
+
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp', '').strip()
+        if not entered_otp:
+            flash('Please enter the OTP.', 'danger')
+            return render_template('verify_otp.html', email=user.email, title='Verify Login', verify_label='Verify & Login', resend_url=url_for('main.resend_login_otp'))
+
+        ok, msg = _is_valid_user_otp(user, entered_otp)
+        if not ok:
+            flash(msg, 'danger')
+            return render_template('verify_otp.html', email=user.email, title='Verify Login', verify_label='Verify & Login', resend_url=url_for('main.resend_login_otp'))
+
+        user.otp_code = None
+        user.otp_expiry = None
+        user.active_session_nonce = secrets.token_hex(24)
+        user.active_session_updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+
+        remember = bool(session.get('pending_login_remember'))
+        force_logout = bool(session.get('pending_login_force_logout'))
+        session.pop('pending_login_user_id', None)
+        session.pop('pending_login_remember', None)
+        session.pop('pending_login_force_logout', None)
+
+        login_user(user, remember=remember)
+        session['_session_nonce'] = user.active_session_nonce
+        session['_last_activity'] = datetime.now(timezone.utc).isoformat()
+        if force_logout:
+            flash('Previous active session was signed out. Login successful!', 'success')
+        else:
+            flash('Login successful!', 'success')
+        return redirect(url_for('main.dashboard'))
+
+    return render_template('verify_otp.html', email=user.email, title='Verify Login', verify_label='Verify & Login', resend_url=url_for('main.resend_login_otp'))
+
+
+@main.route('/resend-login-otp')
+@limiter.limit('3 per minute')
+def resend_login_otp():
+    from flask import current_app
+    user_id = session.get('pending_login_user_id')
+    if not user_id:
+        flash('No pending login verification.', 'warning')
+        return redirect(url_for('main.login'))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.pop('pending_login_user_id', None)
+        session.pop('pending_login_remember', None)
+        session.pop('pending_login_force_logout', None)
+        flash('User not found. Please login again.', 'danger')
+        return redirect(url_for('main.login'))
+
+    otp = _issue_user_otp(user)
+    queue_otp_email(current_app._get_current_object(), user.email, otp)
+    flash(f'New login OTP is being sent to {user.email}.', 'info')
+    return redirect(url_for('main.verify_login_otp'))
 
 
 # ======================== BILLING & PAYMENTS ========================
@@ -737,6 +829,11 @@ def resend_reset_otp():
 @main.route('/logout')
 @login_required
 def logout():
+    current_nonce = session.get('_session_nonce')
+    if current_user.is_authenticated and current_nonce and current_user.active_session_nonce == current_nonce:
+        current_user.active_session_nonce = None
+        current_user.active_session_updated_at = None
+        db.session.commit()
     logout_user()
     session.clear()
     flash('Logged out successfully.', 'info')
@@ -748,6 +845,7 @@ def logout():
 @main.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
+    from flask import current_app
     if request.method == 'POST':
         current_pw = request.form.get('current_password', '')
         new_pw = request.form.get('new_password', '')
@@ -773,11 +871,64 @@ def change_password():
             flash('New password must be different from current password.', 'danger')
             return render_template('change_password.html')
         
+        otp = _issue_user_otp(current_user)
+        session['pending_change_password_user_id'] = current_user.id
+        session['pending_change_password_new_pw'] = new_pw
+        queue_otp_email(current_app._get_current_object(), current_user.email, otp)
+        flash('OTP is being sent to your email. Verify OTP to complete password change.', 'info')
+        return redirect(url_for('main.verify_change_password_otp'))
+    return render_template('change_password.html')
+
+
+@main.route('/verify-change-password-otp', methods=['GET', 'POST'])
+@login_required
+def verify_change_password_otp():
+    user_id = session.get('pending_change_password_user_id')
+    new_pw = session.get('pending_change_password_new_pw')
+    if not user_id or not new_pw or user_id != current_user.id:
+        session.pop('pending_change_password_user_id', None)
+        session.pop('pending_change_password_new_pw', None)
+        flash('No pending password change verification.', 'warning')
+        return redirect(url_for('main.change_password'))
+
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp', '').strip()
+        if not entered_otp:
+            flash('Please enter the OTP.', 'danger')
+            return render_template('verify_otp_auth.html', email=current_user.email, title='Verify Password Change', verify_label='Verify & Change Password', resend_url=url_for('main.resend_change_password_otp'))
+
+        ok, msg = _is_valid_user_otp(current_user, entered_otp)
+        if not ok:
+            flash(msg, 'danger')
+            return render_template('verify_otp_auth.html', email=current_user.email, title='Verify Password Change', verify_label='Verify & Change Password', resend_url=url_for('main.resend_change_password_otp'))
+
         current_user.password_hash = generate_password_hash(new_pw)
+        current_user.otp_code = None
+        current_user.otp_expiry = None
         db.session.commit()
+
+        session.pop('pending_change_password_user_id', None)
+        session.pop('pending_change_password_new_pw', None)
         flash('Password changed successfully!', 'success')
         return redirect(url_for('main.profile'))
-    return render_template('change_password.html')
+
+    return render_template('verify_otp_auth.html', email=current_user.email, title='Verify Password Change', verify_label='Verify & Change Password', resend_url=url_for('main.resend_change_password_otp'))
+
+
+@main.route('/resend-change-password-otp')
+@login_required
+@limiter.limit('3 per minute')
+def resend_change_password_otp():
+    from flask import current_app
+    user_id = session.get('pending_change_password_user_id')
+    if not user_id or user_id != current_user.id:
+        flash('No pending password change verification.', 'warning')
+        return redirect(url_for('main.change_password'))
+
+    otp = _issue_user_otp(current_user)
+    queue_otp_email(current_app._get_current_object(), current_user.email, otp)
+    flash(f'New OTP is being sent to {current_user.email}.', 'info')
+    return redirect(url_for('main.verify_change_password_otp'))
 
 
 # ======================== HEALTH CHECK ========================
@@ -1235,8 +1386,20 @@ def delete_income(id):
 @main.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
+    from flask import current_app
     if request.method == 'POST':
         current_user.full_name = request.form.get('full_name', '').strip()
+        requested_email = request.form.get('email', '').strip().lower()
+        if requested_email and requested_email != current_user.email:
+            if not validate_email(requested_email):
+                flash('Please enter a valid email address.', 'danger')
+                return render_template('profile.html')
+            existing_email = User.query.filter(db.func.lower(User.email) == requested_email, User.id != current_user.id).first()
+            if existing_email:
+                flash('Email already in use by another account.', 'danger')
+                return render_template('profile.html')
+            current_user.pending_email = requested_email
+
         current_user.age = request.form.get('age', type=int)
         current_user.monthly_salary = request.form.get('monthly_salary', 0, type=float)
         current_user.annual_salary = current_user.monthly_salary * 12
@@ -1253,10 +1416,94 @@ def profile():
         lang = request.form.get('language', 'en')
         if lang in ('en', 'ta', 'hi', 'te'):
             current_user.language = lang
+
+        profile_photo = request.files.get('profile_photo')
+        if profile_photo and profile_photo.filename:
+            ext = profile_photo.filename.rsplit('.', 1)[-1].lower() if '.' in profile_photo.filename else ''
+            allowed_photo_exts = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+            if ext not in allowed_photo_exts:
+                flash('Profile photo must be PNG, JPG, JPEG, WEBP, or GIF.', 'danger')
+                return render_template('profile.html')
+
+            photo_dir = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), 'uploads', 'profile_photos')
+            os.makedirs(photo_dir, exist_ok=True)
+            photo_name = secure_filename(f"u{current_user.id}_{secrets.token_hex(8)}.{ext}")
+            photo_path = os.path.join(photo_dir, photo_name)
+            profile_photo.save(photo_path)
+
+            old_photo = (current_user.profile_photo or '').replace('\\', '/')
+            if old_photo.startswith('uploads/profile_photos/'):
+                old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
+                if os.path.exists(old_photo_path):
+                    try:
+                        os.remove(old_photo_path)
+                    except OSError:
+                        pass
+            current_user.profile_photo = f'uploads/profile_photos/{photo_name}'
+
+        if current_user.pending_email:
+            otp = _issue_user_otp(current_user, commit=False)
+
         db.session.commit()
+
+        if current_user.pending_email:
+            session['pending_email_change_user_id'] = current_user.id
+            queue_otp_email(current_app._get_current_object(), current_user.pending_email, otp)
+            flash(f'Profile updated. OTP is being sent to {current_user.pending_email} to verify your new email.', 'info')
+            return redirect(url_for('main.verify_email_change_otp'))
+
         flash('Profile updated!', 'success')
         return redirect(url_for('main.profile'))
     return render_template('profile.html')
+
+
+@main.route('/verify-email-change-otp', methods=['GET', 'POST'])
+@login_required
+def verify_email_change_otp():
+    user_id = session.get('pending_email_change_user_id')
+    if not user_id or user_id != current_user.id or not current_user.pending_email:
+        session.pop('pending_email_change_user_id', None)
+        flash('No pending email change verification.', 'warning')
+        return redirect(url_for('main.profile'))
+
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp', '').strip()
+        if not entered_otp:
+            flash('Please enter the OTP.', 'danger')
+            return render_template('verify_otp_auth.html', email=current_user.pending_email, title='Verify New Email', verify_label='Verify & Update Email', resend_url=url_for('main.resend_email_change_otp'))
+
+        ok, msg = _is_valid_user_otp(current_user, entered_otp)
+        if not ok:
+            flash(msg, 'danger')
+            return render_template('verify_otp_auth.html', email=current_user.pending_email, title='Verify New Email', verify_label='Verify & Update Email', resend_url=url_for('main.resend_email_change_otp'))
+
+        current_user.email = current_user.pending_email
+        current_user.pending_email = None
+        current_user.otp_code = None
+        current_user.otp_expiry = None
+        db.session.commit()
+
+        session.pop('pending_email_change_user_id', None)
+        flash('Email updated and verified successfully!', 'success')
+        return redirect(url_for('main.profile'))
+
+    return render_template('verify_otp_auth.html', email=current_user.pending_email, title='Verify New Email', verify_label='Verify & Update Email', resend_url=url_for('main.resend_email_change_otp'))
+
+
+@main.route('/resend-email-change-otp')
+@login_required
+@limiter.limit('3 per minute')
+def resend_email_change_otp():
+    from flask import current_app
+    user_id = session.get('pending_email_change_user_id')
+    if not user_id or user_id != current_user.id or not current_user.pending_email:
+        flash('No pending email change verification.', 'warning')
+        return redirect(url_for('main.profile'))
+
+    otp = _issue_user_otp(current_user)
+    queue_otp_email(current_app._get_current_object(), current_user.pending_email, otp)
+    flash(f'New OTP is being sent to {current_user.pending_email}.', 'info')
+    return redirect(url_for('main.verify_email_change_otp'))
 
 
 # ======================== EXPENSES ========================

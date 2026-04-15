@@ -11,7 +11,7 @@
         <div class="card">
             <div class="card-header"><h6>{{ t('Personal & Financial Information') }}</h6></div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -24,7 +24,13 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ t('Email') }}</label>
-                            <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                            <input type="email" name="email" class="form-control" value="{{ current_user.email }}">
+                            <small class="text-muted">Changing email requires OTP verification at the new email address.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Profile Photo') }}</label>
+                            <input type="file" name="profile_photo" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
+                            <small class="text-muted">Allowed: PNG, JPG, JPEG, WEBP, GIF.</small>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ t('Age') }}</label>
@@ -140,7 +146,11 @@
         <div class="card">
             <div class="card-header"><h6>{{ t('Account Summary') }}</h6></div>
             <div class="card-body text-center">
+                {% if current_user.profile_photo %}
+                <img src="{{ url_for('static', filename=current_user.profile_photo) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);">
+                {% else %}
                 <span class="material-icons-outlined" style="font-size:80px; color: var(--accent)">account_circle</span>
+                {% endif %}
                 <h5 class="mt-2">{{ current_user.full_name or current_user.username }}</h5>
                 <p class="text-muted">{{ current_user.email }}</p>
                 <hr>

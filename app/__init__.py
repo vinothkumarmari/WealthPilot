@@ -200,6 +200,16 @@ def create_app():
     def check_session_timeout():
         try:
             if current_user.is_authenticated:
+                session_nonce = session.get('_session_nonce')
+                active_nonce = getattr(current_user, 'active_session_nonce', None)
+                if active_nonce and session_nonce != active_nonce:
+                    from flask_login import logout_user
+                    from flask import flash, redirect, url_for
+                    logout_user()
+                    session.clear()
+                    flash('Your account was signed in from another device/session. Please log in again.', 'warning')
+                    return redirect(url_for('main.login'))
+
                 now = datetime.now(timezone.utc)
                 last = session.get('_last_activity')
                 timeout = app.config.get('SESSION_IDLE_TIMEOUT', 1800)
@@ -288,6 +298,18 @@ def _ensure_user_columns(app):
                 if 'enable_only_critical_notifications' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN enable_only_critical_notifications BOOLEAN DEFAULT 0"))
                     app.logger.info('Added column: user.enable_only_critical_notifications')
+                if 'pending_email' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN pending_email VARCHAR(120)"))
+                    app.logger.info('Added column: user.pending_email')
+                if 'profile_photo' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN profile_photo VARCHAR(255)"))
+                    app.logger.info('Added column: user.profile_photo')
+                if 'active_session_nonce' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN active_session_nonce VARCHAR(64)"))
+                    app.logger.info('Added column: user.active_session_nonce')
+                if 'active_session_updated_at' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN active_session_updated_at DATETIME"))
+                    app.logger.info('Added column: user.active_session_updated_at')
                 conn.commit()
             else:
                 rows = conn.execute(text(
@@ -306,6 +328,18 @@ def _ensure_user_columns(app):
                 if 'enable_only_critical_notifications' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_only_critical_notifications BOOLEAN DEFAULT FALSE"))
                     app.logger.info('Added column: user.enable_only_critical_notifications')
+                if 'pending_email' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN pending_email VARCHAR(120)"))
+                    app.logger.info('Added column: user.pending_email')
+                if 'profile_photo' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN profile_photo VARCHAR(255)"))
+                    app.logger.info('Added column: user.profile_photo')
+                if 'active_session_nonce' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN active_session_nonce VARCHAR(64)"))
+                    app.logger.info('Added column: user.active_session_nonce')
+                if 'active_session_updated_at' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN active_session_updated_at TIMESTAMP"))
+                    app.logger.info('Added column: user.active_session_updated_at')
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')

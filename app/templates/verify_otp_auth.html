@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Verify OTP - WealthPilot{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <span class="material-icons-outlined text-primary" style="font-size:48px;">verified</span>
+                        <h4 class="mt-2 fw-bold">{{ title or 'Verify OTP' }}</h4>
+                        <p class="text-muted small">Enter the {{ config.OTP_LENGTH }}-digit OTP sent to <strong>{{ email }}</strong></p>
+                    </div>
+
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Enter OTP</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text"><span class="material-icons-outlined">pin</span></span>
+                                <input type="text" name="otp" class="form-control text-center"
+                                       maxlength="{{ config.OTP_LENGTH }}"
+                                       placeholder="{{ config.OTP_LENGTH }}-digit OTP"
+                                       style="font-size:1.4rem;letter-spacing:0.4rem;font-weight:700;"
+                                       required autofocus>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">{{ verify_label or 'Verify OTP' }}</button>
+                            <a href="{{ resend_url }}" class="btn btn-outline-secondary">Resend OTP</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
