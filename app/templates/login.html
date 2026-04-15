@@ -1,14 +1,257 @@
 {% extends 'base.html' %}
 {% block title %}Login - WealthPilot{% endblock %}
 {% block public_content %}
-<div class="auth-page">
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <span class="material-icons-outlined brand-icon">account_balance_wallet</span>
-                <h3>Welcome Back</h3>
-                <p class="text-muted">Login to WealthPilot</p>
+<style>
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 18px;
+    background:
+        radial-gradient(circle at 8% 8%, rgba(30, 231, 180, 0.22) 0%, rgba(30, 231, 180, 0) 32%),
+        radial-gradient(circle at 92% 18%, rgba(255, 184, 108, 0.26) 0%, rgba(255, 184, 108, 0) 35%),
+        radial-gradient(circle at 52% 100%, rgba(127, 187, 255, 0.25) 0%, rgba(127, 187, 255, 0) 40%),
+        linear-gradient(125deg, #0f172a 0%, #10254d 45%, #133765 100%);
+}
+
+.login-shell {
+    width: min(1080px, 96vw);
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 28px 56px rgba(7, 12, 28, 0.48);
+    backdrop-filter: blur(4px);
+}
+
+.login-story {
+    padding: 36px 34px;
+    color: #ecf3ff;
+    background: linear-gradient(155deg, rgba(8, 20, 43, 0.88), rgba(14, 33, 66, 0.72));
+}
+
+.story-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    margin-bottom: 18px;
+}
+
+.story-brand .material-icons-outlined { color: #6ee7d7; }
+
+.story-title {
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.18;
+    margin-bottom: 10px;
+}
+
+.story-sub {
+    color: rgba(230, 242, 255, 0.86);
+    font-size: 0.98rem;
+    margin-bottom: 24px;
+}
+
+.story-pill-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.story-pill {
+    border: 1px solid rgba(170, 205, 255, 0.35);
+    color: #d8e9ff;
+    background: rgba(26, 58, 103, 0.4);
+    border-radius: 999px;
+    font-size: 0.79rem;
+    padding: 5px 10px;
+}
+
+.pulse-card {
+    border-radius: 14px;
+    border: 1px solid rgba(146, 192, 255, 0.3);
+    background: rgba(23, 52, 94, 0.46);
+    padding: 14px 14px 12px;
+    margin-bottom: 12px;
+}
+
+.pulse-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 7px;
+}
+
+.pulse-head strong {
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.pulse-time {
+    font-size: 0.74rem;
+    color: rgba(196, 223, 255, 0.9);
+}
+
+.pulse-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+    font-size: 0.79rem;
+}
+
+.pulse-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #d9ecff;
+}
+
+.pulse-meta .material-icons-outlined {
+    font-size: 16px;
+    color: #6ee7d7;
+}
+
+.login-card {
+    background: #f8fbff;
+    padding: 34px 28px;
+}
+
+.login-head {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.login-head .material-icons-outlined {
+    font-size: 44px;
+    color: #2563eb;
+}
+
+.login-head h3 {
+    font-weight: 800;
+    margin: 6px 0 4px;
+    color: #1d293f;
+}
+
+.login-head p {
+    color: #5b6f8f;
+    margin: 0;
+}
+
+.login-card .form-label {
+    color: #3b4f6d;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.login-card .input-group-text {
+    background: #edf3ff;
+    border-color: #d8e4fb;
+    color: #48658f;
+}
+
+.login-card .form-control {
+    border-color: #d8e4fb;
+    color: #223150;
+}
+
+.login-card .form-control:focus {
+    border-color: #5ca8ff;
+    box-shadow: 0 0 0 0.2rem rgba(73, 156, 255, 0.2);
+}
+
+.login-card .form-check-label {
+    color: #42597f;
+}
+
+.login-card .btn-accent {
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.link-row {
+    text-align: center;
+    margin-top: 10px;
+    color: #5d6f8c;
+}
+
+.link-row a {
+    color: #1f5eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.link-row a:hover { text-decoration: underline; }
+
+@media (max-width: 900px) {
+    .login-shell {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+    }
+
+    .login-story {
+        padding: 26px 22px;
+    }
+
+    .login-card {
+        padding: 26px 20px;
+    }
+}
+</style>
+
+<div class="login-page">
+    <div class="login-shell">
+        <section class="login-story">
+            <div class="story-brand">
+                <span class="material-icons-outlined">auto_awesome</span>
+                <span>WealthPilot Daily Pulse</span>
             </div>
+            <h2 class="story-title">Come back for today’s money wins, fresh insights, and what your plan needs next.</h2>
+            <p class="story-sub">Like checking reactions on a new reel, your finance feed has movement too: habits completed, goals trending, and reminders waiting for action.</p>
+
+            <div class="story-pill-row">
+                <span class="story-pill">New this week: AI Playbooks refresh</span>
+                <span class="story-pill">1 unread goal reminder</span>
+                <span class="story-pill">Your streak can continue today</span>
+            </div>
+
+            <div class="pulse-card">
+                <div class="pulse-head">
+                    <strong>Goal Spotlight</strong>
+                    <span class="pulse-time">2m ago</span>
+                </div>
+                <div>Retirement Goal is now closer than last week. Keep your momentum with today’s check-in.</div>
+                <div class="pulse-meta">
+                    <span><span class="material-icons-outlined">favorite</span>142 likes</span>
+                    <span><span class="material-icons-outlined">chat_bubble</span>31 comments</span>
+                    <span><span class="material-icons-outlined">share</span>18 shares</span>
+                </div>
+            </div>
+
+            <div class="pulse-card">
+                <div class="pulse-head">
+                    <strong>Weekly Signal</strong>
+                    <span class="pulse-time">Today</span>
+                </div>
+                <div>Your spending trend changed in Food & Groceries. Review once and avoid month-end surprises.</div>
+                <div class="pulse-meta">
+                    <span><span class="material-icons-outlined">notifications_active</span>Action recommended</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="login-card">
+            <div class="login-head">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+                <h3>Welcome Back</h3>
+                <p>Login to WealthPilot</p>
+            </div>
+
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
             {% for category, message in messages %}
@@ -16,6 +259,7 @@
             {% endfor %}
             {% endif %}
             {% endwith %}
+
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
@@ -38,9 +282,10 @@
                 </div>
                 <button type="submit" class="btn btn-accent w-100 btn-lg">Login</button>
             </form>
-            <p class="text-center mt-2"><a id="forgotLink" href="{{ url_for('main.forgot_password') }}" class="text-muted" style="font-size: 0.9rem;">Forgot Password?</a></p>
-            <p class="text-center mt-2">Don't have an account? <a href="{{ url_for('main.register') }}">Register</a></p>
-        </div>
+
+            <p class="link-row"><a id="forgotLink" href="{{ url_for('main.forgot_password') }}" style="font-size: 0.9rem;">Forgot Password?</a></p>
+            <p class="link-row">Don't have an account? <a href="{{ url_for('main.register') }}">Register</a></p>
+        </section>
     </div>
 </div>
 <script>
