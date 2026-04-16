@@ -105,7 +105,8 @@ def generate_otp():
 def _hash_otp(otp_code):
     """Hash OTP before storing it in DB."""
     secret = (Config.SECRET_KEY or 'wealthpilot-otp-secret').encode('utf-8')
-    return hmac.new(secret, str(otp_code).encode('utf-8'), hashlib.sha256).hexdigest()
+    # Keep within legacy DB column size (otp_code VARCHAR(10)).
+    return hmac.new(secret, str(otp_code).encode('utf-8'), hashlib.sha256).hexdigest()[:10]
 
 
 def _parse_float_form(field_name, *, min_value=None, default=None):
