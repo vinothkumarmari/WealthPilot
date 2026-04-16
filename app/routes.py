@@ -27,6 +27,7 @@ from werkzeug.utils import secure_filename
 
 main = Blueprint('main', __name__)
 advisor = FinancialAdvisor()
+OTP_HARDENING_ENABLED = True
 
 
 # ======================== PWA SERVICE WORKER ========================
@@ -233,45 +234,80 @@ def queue_otp_email(app, user_email, otp_code, purpose='registration'):
 
 def _issue_user_otp(user, *, commit=True):
     """Generate and set a fresh OTP for a user."""
+    global OTP_HARDENING_ENABLED
     otp = generate_otp()
     user.otp_code = _hash_otp(otp)
     user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
-    user.otp_attempts = 0
-    user.otp_locked_until = None
+    if OTP_HARDENING_ENABLED:
+        user.otp_attempts = 0
+        user.otp_locked_until = None
     if commit:
-        db.session.commit()
+        try:
+            db.session.commit()
+        except OperationalError as e:
+            db.session.rollback()
+            msg = str(e).lower()
+            if OTP_HARDENING_ENABLED and ('otp_attempts' in msg or 'otp_locked_until' in msg):
+                OTP_HARDENING_ENABLED = False
+                user.otp_code = _hash_otp(otp)
+                user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
+                db.session.commit()
+            else:
+                raise
     return otp
 
 
 def _is_valid_user_otp(user, entered_otp):
     """Validate OTP value and expiry for the given user."""
+    global OTP_HARDENING_ENABLED
     now_utc = datetime.now(timezone.utc)
-    otp_locked_until = getattr(user, 'otp_locked_until', None)
-    if otp_locked_until and otp_locked_until.tzinfo is None:
-        otp_locked_until = otp_locked_until.replace(tzinfo=timezone.utc)
-    if otp_locked_until and otp_locked_until > now_utc:
-        minutes_left = int((otp_locked_until - now_utc).total_seconds() / 60) + 1
-        return False, f'Too many invalid OTP attempts. Try again in {minutes_left} minute(s).'
+    if OTP_HARDENING_ENABLED:
+        otp_locked_until = getattr(user, 'otp_locked_until', None)
+        if otp_locked_until and otp_locked_until.tzinfo is None:
+            otp_locked_until = otp_locked_until.replace(tzinfo=timezone.utc)
+        if otp_locked_until and otp_locked_until > now_utc:
+            minutes_left = int((otp_locked_until - now_utc).total_seconds() / 60) + 1
+            return False, f'Too many invalid OTP attempts. Try again in {minutes_left} minute(s).'
 
     stored = user.otp_code or ''
     entered_hash = _hash_otp(entered_otp)
     is_match = hmac.compare_digest(stored, entered_hash) or hmac.compare_digest(stored, entered_otp)
     if not is_match:
-        user.otp_attempts = int(getattr(user, 'otp_attempts', 0) or 0) + 1
-        max_attempts = int(getattr(Config, 'OTP_MAX_FAILED_ATTEMPTS', 5))
-        lock_minutes = int(getattr(Config, 'OTP_LOCKOUT_MINUTES', 10))
-        if user.otp_attempts >= max_attempts:
-            user.otp_locked_until = now_utc + timedelta(minutes=lock_minutes)
-            db.session.commit()
-            return False, f'Too many invalid OTP attempts. Try again in {lock_minutes} minute(s).'
-        db.session.commit()
+        if OTP_HARDENING_ENABLED:
+            user.otp_attempts = int(getattr(user, 'otp_attempts', 0) or 0) + 1
+            max_attempts = int(getattr(Config, 'OTP_MAX_FAILED_ATTEMPTS', 5))
+            lock_minutes = int(getattr(Config, 'OTP_LOCKOUT_MINUTES', 10))
+            if user.otp_attempts >= max_attempts:
+                user.otp_locked_until = now_utc + timedelta(minutes=lock_minutes)
+                try:
+                    db.session.commit()
+                except OperationalError as e:
+                    db.session.rollback()
+                    msg = str(e).lower()
+                    if 'otp_attempts' in msg or 'otp_locked_until' in msg:
+                        OTP_HARDENING_ENABLED = False
+                    else:
+                        raise
+                if OTP_HARDENING_ENABLED:
+                    return False, f'Too many invalid OTP attempts. Try again in {lock_minutes} minute(s).'
+            else:
+                try:
+                    db.session.commit()
+                except OperationalError as e:
+                    db.session.rollback()
+                    msg = str(e).lower()
+                    if 'otp_attempts' in msg or 'otp_locked_until' in msg:
+                        OTP_HARDENING_ENABLED = False
+                    else:
+                        raise
         return False, 'Invalid OTP. Please try again.'
 
     if user.otp_expiry and user.otp_expiry.replace(tzinfo=timezone.utc) < now_utc:
         return False, 'OTP has expired. Please request a new one.'
 
-    user.otp_attempts = 0
-    user.otp_locked_until = None
+    if OTP_HARDENING_ENABLED:
+        user.otp_attempts = 0
+        user.otp_locked_until = None
     return True, ''
 
 
@@ -425,9 +461,7 @@ def register():
             risk_appetite=request.form.get('risk_appetite', 'moderate'),
             is_verified=False,
             otp_code=_hash_otp(otp),
-            otp_expiry=datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES),
-            otp_attempts=0,
-            otp_locked_until=None
+            otp_expiry=datetime.now(timezone.utc) + timedelta(minutes=Config.OTP_EXPIRY_MINUTES)
         )
         db.session.add(user)
         db.session.commit()
