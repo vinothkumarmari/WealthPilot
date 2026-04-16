@@ -191,6 +191,27 @@ def create_app():
             "img-src 'self' data: blob:; "
             "connect-src 'self';"
         )
+
+        # Prevent browser back-button from showing stale authenticated pages.
+        try:
+            endpoint = request.endpoint or ''
+            sensitive_endpoints = {
+                'main.login',
+                'main.logout',
+                'main.dashboard',
+                'main.verify_login_otp',
+                'main.verify_otp',
+                'main.reset_password',
+                'main.verify_change_password_otp',
+                'main.verify_email_change_otp',
+            }
+            if current_user.is_authenticated or endpoint in sensitive_endpoints:
+                response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
+                response.headers['Pragma'] = 'no-cache'
+                response.headers['Expires'] = '0'
+        except Exception:
+            pass
+
         if not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
