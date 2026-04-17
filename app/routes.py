@@ -751,9 +751,49 @@ def create_billing_order():
             'plan_name': plan['name'],
             'user_name': current_user.full_name or current_user.username,
             'user_email': current_user.email,
+            'callback_path': url_for('main.billing_callback'),
         })
     except Exception as e:
         return jsonify({'success': False, 'message': f'Unable to create payment order: {e}'}), 502
+
+
+@main.route('/billing/callback', methods=['POST'])
+@csrf.exempt
+def billing_callback():
+    """Razorpay redirect callback endpoint to verify payment and redirect user."""
+    if not Config.RAZORPAY_KEY_SECRET:
+        flash('Payment verification is not configured.', 'danger')
+        return redirect(url_for('main.pricing'))
+
+    order_id = request.form.get('razorpay_order_id', '').strip()
+    payment_id = request.form.get('razorpay_payment_id', '').strip()
+    signature = request.form.get('razorpay_signature', '').strip()
+    if not order_id or not payment_id or not signature:
+        flash('Missing payment verification fields. Please try again.', 'danger')
+        return redirect(url_for('main.pricing'))
+
+    payload = f'{order_id}|{payment_id}'.encode('utf-8')
+    expected = hmac.new(
+        Config.RAZORPAY_KEY_SECRET.encode('utf-8'), payload, hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        flash('Invalid payment signature. Please contact support if amount was debited.', 'danger')
+        return redirect(url_for('main.pricing'))
+
+    from .models import PaymentTransaction
+    txn = PaymentTransaction.query.filter_by(razorpay_order_id=order_id).first()
+    if not txn:
+        flash('Payment record not found. Please contact support.', 'danger')
+        return redirect(url_for('main.pricing'))
+
+    txn.razorpay_payment_id = payment_id
+    txn.razorpay_signature = signature
+    txn.status = 'paid'
+    txn.paid_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    flash('Payment successful and verified.', 'success')
+    return redirect(url_for('main.dashboard'))
 
 
 @main.route('/billing/verify', methods=['POST'])

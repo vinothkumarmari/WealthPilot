@@ -264,20 +264,6 @@
             return res.json();
         }
 
-        async function verifyPayment(payload) {
-            const formData = new URLSearchParams();
-            formData.append('razorpay_order_id', payload.razorpay_order_id);
-            formData.append('razorpay_payment_id', payload.razorpay_payment_id);
-            formData.append('razorpay_signature', payload.razorpay_signature);
-            formData.append('csrf_token', '{{ csrf_token() }}');
-            const res = await fetch('{{ url_for("main.verify_billing_payment") }}', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: formData.toString()
-            });
-            return res.json();
-        }
-
         document.querySelectorAll('.buy-plan-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 btn.disabled = true;
@@ -302,20 +288,13 @@
                         name: 'WealthPilot',
                         description: orderResp.plan_name,
                         order_id: orderResp.order_id,
+                        callback_url: window.location.origin + (orderResp.callback_path || '{{ url_for("main.pricing") }}'),
+                        redirect: true,
                         prefill: {
                             name: orderResp.user_name,
                             email: orderResp.user_email
                         },
-                        theme: { color: '#6C5CE7' },
-                        handler: async function (response) {
-                            const verifyResp = await verifyPayment(response);
-                            if (verifyResp.success) {
-                                alert('Payment successful and verified.');
-                                window.location.href = '{{ url_for("main.dashboard") }}';
-                            } else {
-                                alert(verifyResp.message || 'Payment verification failed.');
-                            }
-                        }
+                        theme: { color: '#6C5CE7' }
                     };
                     const rzp = new Razorpay(options);
                     rzp.open();
