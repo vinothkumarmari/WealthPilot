@@ -93,6 +93,10 @@
                 <span class="material-icons-outlined">receipt</span>
                 <span>{{ t('Tax Planning') }}</span>
             </a>
+            <a href="{{ url_for('main.itr_guide') }}" class="nav-link {% if request.endpoint == 'main.itr_guide' %}active{% endif %}">
+                <span class="material-icons-outlined">request_quote</span>
+                <span>{{ t('ITR Guide') }}</span>
+            </a>
             <a href="{{ url_for('main.calculators') }}" class="nav-link {% if request.endpoint == 'main.calculators' %}active{% endif %}">
                 <span class="material-icons-outlined">calculate</span>
                 <span>{{ t('Calculators') }}</span>

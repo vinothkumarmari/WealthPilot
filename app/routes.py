@@ -3506,6 +3506,103 @@ def tax_planning():
     )
 
 
+@main.route('/itr-guide')
+@login_required
+def itr_guide():
+    """Dedicated ITR planning tab with old/new regime guidance."""
+    annual_income = float(current_user.annual_salary or ((current_user.monthly_salary or 0) * 12) or 0)
+
+    # Approx deductions from user's tracked data (for planning guidance only).
+    sec80c_types = {'PPF', 'EPF', 'ELSS', 'NPS', 'NSC', 'Tax-Saver FD'}
+    sec80c_inv = db.session.query(db.func.sum(Investment.amount_invested)).filter(
+        Investment.user_id == current_user.id,
+        Investment.investment_type.in_(sec80c_types)
+    ).scalar() or 0
+
+    active_policies = InsurancePolicy.query.filter_by(user_id=current_user.id, status='active').all()
+    freq_map = {'monthly': 12, 'quarterly': 4, 'half-yearly': 2, 'yearly': 1}
+    annual_life_premium = sum(
+        p.premium_amount * freq_map.get((p.premium_frequency or '').lower(), 1)
+        for p in active_policies
+        if p.policy_type in ('Term Life', 'Whole Life', 'Endowment', 'ULIP', 'Money Back', 'Child Plan')
+    )
+    annual_health_premium = sum(
+        p.premium_amount * freq_map.get((p.premium_frequency or '').lower(), 1)
+        for p in active_policies
+        if p.policy_type in ('Health Insurance', 'Critical Illness')
+    )
+
+    sec80c_used = float(sec80c_inv + annual_life_premium)
+    sec80c_claim = min(sec80c_used, 150000)
+    sec80d_claim = min(float(annual_health_premium), 25000)
+    nps_extra_claim = min(
+        float(db.session.query(db.func.sum(Investment.amount_invested)).filter(
+            Investment.user_id == current_user.id,
+            Investment.investment_type == 'NPS'
+        ).scalar() or 0),
+        50000
+    )
+
+    # Simplified tax estimate (education only; not legal/compliance computation).
+    def _tax_old_regime(income, deductions):
+        taxable = max(0.0, income - 50000 - deductions)  # std deduction
+        tax = 0.0
+        slabs = [
+            (250000, 0.0),
+            (250000, 0.05),
+            (500000, 0.20),
+            (float('inf'), 0.30),
+        ]
+        remaining = taxable
+        for limit, rate in slabs:
+            portion = min(remaining, limit)
+            tax += portion * rate
+            remaining -= portion
+            if remaining <= 0:
+                break
+        return max(0.0, tax)
+
+    def _tax_new_regime(income):
+        taxable = max(0.0, income - 75000)  # std deduction (new regime)
+        tax = 0.0
+        slabs = [
+            (400000, 0.00),
+            (400000, 0.05),
+            (400000, 0.10),
+            (400000, 0.15),
+            (400000, 0.20),
+            (400000, 0.25),
+            (float('inf'), 0.30),
+        ]
+        remaining = taxable
+        for limit, rate in slabs:
+            portion = min(remaining, limit)
+            tax += portion * rate
+            remaining -= portion
+            if remaining <= 0:
+                break
+        return max(0.0, tax)
+
+    deductions_old = sec80c_claim + sec80d_claim + nps_extra_claim
+    est_old_tax = _tax_old_regime(annual_income, deductions_old)
+    est_new_tax = _tax_new_regime(annual_income)
+
+    suggested_regime = 'new' if est_new_tax < est_old_tax else 'old'
+    estimated_savings = abs(est_new_tax - est_old_tax)
+
+    return render_template(
+        'itr_guide.html',
+        annual_income=annual_income,
+        sec80c_claim=sec80c_claim,
+        sec80d_claim=sec80d_claim,
+        nps_extra_claim=nps_extra_claim,
+        est_old_tax=est_old_tax,
+        est_new_tax=est_new_tax,
+        suggested_regime=suggested_regime,
+        estimated_savings=estimated_savings,
+    )
+
+
 # ======================== GOVERNMENT SCHEMES ========================
 
 def _fetch_india_inflation_snapshot():
