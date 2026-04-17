@@ -3468,6 +3468,54 @@ def tax_planning():
 
 # ======================== GOVERNMENT SCHEMES ========================
 
+def _fetch_india_inflation_snapshot():
+    """Fetch latest India inflation data (CPI annual %) with graceful fallback."""
+    default_rate = float(getattr(Config, 'INFLATION_RATE', 6.0))
+    snapshot = {
+        'latest_rate': default_rate,
+        'series': [],
+        'source': 'Config default',
+        'success': False,
+    }
+
+    try:
+        resp = requests.get(
+            'https://api.worldbank.org/v2/country/IND/indicator/FP.CPI.TOTL.ZG?format=json&per_page=25',
+            timeout=8,
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        rows = payload[1] if isinstance(payload, list) and len(payload) > 1 else []
+        series = []
+        for r in rows:
+            year = r.get('date')
+            value = r.get('value')
+            if year and value is not None:
+                series.append({'year': int(year), 'rate': round(float(value), 2)})
+        series.sort(key=lambda x: x['year'])
+        if series:
+            snapshot['latest_rate'] = float(series[-1]['rate'])
+            snapshot['series'] = series[-10:]
+            snapshot['source'] = 'World Bank (FP.CPI.TOTL.ZG)'
+            snapshot['success'] = True
+    except Exception:
+        pass
+
+    return snapshot
+
+
+LAND_RATE_DATA_INR_PER_SQFT = {
+    'Chennai': {'prime': (12000, 25000), 'urban': (6000, 12000), 'suburban': (2500, 6500)},
+    'Bengaluru': {'prime': (15000, 30000), 'urban': (8000, 16000), 'suburban': (3500, 8000)},
+    'Hyderabad': {'prime': (10000, 22000), 'urban': (5000, 11000), 'suburban': (2200, 5500)},
+    'Mumbai': {'prime': (35000, 90000), 'urban': (18000, 35000), 'suburban': (7000, 18000)},
+    'Delhi NCR': {'prime': (20000, 50000), 'urban': (10000, 22000), 'suburban': (4500, 11000)},
+    'Pune': {'prime': (12000, 26000), 'urban': (6000, 13000), 'suburban': (2500, 6500)},
+    'Kolkata': {'prime': (9000, 20000), 'urban': (4500, 9000), 'suburban': (2000, 5000)},
+    'Ahmedabad': {'prime': (8000, 17000), 'urban': (4000, 8500), 'suburban': (1800, 4500)},
+    'Coimbatore': {'prime': (7000, 14000), 'urban': (3500, 7000), 'suburban': (1500, 3500)},
+}
+
 @main.route('/govt-schemes')
 @login_required
 def govt_schemes():
@@ -3479,7 +3527,55 @@ def govt_schemes():
 @main.route('/indian-budget')
 @login_required
 def indian_budget():
-    return render_template('indian_budget.html')
+    inflation = _fetch_india_inflation_snapshot()
+    return render_template(
+        'indian_budget.html',
+        inflation=inflation,
+        land_cities=sorted(LAND_RATE_DATA_INR_PER_SQFT.keys()),
+    )
+
+
+@main.route('/api/land-rate-search')
+@login_required
+def api_land_rate_search():
+    """Approximate land rate lookup by city and area tier."""
+    city = (request.args.get('city') or '').strip()
+    locality_type = (request.args.get('locality_type') or 'urban').strip().lower()
+    area_sqft_raw = (request.args.get('area_sqft') or '').strip()
+
+    if city not in LAND_RATE_DATA_INR_PER_SQFT:
+        return jsonify({'success': False, 'message': 'City not supported yet. Please select a listed city.'}), 400
+    if locality_type not in ('prime', 'urban', 'suburban'):
+        return jsonify({'success': False, 'message': 'Invalid locality type.'}), 400
+
+    min_rate, max_rate = LAND_RATE_DATA_INR_PER_SQFT[city][locality_type]
+    avg_rate = round((min_rate + max_rate) / 2)
+    area_sqft = 0
+    if area_sqft_raw:
+        try:
+            area_sqft = float(area_sqft_raw)
+            if area_sqft < 0:
+                return jsonify({'success': False, 'message': 'Area cannot be negative.'}), 400
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid area value.'}), 400
+
+    estimate = {
+        'city': city,
+        'locality_type': locality_type,
+        'rate_min': min_rate,
+        'rate_max': max_rate,
+        'rate_avg': avg_rate,
+        'source': 'WealthPilot reference ranges (market approximation)',
+    }
+    if area_sqft > 0:
+        estimate.update({
+            'area_sqft': area_sqft,
+            'value_min': round(min_rate * area_sqft),
+            'value_max': round(max_rate * area_sqft),
+            'value_avg': round(avg_rate * area_sqft),
+        })
+
+    return jsonify({'success': True, 'data': estimate})
 
 
 # ======================== LOANS ========================

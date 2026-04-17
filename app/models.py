@@ -243,7 +243,7 @@ class BankAccount(db.Model):
 class ProvidentFund(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    pf_type = db.Column(db.String(20), nullable=False)  # EPF, VPF, GPF
+    pf_type = db.Column(db.String(20), nullable=False)  # EPF, VPF, GPF, PPF
     uan_number = db.Column(db.String(20))
     employer = db.Column(db.String(150))
     employee_contribution = db.Column(db.Float, default=0)  # monthly
