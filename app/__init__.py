@@ -185,11 +185,12 @@ def create_app():
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://checkout.razorpay.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; "
             "img-src 'self' data: blob:; "
-            "connect-src 'self';"
+            "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com; "
+            "frame-src 'self' https://checkout.razorpay.com;"
         )
 
         # Prevent browser back-button from showing stale authenticated pages.

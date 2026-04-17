@@ -290,6 +290,11 @@
                         return;
                     }
 
+                    if (typeof Razorpay === 'undefined') {
+                        alert('Razorpay checkout could not load. Please disable strict blockers and try again.');
+                        return;
+                    }
+
                     const options = {
                         key: orderResp.key,
                         amount: orderResp.amount,
@@ -315,7 +320,7 @@
                     const rzp = new Razorpay(options);
                     rzp.open();
                 } catch (e) {
-                    alert('Payment initialization failed. Please try again.');
+                    alert('Payment initialization failed: ' + (e && e.message ? e.message : 'Please try again.'));
                 } finally {
                     btn.disabled = false;
                     btn.textContent = originalText;
