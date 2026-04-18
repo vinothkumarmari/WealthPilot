@@ -4096,13 +4096,20 @@ def gold_silver():
 
         # Additional purities
         extra_purities = {}
+        extra_purity_map = {'995': 'gold_995', '585': 'gold_585'}
         for key in ['995', '585']:
             g = live['gold'].get(key, {})
             if g.get('price_per_gram'):
+                ep_price = g['price_per_gram']
+                ep_prev = prev_day.get(extra_purity_map[key], ep_price) if prev_day else ep_price
+                ep_change = ep_price - ep_prev
+                ep_change_pct = (ep_change / ep_prev * 100) if ep_prev else 0
                 extra_purities[key] = {
-                    'price_per_gram': g['price_per_gram'],
+                    'price_per_gram': ep_price,
                     'price_per_10g': g['price_per_10g'],
                     'purity': g['purity'],
+                    'change': round(ep_change, 2),
+                    'change_pct': round(ep_change_pct, 2),
                 }
 
         # Silver
