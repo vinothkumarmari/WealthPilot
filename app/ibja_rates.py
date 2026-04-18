@@ -1,77 +1,19 @@
 """
 IBJA Live Rates Scraper
 Fetches live gold, silver & platinum rates from ibjarates.com
-Includes: current prices, AM/PM table history, chart history (~80 days),
-and generated 12-month & 5-year history for charts.
-Caches results for 5 minutes to avoid excessive requests.
+Includes: current prices, AM/PM table history, chart history (~80 days).
+All data is real — sourced directly from IBJA. No fabricated history.
+Caches results for 60 seconds to stay close to real-time.
 """
 import re
 import json
 import time
-import math
 import logging
-import random
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-_cache = {'data': None, 'timestamp': 0, 'ttl': 300}
-
-
-def _generate_extended_history(chart_gold, chart_silver, gold_999_now, silver_now):
-    """Generate 12-month and 5-year history by back-extrapolating from known data.
-    Uses ~10% annual appreciation for gold, ~8% for silver with realistic noise."""
-
-    history_month = {'gold': [], 'silver': []}
-    history_year = {'gold': [], 'silver': []}
-
-    # --- 12 month history (monthly data points) ---
-    today = datetime.now()
-    gold_annual_rate = 0.10  # 10% annual appreciation
-    silver_annual_rate = 0.08
-
-    for months_ago in range(12, -1, -1):
-        dt = today - timedelta(days=months_ago * 30)
-        label = dt.strftime('%b %Y')
-        # Calculate backward from current price
-        factor_gold = (1 + gold_annual_rate) ** (months_ago / 12)
-        factor_silver = (1 + silver_annual_rate) ** (months_ago / 12)
-        # Add small random noise (seeded by month for consistency)
-        random.seed(int(dt.timestamp()) // 86400)
-        noise = 1 + random.uniform(-0.015, 0.015)
-
-        g999_past = round(gold_999_now / factor_gold * noise, 2)
-        g916_past = round(g999_past * 0.916, 2)
-        g750_past = round(g999_past * 0.750, 2)
-        s_past = round(silver_now / factor_silver * noise, 2)
-
-        history_month['gold'].append({
-            'date': label, '24K': g999_past,
-            '22K': g916_past, '18K': g750_past
-        })
-        history_month['silver'].append({'date': label, 'price': s_past})
-
-    # --- 5 year history (quarterly data points) ---
-    for quarters_ago in range(20, -1, -1):
-        dt = today - timedelta(days=quarters_ago * 91)
-        label = dt.strftime('%b %Y')
-        factor_gold = (1 + gold_annual_rate) ** (quarters_ago / 4)
-        factor_silver = (1 + silver_annual_rate) ** (quarters_ago / 4)
-        random.seed(int(dt.timestamp()) // 86400)
-        noise = 1 + random.uniform(-0.025, 0.025)
-
-        g999_past = round(gold_999_now / factor_gold * noise, 2)
-        g916_past = round(g999_past * 0.916, 2)
-        g750_past = round(g999_past * 0.750, 2)
-        s_past = round(silver_now / factor_silver * noise, 2)
-
-        history_year['gold'].append({
-            'date': label, '24K': g999_past,
-            '22K': g916_past, '18K': g750_past
-        })
-        history_year['silver'].append({'date': label, 'price': s_past})
-
-    return history_month, history_year
+_cache = {'data': None, 'timestamp': 0, 'ttl': 60}
 
 
 def fetch_ibja_rates():
@@ -232,13 +174,6 @@ def fetch_ibja_rates():
                 except (ValueError, KeyError):
                     continue
 
-        # Generate 12-month and 5-year extended history
-        g999_now = gold_999 or (gold_history_day[-1]['24K'] if gold_history_day else 14000)
-        s_now = silver_per_gram or (silver_history_day[-1]['price'] if silver_history_day else 200)
-        history_month, history_year = _generate_extended_history(
-            chart_gold, chart_silver, g999_now, s_now
-        )
-
         # --- AM/PM comparison (convert to per-gram for display) ---
         am_pm_data = []
         # Build a merged view: dates that have both AM and PM
@@ -327,10 +262,6 @@ def fetch_ibja_rates():
             },
             'gold_history': gold_history_day,
             'silver_history': silver_history_day,
-            'gold_history_month': history_month['gold'],
-            'silver_history_month': history_month['silver'],
-            'gold_history_year': history_year['gold'],
-            'silver_history_year': history_year['silver'],
             'am_pm_data': am_pm_data,
             'chart_data_points': len(chart_gold),
         }

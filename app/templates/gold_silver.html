@@ -199,9 +199,7 @@
                 <small class="text-muted ms-2" id="goldChartInfo"></small>
             </h6>
             <div class="btn-group btn-group-sm" id="goldRangeGroup">
-                <button class="btn btn-outline-warning active" data-range="day" onclick="switchGoldRange('day')">{{ t('Recent') }} <small>(IBJA)</small></button>
-                <button class="btn btn-outline-warning" data-range="month" onclick="switchGoldRange('month')">{{ t('12 Months') }}</button>
-                <button class="btn btn-outline-warning" data-range="year" onclick="switchGoldRange('year')">{{ t('5 Years') }}</button>
+                <button class="btn btn-warning active" data-range="day">{{ t('IBJA Live Trend') }} <small>(~80 days)</small></button>
             </div>
         </div>
         <canvas id="goldChart" height="200"></canvas>
@@ -216,9 +214,7 @@
                 <small class="text-muted ms-2" id="silverChartInfo"></small>
             </h6>
             <div class="btn-group btn-group-sm" id="silverRangeGroup">
-                <button class="btn btn-outline-secondary active" data-range="day" onclick="switchSilverRange('day')">{{ t('Recent') }} <small>(IBJA)</small></button>
-                <button class="btn btn-outline-secondary" data-range="month" onclick="switchSilverRange('month')">{{ t('12 Months') }}</button>
-                <button class="btn btn-outline-secondary" data-range="year" onclick="switchSilverRange('year')">{{ t('5 Years') }}</button>
+                <button class="btn btn-secondary active" data-range="day">{{ t('IBJA Live Trend') }} <small>(~80 days)</small></button>
             </div>
         </div>
         <canvas id="silverChart" height="200"></canvas>
@@ -329,35 +325,23 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 const goldHistories = {
-    '24K': { day: {{ analysis.gold['24K'].history_day | tojson }}, month: {{ analysis.gold['24K'].history_month | tojson }}, year: {{ analysis.gold['24K'].history_year | tojson }} },
-    '22K': { day: {{ analysis.gold['22K'].history_day | tojson }}, month: {{ analysis.gold['22K'].history_month | tojson }}, year: {{ analysis.gold['22K'].history_year | tojson }} },
-    '18K': { day: {{ analysis.gold['18K'].history_day | tojson }}, month: {{ analysis.gold['18K'].history_month | tojson }}, year: {{ analysis.gold['18K'].history_year | tojson }} },
+    '24K': {{ analysis.gold['24K'].history_day | tojson }},
+    '22K': {{ analysis.gold['22K'].history_day | tojson }},
+    '18K': {{ analysis.gold['18K'].history_day | tojson }},
 };
-const silverHistories = {
-    day: {{ analysis.silver.history_day | tojson }},
-    month: {{ analysis.silver.history_month | tojson }},
-    year: {{ analysis.silver.history_year | tojson }},
-};
+const silverHistory = {{ analysis.silver.history_day | tojson }};
 
 const goldColors = { '24K': '#FFD700', '22K': '#DAA520', '18K': '#B8860B' };
-let currentGoldRange = 'day';
-let currentSilverRange = 'day';
 
-const rangeLabels = {
-    day: 'IBJA Live Data (~80 trading days)',
-    month: '12-Month Trend (estimated)',
-    year: '5-Year Trend (estimated)'
-};
-
-function buildGoldDatasets(range) {
+function buildGoldDatasets() {
     return ['24K', '22K', '18K'].map(k => ({
         label: k + ' ₹/g',
-        data: goldHistories[k][range].map(d => d.price),
+        data: goldHistories[k].map(d => d.price),
         borderColor: goldColors[k],
         backgroundColor: goldColors[k] + '18',
         fill: k === '24K',
         tension: 0.3,
-        pointRadius: range === 'year' ? 3 : (range === 'month' ? 2 : 1),
+        pointRadius: 1,
         borderWidth: k === '24K' ? 2.5 : 1.5,
     }));
 }
@@ -366,8 +350,8 @@ const goldCtx = document.getElementById('goldChart');
 let goldChart = new Chart(goldCtx, {
     type: 'line',
     data: {
-        labels: goldHistories['24K'].day.map(d => d.date),
-        datasets: buildGoldDatasets('day')
+        labels: goldHistories['24K'].map(d => d.date),
+        datasets: buildGoldDatasets()
     },
     options: {
         responsive: true,
@@ -388,28 +372,17 @@ let goldChart = new Chart(goldCtx, {
         }
     }
 });
-document.getElementById('goldChartInfo').textContent = rangeLabels.day;
-
-function switchGoldRange(range) {
-    currentGoldRange = range;
-    goldChart.data.labels = goldHistories['24K'][range].map(d => d.date);
-    goldChart.data.datasets = buildGoldDatasets(range);
-    goldChart.update();
-    document.querySelectorAll('#goldRangeGroup button').forEach(b => {
-        b.classList.toggle('active', b.dataset.range === range);
-    });
-    document.getElementById('goldChartInfo').textContent = rangeLabels[range];
-}
+document.getElementById('goldChartInfo').textContent = 'Source: IBJA (~' + goldHistories['24K'].length + ' trading days)';
 
 // Silver chart
 const silverCtx = document.getElementById('silverChart');
 let silverChart = new Chart(silverCtx, {
     type: 'line',
     data: {
-        labels: silverHistories.day.map(d => d.date),
+        labels: silverHistory.map(d => d.date),
         datasets: [{
             label: 'Silver ₹/g',
-            data: silverHistories.day.map(d => d.price),
+            data: silverHistory.map(d => d.price),
             borderColor: '#C0C0C0',
             backgroundColor: 'rgba(192,192,192,0.12)',
             fill: true,
@@ -436,20 +409,7 @@ let silverChart = new Chart(silverCtx, {
         }
     }
 });
-document.getElementById('silverChartInfo').textContent = rangeLabels.day;
-
-function switchSilverRange(range) {
-    currentSilverRange = range;
-    const data = silverHistories[range];
-    silverChart.data.labels = data.map(d => d.date);
-    silverChart.data.datasets[0].data = data.map(d => d.price);
-    silverChart.data.datasets[0].pointRadius = range === 'year' ? 3 : (range === 'month' ? 2 : 1);
-    silverChart.update();
-    document.querySelectorAll('#silverRangeGroup button').forEach(b => {
-        b.classList.toggle('active', b.dataset.range === range);
-    });
-    document.getElementById('silverChartInfo').textContent = rangeLabels[range];
-}
+document.getElementById('silverChartInfo').textContent = 'Source: IBJA (~' + silverHistory.length + ' trading days)';
 
 // Refresh rates via AJAX
 function refreshRates() {

@@ -4084,8 +4084,6 @@ def gold_silver():
                 'change_pct': round(change_pct, 2),
                 'trend': trend,
                 'history_day': [{'date': h['date'], 'price': h[karat]} for h in history_day],
-                'history_month': [{'date': h['date'], 'price': h[karat]} for h in live.get('gold_history_month', [])],
-                'history_year': [{'date': h['date'], 'price': h[karat]} for h in live.get('gold_history_year', [])],
             }
 
         # Additional purities
@@ -4141,8 +4139,6 @@ def gold_silver():
                 'change_pct': round(s_change_pct, 2),
                 'trend': s_trend,
                 'history_day': s_history_day,
-                'history_month': live.get('silver_history_month', []),
-                'history_year': live.get('silver_history_year', []),
                 'tips': silver_tips,
             },
             'platinum': {
