@@ -9,7 +9,7 @@
 <!-- Financial Health Score -->
 <div class="row mb-4">
     <div class="col-lg-4 mb-3">
-        <div class="card health-card">
+        <div class="card health-card h-100">
             <div class="card-body text-center">
                 <h6 class="text-muted mb-3">{{ t('Financial Health Score') }}</h6>
                 <div class="health-score-circle {% if health.score >= 75 %}score-excellent{% elif health.score >= 55 %}score-good{% elif health.score >= 35 %}score-fair{% else %}score-poor{% endif %}">
@@ -284,8 +284,8 @@
 
 <!-- Health Metrics & Goals -->
 <div class="row mb-4">
-    <div class="col-lg-4 mb-3">
-        <div class="card">
+    <div class="col-lg-3 mb-3">
+        <div class="card h-100">
             <div class="card-header">
                 <h6><span class="material-icons-outlined">analytics</span> {{ t('Financial Metrics') }}</h6>
             </div>
@@ -317,7 +317,36 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4 mb-3">
+    <div class="col-lg-3 mb-3">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6><span class="material-icons-outlined">account_balance_wallet</span> {{ t('Monthly Summary') }}</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-muted"><span class="material-icons-outlined" style="font-size:18px;vertical-align:middle;">payments</span> {{ t('Monthly Income') }}</span>
+                    <span class="text-success fw-bold">₹{{ current_user.monthly_salary|inr }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">event_repeat</span> {{ t('Total Commitments') }}</small>
+                    <small class="text-danger">-₹{{ monthly_commitments|inr }}</small>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">shield</span> {{ t('Insurance Cover') }}</small>
+                    <small class="text-success">₹{{ total_sum_assured|inr }}</small>
+                </div>
+                <hr class="my-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-medium">{{ t('Available after commitments') }}</span>
+                    <span class="fw-bold {% if (current_user.monthly_salary - monthly_commitments) > 0 %}text-success{% else %}text-danger{% endif %}">₹{{ (current_user.monthly_salary - monthly_commitments)|inr }}</span>
+                </div>
+                <a href="{{ url_for('main.suggestions') }}" class="btn btn-outline-accent btn-sm w-100 mt-3">
+                    <span class="material-icons-outlined">psychology</span> {{ t('Get AI Suggestions') }}
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 mb-3">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><span class="material-icons-outlined">rocket_launch</span> {{ t('Future Readiness 2040+') }}</h6>
@@ -356,8 +385,8 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-4 mb-3">
-        <div class="card">
+    <div class="col-lg-3 mb-3">
+        <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><span class="material-icons-outlined">flag</span> {{ t('Goals Progress') }}</h6>
                 <a href="{{ url_for('main.goals') }}" class="btn btn-sm btn-outline-primary">{{ t('View All') }}</a>
@@ -379,35 +408,6 @@
                 {% else %}
                 <p class="text-muted text-center py-3">No goals set yet. <a href="{{ url_for('main.goals') }}">Add a goal</a></p>
                 {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4 mb-3">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6><span class="material-icons-outlined">account_balance_wallet</span> {{ t('Monthly Summary') }}</h6>
-            </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                    <span class="text-muted"><span class="material-icons-outlined" style="font-size:18px;vertical-align:middle;">payments</span> {{ t('Monthly Income') }}</span>
-                    <span class="text-success fw-bold">₹{{ current_user.monthly_salary|inr }}</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">event_repeat</span> {{ t('Total Commitments') }}</small>
-                    <small class="text-danger">-₹{{ monthly_commitments|inr }}</small>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">shield</span> {{ t('Insurance Cover') }}</small>
-                    <small class="text-success">₹{{ total_sum_assured|inr }}</small>
-                </div>
-                <hr class="my-2">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-medium">{{ t('Available after commitments') }}</span>
-                    <span class="fw-bold {% if (current_user.monthly_salary - monthly_commitments) > 0 %}text-success{% else %}text-danger{% endif %}">₹{{ (current_user.monthly_salary - monthly_commitments)|inr }}</span>
-                </div>
-                <a href="{{ url_for('main.suggestions') }}" class="btn btn-outline-accent btn-sm w-100 mt-3">
-                    <span class="material-icons-outlined">psychology</span> {{ t('Get AI Suggestions') }}
-                </a>
             </div>
         </div>
     </div>
