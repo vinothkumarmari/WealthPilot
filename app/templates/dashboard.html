@@ -26,8 +26,9 @@
                 <div class="stat-card stat-income">
                     <span class="material-icons-outlined stat-icon">payments</span>
                     <div class="stat-info">
-                        <span class="stat-label">{{ t('Total Income') }}</span>
+                        <span class="stat-label">{{ t('Monthly Income') }}</span>
                         <span class="stat-value">₹{{ total_income|inr }}</span>
+                        <small class="text-muted">{{ dashboard_income_note }}</small>
                     </div>
                 </div>
             </div>
@@ -35,8 +36,8 @@
                 <div class="stat-card stat-expense">
                     <span class="material-icons-outlined stat-icon">receipt_long</span>
                     <div class="stat-info">
-                        <span class="stat-label">{{ t('Total Expenses') }}</span>
-                        <span class="stat-value">₹{{ total_expenses|inr }}</span>
+                        <span class="stat-label">{{ t('Monthly Expenses') }}</span>
+                        <span class="stat-value">₹{{ month_expenses|inr }}</span>
                     </div>
                 </div>
             </div>
@@ -80,8 +81,8 @@
                 <div class="stat-card stat-savings">
                     <span class="material-icons-outlined stat-icon">savings</span>
                     <div class="stat-info">
-                        <span class="stat-label">{{ t('Net Savings') }}</span>
-                        <span class="stat-value">₹{{ savings|inr }}</span>
+                        <span class="stat-label">{{ t('Monthly Net Savings') }}</span>
+                        <span class="stat-value">₹{{ monthly_net_savings|inr }}</span>
                     </div>
                 </div>
             </div>

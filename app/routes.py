@@ -1379,8 +1379,30 @@ def dashboard():
         else:
             effective_salary = total_income
 
-    # Show profile salary on dashboard when no income records exist.
-    dashboard_income = float(total_income) if float(total_income) > 0 else float(effective_salary or 0)
+    # Use simple, user-friendly monthly numbers on top cards.
+    today = date.today()
+    month_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == current_user.id,
+        db.extract('month', Expense.date) == today.month,
+        db.extract('year', Expense.date) == today.year
+    ).scalar() or 0
+    month_income_records = db.session.query(db.func.sum(Income.amount)).filter(
+        Income.user_id == current_user.id,
+        db.extract('month', Income.date) == today.month,
+        db.extract('year', Income.date) == today.year
+    ).scalar() or 0
+
+    if float(current_user.monthly_salary or 0) > 0:
+        dashboard_income = float(current_user.monthly_salary)
+        dashboard_income_note = 'From Profile Salary'
+    elif float(month_income_records or 0) > 0:
+        dashboard_income = float(month_income_records)
+        dashboard_income_note = 'From Income tab (this month)'
+    else:
+        dashboard_income = 0.0
+        dashboard_income_note = 'Add Profile Salary or Income records'
+
+    monthly_net_savings = float(dashboard_income) - float(month_expenses)
 
     health = advisor.analyze_financial_health(
         effective_salary, total_expenses, total_investments, total_debts
@@ -1524,6 +1546,9 @@ def dashboard():
     return render_template('dashboard.html',
         total_income=dashboard_income,
         total_expenses=total_expenses,
+        month_expenses=float(month_expenses),
+        monthly_net_savings=float(monthly_net_savings),
+        dashboard_income_note=dashboard_income_note,
         total_investments=total_investments_all,
         total_assets=total_assets_value,
         total_debts=total_debts,
@@ -1535,7 +1560,7 @@ def dashboard():
         monthly_trend=json.dumps(monthly_trend),
         trend_series=json.dumps(trend_series),
         goals=goals,
-        savings=dashboard_income - total_expenses,
+        savings=monthly_net_savings,
         monthly_commitments=monthly_commitments,
         total_sum_assured=total_sum_assured,
         allocation=json.dumps(allocation),
