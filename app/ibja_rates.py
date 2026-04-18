@@ -240,11 +240,11 @@ def fetch_ibja_rates():
                         current_am = cells[1] if len(cells) > 1 else None
                         current_pm = cells[2] if len(cells) > 2 else None
 
-        # Previous day rates for accurate change calculation (use PM table, row index 1 = yesterday)
+        # Previous day rates = yesterday's PM close (latest row in PM table)
         prev_day = {}
-        prev_source = history_pm if len(history_pm) >= 2 else (history_am if len(history_am) >= 2 else [])
-        if len(prev_source) >= 2:
-            prev = prev_source[1]  # index 0 = latest, index 1 = previous day
+        prev_source = history_pm if history_pm else (history_am if history_am else [])
+        if prev_source:
+            prev = prev_source[0]  # index 0 = latest (yesterday's closing)
             prev_day = {
                 'gold_999': round(prev['gold_999'] / 10, 2),
                 'gold_995': round(prev['gold_995'] / 10, 2),
