@@ -1432,14 +1432,22 @@ def dashboard():
         db.extract('month', Income.date) == today.month,
         db.extract('year', Income.date) == today.year
     ).scalar() or 0
+    month_salary_income_records = db.session.query(db.func.sum(Income.amount)).filter(
+        Income.user_id == current_user.id,
+        Income.income_type == 'Salary',
+        db.extract('month', Income.date) == today.month,
+        db.extract('year', Income.date) == today.year
+    ).scalar() or 0
+    month_non_salary_income_records = max(0.0, float(month_income_records) - float(month_salary_income_records))
+    salary_component = float(month_salary_income_records) if float(month_salary_income_records) > 0 else float(current_user.monthly_salary or 0)
 
     # Top income card should represent actual tracked income entries for this month
     # (salary, freelance, business, rental, etc.) to match chart behavior.
-    dashboard_income = float(month_income_records or 0)
+    dashboard_income = float(month_non_salary_income_records) + float(salary_component)
     profile_salary = float(current_user.monthly_salary or 0)
 
     if dashboard_income > 0:
-        dashboard_income_note = 'From Income tab (all sources, this month)'
+        dashboard_income_note = 'Income tab entries + monthly salary (if salary entry missing)'
     else:
         dashboard_income_note = 'No income entries for this month'
 
@@ -1457,6 +1465,10 @@ def dashboard():
     ).filter_by(user_id=current_user.id).group_by(Expense.category).all()
 
     income_points = db.session.query(Income.date, Income.amount).filter_by(user_id=current_user.id).all()
+    salary_income_points = db.session.query(Income.date, Income.amount).filter(
+        Income.user_id == current_user.id,
+        Income.income_type == 'Salary'
+    ).all()
     expense_points = db.session.query(Expense.date, Expense.amount).filter_by(user_id=current_user.id).all()
 
     daily_income_map = {}
@@ -1465,6 +1477,7 @@ def dashboard():
     monthly_expense_map = {}
     yearly_income_map = {}
     yearly_expense_map = {}
+    salary_month_map = {}
 
     for dt, amount in income_points:
         d_key = dt
@@ -1474,6 +1487,10 @@ def dashboard():
         monthly_income_map[m_key] = monthly_income_map.get(m_key, 0.0) + float(amount or 0)
         yearly_income_map[y_key] = yearly_income_map.get(y_key, 0.0) + float(amount or 0)
 
+    for dt, amount in salary_income_points:
+        m_key = (dt.year, dt.month)
+        salary_month_map[m_key] = salary_month_map.get(m_key, 0.0) + float(amount or 0)
+
     for dt, amount in expense_points:
         d_key = dt
         m_key = (dt.year, dt.month)
@@ -1482,9 +1499,24 @@ def dashboard():
         monthly_expense_map[m_key] = monthly_expense_map.get(m_key, 0.0) + float(amount or 0)
         yearly_expense_map[y_key] = yearly_expense_map.get(y_key, 0.0) + float(amount or 0)
 
-    all_day_keys = sorted(set(daily_income_map.keys()) | set(daily_expense_map.keys()))
-    all_month_keys = sorted(set(monthly_income_map.keys()) | set(monthly_expense_map.keys()))
-    all_year_keys = sorted(set(yearly_income_map.keys()) | set(yearly_expense_map.keys()))
+    # Inject monthly profile salary into series when Salary income entry is missing for that month.
+    profile_monthly_salary = float(current_user.monthly_salary or 0)
+
+    day_keys = [today - timedelta(days=i) for i in range(364, -1, -1)]
+    month_keys = []
+    for i in range(119, -1, -1):
+        dt = today - relativedelta(months=i)
+        month_keys.append((dt.year, dt.month))
+    year_keys = list(range(today.year - 19, today.year + 1))
+
+    if profile_monthly_salary > 0:
+        for (y, m) in month_keys:
+            if float(salary_month_map.get((y, m), 0.0)) <= 0:
+                monthly_income_map[(y, m)] = float(monthly_income_map.get((y, m), 0.0)) + profile_monthly_salary
+                yearly_income_map[y] = float(yearly_income_map.get(y, 0.0)) + profile_monthly_salary
+                first_day = date(y, m, 1)
+                if first_day in day_keys:
+                    daily_income_map[first_day] = float(daily_income_map.get(first_day, 0.0)) + profile_monthly_salary
 
     day_trend = [
         {
@@ -1492,7 +1524,7 @@ def dashboard():
             'income': float(daily_income_map.get(d, 0.0)),
             'expense': float(daily_expense_map.get(d, 0.0)),
         }
-        for d in all_day_keys
+        for d in day_keys
     ]
     month_trend = [
         {
@@ -1500,7 +1532,7 @@ def dashboard():
             'income': float(monthly_income_map.get((y, m), 0.0)),
             'expense': float(monthly_expense_map.get((y, m), 0.0)),
         }
-        for (y, m) in all_month_keys
+        for (y, m) in month_keys
     ]
     year_trend = [
         {
@@ -1508,7 +1540,7 @@ def dashboard():
             'income': float(yearly_income_map.get(y, 0.0)),
             'expense': float(yearly_expense_map.get(y, 0.0)),
         }
-        for y in all_year_keys
+        for y in year_keys
     ]
 
     trend_series = {
