@@ -331,16 +331,20 @@
     </script>
 
     <!-- Custom Modal (replaces browser alert/confirm) -->
-    <div id="wpModal" class="wp-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
-        <div class="wp-modal-box" style="background:var(--bs-body-bg,#fff);border-radius:12px;max-width:420px;width:90%;padding:28px 24px 20px;box-shadow:0 8px 32px rgba(0,0,0,.25);animation:wpModalIn .2s ease;">
-            <div id="wpModalIcon" style="text-align:center;margin-bottom:12px;"></div>
-            <h6 id="wpModalTitle" style="text-align:center;margin-bottom:8px;font-weight:600;"></h6>
-            <p id="wpModalMsg" style="text-align:center;color:var(--bs-secondary-color,#666);margin-bottom:20px;word-break:break-word;"></p>
-            <div id="wpModalBtns" style="display:flex;gap:10px;justify-content:center;"></div>
+    <div id="wpModal" class="wp-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.35);align-items:flex-start;justify-content:center;padding-top:60px;">
+        <div class="wp-modal-box" style="background:var(--bs-body-bg,#fff);border-radius:12px;min-width:340px;max-width:520px;width:auto;padding:20px 28px 18px;box-shadow:0 8px 32px rgba(0,0,0,.25);animation:wpModalIn .2s ease;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div id="wpModalIcon" style="flex-shrink:0;line-height:1;"></div>
+                <div style="flex:1;min-width:0;">
+                    <h6 id="wpModalTitle" style="margin:0 0 2px;font-weight:600;font-size:15px;"></h6>
+                    <p id="wpModalMsg" style="margin:0;color:var(--bs-secondary-color,#666);font-size:14px;line-height:1.4;"></p>
+                </div>
+            </div>
+            <div id="wpModalBtns" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;"></div>
         </div>
     </div>
     <style>
-    @keyframes wpModalIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+    @keyframes wpModalIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
     </style>
     <script>
     (function(){
@@ -360,10 +364,10 @@
         };
 
         var icons = {
-            info:    '<span class="material-icons-outlined" style="font-size:48px;color:#2196F3;">info</span>',
-            success: '<span class="material-icons-outlined" style="font-size:48px;color:#4caf50;">check_circle</span>',
-            warning: '<span class="material-icons-outlined" style="font-size:48px;color:#ff9800;">warning</span>',
-            error:   '<span class="material-icons-outlined" style="font-size:48px;color:#f44336;">error</span>'
+            info:    '<span class="material-icons-outlined" style="font-size:32px;color:#2196F3;">info</span>',
+            success: '<span class="material-icons-outlined" style="font-size:32px;color:#4caf50;">check_circle</span>',
+            warning: '<span class="material-icons-outlined" style="font-size:32px;color:#ff9800;">warning</span>',
+            error:   '<span class="material-icons-outlined" style="font-size:32px;color:#f44336;">error</span>'
         };
 
         function _wpShow(msg, type, isConfirm, cb) {
