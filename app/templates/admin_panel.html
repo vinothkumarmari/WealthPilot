@@ -170,6 +170,7 @@
                         <th>Mobile</th>
                         <th>Plan</th>
                         <th>Status</th>
+                        <th>Login</th>
                         <th>Role</th>
                         <th>Joined</th>
                         <th>Actions</th>
@@ -201,6 +202,13 @@
                             {% endif %}
                         </td>
                         <td>
+                            {% if user.is_active %}
+                            <span class="badge bg-success">Enabled</span>
+                            {% else %}
+                            <span class="badge bg-danger">Disabled</span>
+                            {% endif %}
+                        </td>
+                        <td>
                             {% if user.is_admin %}
                             <span class="badge bg-danger">Admin</span>
                             {% else %}
@@ -210,6 +218,13 @@
                         <td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '-' }}</td>
                         <td>
                             {% if not user.is_admin %}
+                            <form method="POST" action="{{ url_for('main.admin_toggle_active', id=user.id) }}" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-{{ 'danger' if user.is_active else 'success' }}"
+                                        title="{{ 'Disable Login' if user.is_active else 'Enable Login' }}">
+                                    <span class="material-icons-outlined" style="font-size: 16px;">{{ 'block' if user.is_active else 'check_circle' }}</span>
+                                </button>
+                            </form>
                             <form method="POST" action="{{ url_for('main.admin_toggle_verify', id=user.id) }}" style="display:inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-{{ 'warning' if user.is_verified else 'success' }}"

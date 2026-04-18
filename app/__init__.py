@@ -112,6 +112,7 @@ def create_app():
     def inject_translations():
         lang = 'en'
         subscription_banner = None
+        user_plan_code = 'starter'
         try:
             if _cu and _cu.is_authenticated:
                 lang = getattr(_cu, 'language', 'en') or 'en'
@@ -119,25 +120,33 @@ def create_app():
                 latest_paid = PaymentTransaction.query.filter_by(user_id=_cu.id, status='paid').order_by(PaymentTransaction.paid_at.desc()).first()
 
                 current_plan = 'Free'
-                suggestion = {
-                    'plan_code': 'pro_monthly',
-                    'plan_name': 'WealthPilot Pro',
-                    'price': '₹99/month',
-                    'reason': 'unlock premium analytics and faster wealth insights',
-                }
-                if latest_paid and latest_paid.plan_code == 'pro_monthly':
+                if _cu.is_admin:
+                    user_plan_code = 'family_monthly'
+                    current_plan = 'Admin (Full Access)'
+                elif latest_paid and latest_paid.plan_code == 'pro_monthly':
+                    user_plan_code = 'pro_monthly'
                     current_plan = 'WealthPilot Pro'
+                elif latest_paid and latest_paid.plan_code == 'family_monthly':
+                    user_plan_code = 'family_monthly'
+                    current_plan = 'WealthPilot Family'
+                elif latest_paid:
+                    current_plan = latest_paid.plan_code
+
+                suggestion = None
+                if user_plan_code == 'starter':
+                    suggestion = {
+                        'plan_code': 'pro_monthly',
+                        'plan_name': 'WealthPilot Pro',
+                        'price': '₹99/month',
+                        'reason': 'unlock premium analytics and faster wealth insights',
+                    }
+                elif user_plan_code == 'pro_monthly':
                     suggestion = {
                         'plan_code': 'family_monthly',
                         'plan_name': 'WealthPilot Family',
                         'price': '₹199/month',
                         'reason': 'add family members and shared financial dashboards',
                     }
-                elif latest_paid and latest_paid.plan_code == 'family_monthly':
-                    current_plan = 'WealthPilot Family'
-                    suggestion = None
-                elif latest_paid:
-                    current_plan = latest_paid.plan_code
 
                 if suggestion:
                     banner_key = f"sub-banner-{_cu.id}-{current_plan}-{suggestion['plan_code']}"
@@ -153,11 +162,23 @@ def create_app():
             db.session.rollback()
             app.logger.warning(f'Subscription banner skipped due to transient error: {e}')
 
+        # Plan level helper for sidebar lock icons
+        plan_levels = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'family_monthly': 2}
+        user_level = plan_levels.get(user_plan_code, 0)
+
+        def has_access(endpoint):
+            """Check if current user's plan allows access to endpoint."""
+            from .routes import MODULE_PLAN_REQUIREMENTS
+            req = MODULE_PLAN_REQUIREMENTS.get(endpoint, 'starter')
+            return user_level >= plan_levels.get(req, 0)
+
         return {
             't': get_translator(lang),
             'current_lang': lang,
             'LANGUAGES': LANGUAGES,
             'subscription_banner': subscription_banner,
+            'user_plan': user_plan_code,
+            'has_access': has_access,
         }
 
     # User loader
@@ -347,6 +368,9 @@ def _ensure_user_columns(app):
                 if 'otp_locked_until' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN otp_locked_until DATETIME"))
                     app.logger.info('Added column: user.otp_locked_until')
+                if 'is_active_user' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN is_active_user BOOLEAN DEFAULT 1"))
+                    app.logger.info('Added column: user.is_active_user')
                 conn.commit()
             else:
                 rows = conn.execute(text(
@@ -392,6 +416,9 @@ def _ensure_user_columns(app):
                 if 'otp_locked_until' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN otp_locked_until TIMESTAMP"))
                     app.logger.info('Added column: user.otp_locked_until')
+                if 'is_active_user' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN is_active_user BOOLEAN DEFAULT TRUE"))
+                    app.logger.info('Added column: user.is_active_user')
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')

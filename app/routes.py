@@ -365,6 +365,88 @@ def admin_required(f):
     return decorated_function
 
 
+# ── Subscription plan helpers ─────────────────────────────
+# Plan hierarchy: starter < pro_monthly < family_monthly
+# Admin users always get full access.
+PLAN_HIERARCHY = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'family_monthly': 2}
+
+# Module → minimum plan required
+MODULE_PLAN_REQUIREMENTS = {
+    # Starter (Free) modules — accessible to all
+    'main.dashboard': 'starter',
+    'main.income': 'starter',
+    'main.expenses': 'starter',
+    'main.budget': 'starter',
+    'main.loans': 'starter',
+    'main.investments': 'starter',
+    'main.goals': 'starter',
+    'main.profile': 'starter',
+    'main.calculators': 'starter',
+    'main.pricing': 'starter',
+    'main.help_guide': 'starter',
+    'main.gold_silver': 'starter',
+    'main.global_gold_prices': 'starter',
+    # Pro modules
+    'main.policies': 'pro_monthly',
+    'main.schemes': 'pro_monthly',
+    'main.sips': 'pro_monthly',
+    'main.assets': 'pro_monthly',
+    'main.tax_planning': 'pro_monthly',
+    'main.itr_guide': 'pro_monthly',
+    'main.suggestions': 'pro_monthly',
+    'main.ai_playbooks': 'pro_monthly',
+    'main.reports': 'pro_monthly',
+    'main.rate_monitor': 'pro_monthly',
+    'main.business_ideas': 'pro_monthly',
+    'main.notifications': 'pro_monthly',
+    # Family modules
+    'main.future_planner': 'family_monthly',
+    'main.govt_schemes': 'family_monthly',
+}
+
+
+def get_user_plan(user=None):
+    """Return current plan code for a user ('starter', 'pro_monthly', 'family_monthly')."""
+    u = user or current_user
+    if not u or not u.is_authenticated:
+        return 'starter'
+    if u.is_admin:
+        return 'family_monthly'  # Admin gets full access
+    from .models import PaymentTransaction
+    latest = PaymentTransaction.query.filter_by(
+        user_id=u.id, status='paid'
+    ).order_by(
+        PaymentTransaction.paid_at.desc(),
+        PaymentTransaction.created_at.desc()
+    ).first()
+    if latest and latest.plan_code in PLAN_HIERARCHY:
+        return latest.plan_code
+    return 'starter'
+
+
+def _plan_level(plan_code):
+    return PLAN_HIERARCHY.get(plan_code, 0)
+
+
+def subscription_required(min_plan):
+    """Decorator: restrict route to users with at least `min_plan` subscription."""
+    def decorator(f):
+        @wraps(f)
+        @login_required
+        def decorated_function(*args, **kwargs):
+            if current_user.is_admin:
+                return f(*args, **kwargs)
+            user_plan = get_user_plan()
+            if _plan_level(user_plan) < _plan_level(min_plan):
+                plan_names = {'pro_monthly': 'Pro', 'family_monthly': 'Family'}
+                name = plan_names.get(min_plan, min_plan)
+                flash(f'This feature requires a {name} subscription. Please upgrade your plan.', 'warning')
+                return redirect(url_for('main.pricing'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
 def _sync_user_salary(user, force_from_income=False):
     """Keep user salary in sync while preserving profile-entered salary unless force_from_income is set."""
     salary_total = db.session.query(db.func.sum(Income.amount)).filter_by(
@@ -620,6 +702,11 @@ def login():
                 user.failed_login_count = 0
                 user.locked_until = None
                 db.session.commit()
+
+                # Check if account has been disabled by admin
+                if not user.is_active:
+                    flash('Your account has been disabled by the administrator. Please contact support.', 'danger')
+                    return render_template('login.html')
                 
                 if not user.is_verified:
                     otp = _issue_user_otp(user)
@@ -2386,6 +2473,7 @@ def calculate():
 
 @main.route('/suggestions')
 @login_required
+@subscription_required('pro_monthly')
 def suggestions():
     age = current_user.age or 30
     salary = current_user.monthly_salary or 0
@@ -2438,6 +2526,7 @@ def suggestions():
 
 @main.route('/ai-playbooks')
 @login_required
+@subscription_required('pro_monthly')
 def ai_playbooks():
     data = advisor.get_ai_playbooks(
         monthly_salary=current_user.monthly_salary or 0,
@@ -2450,6 +2539,7 @@ def ai_playbooks():
 
 @main.route('/future-planner')
 @login_required
+@subscription_required('family_monthly')
 def future_planner():
     data = advisor.get_future_readiness_plan(
         monthly_salary=current_user.monthly_salary or 0,
@@ -2464,6 +2554,7 @@ def future_planner():
 
 @main.route('/business-ideas')
 @login_required
+@subscription_required('pro_monthly')
 def business_ideas():
     salary = current_user.monthly_salary or 0
     age = current_user.age or 30
@@ -2491,6 +2582,7 @@ def business_ideas():
 
 @main.route('/assets')
 @login_required
+@subscription_required('pro_monthly')
 def assets():
     all_assets = Asset.query.filter_by(user_id=current_user.id).order_by(Asset.created_at.desc()).all()
     total_value = sum(a.current_value for a in all_assets)
@@ -2624,6 +2716,7 @@ def delete_goal(id):
 
 @main.route('/reports')
 @login_required
+@subscription_required('pro_monthly')
 def reports():
     months_data = []
     for i in range(11, -1, -1):
@@ -2843,10 +2936,28 @@ def admin_toggle_verify(id):
     return redirect(url_for('main.admin_panel'))
 
 
+@main.route('/admin/toggle-active/<int:id>', methods=['POST'])
+@admin_required
+def admin_toggle_active(id):
+    user = db.session.get(User, id)
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    if user.is_admin:
+        flash('Cannot disable admin account.', 'warning')
+        return redirect(url_for('main.admin_panel'))
+    user.is_active_user = not user.is_active_user
+    db.session.commit()
+    status = 'enabled' if user.is_active_user else 'disabled'
+    flash(f'Login for "{user.username}" has been {status}.', 'success')
+    return redirect(url_for('main.admin_panel'))
+
+
 # ======================== INSURANCE POLICIES ========================
 
 @main.route('/policies')
 @login_required
+@subscription_required('pro_monthly')
 def policies():
     all_policies = InsurancePolicy.query.filter_by(user_id=current_user.id).order_by(InsurancePolicy.created_at.desc()).all()
     active_policies = [p for p in all_policies if p.status == 'active']
@@ -3242,6 +3353,7 @@ def delete_premium_payment(payment_id):
 
 @main.route('/schemes')
 @login_required
+@subscription_required('pro_monthly')
 def schemes():
     all_schemes = Scheme.query.filter_by(user_id=current_user.id).order_by(Scheme.created_at.desc()).all()
     active_schemes = [s for s in all_schemes if s.status == 'active']
@@ -3441,6 +3553,7 @@ def scan_scheme_text():
 
 @main.route('/sips')
 @login_required
+@subscription_required('pro_monthly')
 def sips():
     all_sips = SIP.query.filter_by(user_id=current_user.id).order_by(SIP.created_at.desc()).all()
     active = [s for s in all_sips if s.is_active]
@@ -3635,6 +3748,7 @@ def save_budget():
 
 @main.route('/tax')
 @login_required
+@subscription_required('pro_monthly')
 def tax_planning():
     # Section 80C — ₹1,50,000 limit
     # Eligible: PPF, EPF, ELSS MF, NSC, Life Insurance premiums, Sukanya, Tax-saver FD, NPS (extra 50K under 80CCD)
@@ -3711,6 +3825,7 @@ def tax_planning():
 
 @main.route('/itr-guide')
 @login_required
+@subscription_required('pro_monthly')
 def itr_guide():
     """Dedicated ITR planning tab with old/new regime guidance."""
     annual_income = float(current_user.annual_salary or ((current_user.monthly_salary or 0) * 12) or 0)
@@ -3858,6 +3973,7 @@ LAND_RATE_DATA_INR_PER_SQFT = {
 
 @main.route('/govt-schemes')
 @login_required
+@subscription_required('family_monthly')
 def govt_schemes():
     return render_template('govt_schemes.html')
 
@@ -4203,6 +4319,7 @@ def global_gold_prices():
 
 @main.route('/rate-monitor')
 @login_required
+@subscription_required('pro_monthly')
 def rate_monitor():
     from .rate_monitor import get_rate_summary
     rates = get_rate_summary()
@@ -4496,6 +4613,7 @@ def _generate_notifications(user):
 
 @main.route('/notifications')
 @login_required
+@subscription_required('pro_monthly')
 def notifications():
     _generate_notifications(current_user)
     notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(50).all()

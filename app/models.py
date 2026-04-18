@@ -29,6 +29,12 @@ class User(UserMixin, db.Model):
     language = db.Column(db.String(5), default='en')  # en, ta, hi, te
     is_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
+    is_active_user = db.Column(db.Boolean, default=True)  # Admin can disable login
+
+    @property
+    def is_active(self):
+        """Flask-Login checks this; disabled users cannot log in."""
+        return bool(self.is_active_user)
     otp_code = db.Column(db.String(10))
     otp_expiry = db.Column(db.DateTime)
     otp_attempts = db.Column(db.Integer, default=0)
