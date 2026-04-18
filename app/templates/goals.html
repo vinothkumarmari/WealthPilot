@@ -23,7 +23,7 @@
                         <span class="badge bg-{{ 'danger' if goal.priority == 'high' else 'warning' if goal.priority == 'medium' else 'info' }}-subtle text-{{ 'danger' if goal.priority == 'high' else 'warning' if goal.priority == 'medium' else 'info' }}">{{ goal.priority|title }}</span>
                         {% if goal.category %}<span class="badge bg-primary-subtle text-primary">{{ goal.category }}</span>{% endif %}
                     </div>
-                    <form method="POST" action="{{ url_for('main.delete_goal', id=goal.id) }}" style="display:inline" onsubmit="return confirm('Delete goal?')">
+                    <form method="POST" action="{{ url_for('main.delete_goal', id=goal.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete goal?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-outline-danger">
                             <span class="material-icons-outlined" style="font-size:16px">delete</span>

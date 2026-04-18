@@ -122,7 +122,7 @@
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateScheme{{ s.id }}" title="Update">
                                         <span class="material-icons-outlined" style="font-size:16px">edit</span>
                                     </button>
-                                    <form method="POST" action="{{ url_for('main.delete_scheme', id=s.id) }}" style="display:inline" onsubmit="return confirm('Delete this scheme?')">
+                                    <form method="POST" action="{{ url_for('main.delete_scheme', id=s.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete this scheme?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                             <span class="material-icons-outlined" style="font-size:16px">delete</span>
@@ -638,7 +638,7 @@ function _handleSchemeScanResult(result) {
 
 function scanSchemeDoc() {
     const fileInput = document.getElementById('schemeDocFile');
-    if (!fileInput.files.length) { alert('Please select a file.'); return; }
+    if (!fileInput.files.length) { wpAlert('Please select a file.', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('document', fileInput.files[0]);
@@ -658,7 +658,7 @@ function scanSchemeDoc() {
 
 function scanSchemeFromText() {
     const text = document.getElementById('schemePasteText').value.trim();
-    if (!text) { alert('Please paste the document text.'); return; }
+    if (!text) { wpAlert('Please paste the document text.', 'warning'); return; }
 
     _showSchemeScanProgress();
     document.getElementById('schemePasteBtn').disabled = true;

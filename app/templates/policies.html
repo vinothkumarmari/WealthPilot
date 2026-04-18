@@ -129,7 +129,7 @@
                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updatePolicy{{ p.id }}" title="Update">
                                         <span class="material-icons-outlined" style="font-size:16px">edit</span>
                                     </button>
-                                    <form method="POST" action="{{ url_for('main.delete_policy', id=p.id) }}" style="display:inline" onsubmit="return confirm('Delete this policy?')">
+                                    <form method="POST" action="{{ url_for('main.delete_policy', id=p.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete this policy?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                                             <span class="material-icons-outlined" style="font-size:16px">delete</span>
@@ -685,7 +685,7 @@ function _handlePolicyScanResult(result) {
 
 function scanPolicyDoc() {
     const fileInput = document.getElementById('policyDocFile');
-    if (!fileInput.files.length) { alert('Please select a file.'); return; }
+    if (!fileInput.files.length) { wpAlert('Please select a file.', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('document', fileInput.files[0]);
@@ -705,7 +705,7 @@ function scanPolicyDoc() {
 
 function scanPolicyFromText() {
     const text = document.getElementById('policyPasteText').value.trim();
-    if (!text) { alert('Please paste the document text.'); return; }
+    if (!text) { wpAlert('Please paste the document text.', 'warning'); return; }
 
     _showPolicyScanProgress();
     document.getElementById('policyPasteBtn').disabled = true;
@@ -728,7 +728,7 @@ let _currentPolicyId = null;
 
 function lookupPremium() {
     const policyNum = document.getElementById('lookupPolicyNumber').value.trim();
-    if (!policyNum) { alert('Please enter a policy number.'); return; }
+    if (!policyNum) { wpAlert('Please enter a policy number.', 'warning'); return; }
 
     document.getElementById('lookupSpinner').classList.remove('d-none');
     document.getElementById('lookupError').classList.add('d-none');
@@ -808,7 +808,7 @@ function recordPayment() {
     if (!_currentPolicyId) return;
     const amount = document.getElementById('payAmount').value;
     const payDate = document.getElementById('payDate').value;
-    if (!amount || !payDate) { alert('Amount and date are required.'); return; }
+    if (!amount || !payDate) { wpAlert('Amount and date are required.', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('policy_id', _currentPolicyId);
@@ -819,21 +819,23 @@ function recordPayment() {
     fetch('{{ url_for("main.record_premium_payment") }}', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
-            if (!res.success) { alert(res.message); return; }
+            if (!res.success) { wpAlert(res.message, 'error'); return; }
             lookupPremium(); // Refresh the results
         })
-        .catch(err => alert('Error: ' + err.message));
+        .catch(err => wpAlert('Error: ' + err.message, 'error'));
 }
 
 function deletePayment(paymentId) {
-    if (!confirm('Delete this payment record?')) return;
-    fetch(`/policies/delete-payment/${paymentId}`, { method: 'POST' })
-        .then(r => r.json())
-        .then(res => {
-            if (!res.success) { alert(res.message); return; }
-            lookupPremium(); // Refresh
-        })
-        .catch(err => alert('Error: ' + err.message));
+    wpConfirm('Delete this payment record?', 'warning').then(ok => {
+        if (!ok) return;
+        fetch(`/policies/delete-payment/${paymentId}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(res => {
+                if (!res.success) { wpAlert(res.message, 'error'); return; }
+                lookupPremium(); // Refresh
+            })
+            .catch(err => wpAlert('Error: ' + err.message, 'error'));
+    });
 }
 
 // Allow Enter key in lookup input
@@ -857,7 +859,7 @@ function calcByMonths(policyId, premiumAmt) {
 // Option 3: Upload premium paid statement
 function uploadPaidStatement(policyId) {
     const fileInput = document.getElementById('paidStmtFile' + policyId);
-    if (!fileInput.files.length) { alert('Please select a file.'); return; }
+    if (!fileInput.files.length) { wpAlert('Please select a file.', 'warning'); return; }
     const formData = new FormData();
     formData.append('document', fileInput.files[0]);
     document.getElementById('stmtSpinner' + policyId).classList.remove('d-none');
@@ -879,7 +881,7 @@ function uploadPaidStatement(policyId) {
         })
         .catch(err => {
             document.getElementById('stmtSpinner' + policyId).classList.add('d-none');
-            alert('Error: ' + err.message);
+            wpAlert('Error: ' + err.message, 'error');
         });
 }
 
@@ -887,8 +889,8 @@ function uploadPaidStatement(policyId) {
 function calcByDue(policyId, startDateStr, premiumAmt, frequency, dueDay) {
     const sel = document.getElementById('dueMonth' + policyId);
     const paidUpto = sel.value;
-    if (!paidUpto) { alert('Please select a month.'); return; }
-    if (!startDateStr) { alert('Policy must have a start date.'); return; }
+    if (!paidUpto) { wpAlert('Please select a month.', 'warning'); return; }
+    if (!startDateStr) { wpAlert('Policy must have a start date.', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('policy_id', policyId);
@@ -897,7 +899,7 @@ function calcByDue(policyId, startDateStr, premiumAmt, frequency, dueDay) {
     fetch('{{ url_for("main.calc_paid_by_due") }}', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(res => {
-            if (!res.success) { alert(res.message); return; }
+            if (!res.success) { wpAlert(res.message, 'error'); return; }
 
             const resultEl = document.getElementById('dueResult' + policyId);
             const warnEl = document.getElementById('dueWarn' + policyId);
@@ -919,7 +921,7 @@ function calcByDue(policyId, startDateStr, premiumAmt, frequency, dueDay) {
                 document.getElementById('manualPaid' + policyId).value = res.total;
             }
         })
-        .catch(err => alert('Error: ' + err.message));
+        .catch(err => wpAlert('Error: ' + err.message, 'error'));
 }
 
 function confirmDueApply(policyId, total) {

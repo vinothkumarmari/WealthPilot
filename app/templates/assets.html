@@ -62,7 +62,7 @@
                             <td>₹{{ a.emi_amount|inr }}</td>
                             <td>₹{{ a.loan_amount|inr }}</td>
                             <td>
-                                <form method="POST" action="{{ url_for('main.delete_asset', id=a.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                                <form method="POST" action="{{ url_for('main.delete_asset', id=a.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <span class="material-icons-outlined" style="font-size:16px">delete</span>

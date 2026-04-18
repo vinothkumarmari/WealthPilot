@@ -84,7 +84,7 @@
                                         </button>
                                     </div>
                                 </form>
-                                <form method="POST" action="{{ url_for('main.delete_bank_account', id=b.id) }}" style="display:inline" onsubmit="return confirm('Remove?')">
+                                <form method="POST" action="{{ url_for('main.delete_bank_account', id=b.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Remove?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger mt-1">
                                         <span class="material-icons-outlined" style="font-size:14px">delete</span>
@@ -123,7 +123,7 @@
                             <td class="fw-bold text-success">₹{{ pf.total_balance|inr }}</td>
                             <td>{{ pf.interest_rate }}%</td>
                             <td>
-                                <form method="POST" action="{{ url_for('main.delete_pf', id=pf.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                                <form method="POST" action="{{ url_for('main.delete_pf', id=pf.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <span class="material-icons-outlined" style="font-size:14px">delete</span>
@@ -191,7 +191,7 @@
                             </td>
                             <td><span class="badge bg-secondary-subtle text-secondary">{{ inv.member or 'Self' }}</span></td>
                             <td>
-                                <form method="POST" action="{{ url_for('main.delete_investment', id=inv.id) }}" style="display:inline" onsubmit="return confirm('Delete?')">
+                                <form method="POST" action="{{ url_for('main.delete_investment', id=inv.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <span class="material-icons-outlined" style="font-size:16px">delete</span>

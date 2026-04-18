@@ -272,12 +272,12 @@
                 try {
                     const orderResp = await createOrder(btn.dataset.plan);
                     if (!orderResp.success) {
-                        alert(orderResp.message || 'Could not create order.');
+                        wpAlert(orderResp.message || 'Could not create order.', 'error');
                         return;
                     }
 
                     if (typeof Razorpay === 'undefined') {
-                        alert('Razorpay checkout could not load. Please disable strict blockers and try again.');
+                        wpAlert('Razorpay checkout could not load. Please disable strict blockers and try again.', 'error');
                         return;
                     }
 
@@ -299,7 +299,7 @@
                     const rzp = new Razorpay(options);
                     rzp.open();
                 } catch (e) {
-                    alert('Payment initialization failed: ' + (e && e.message ? e.message : 'Please try again.'));
+                    wpAlert('Payment initialization failed: ' + (e && e.message ? e.message : 'Please try again.'), 'error');
                 } finally {
                     btn.disabled = false;
                     btn.textContent = originalText;

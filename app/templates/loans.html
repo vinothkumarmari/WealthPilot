@@ -169,7 +169,7 @@
                     </button>
                 </form>
                 {% endif %}
-                <form method="POST" action="{{ url_for('main.delete_loan', id=loan.id) }}" style="display:inline" onsubmit="return confirm('Delete this loan?')">
+                <form method="POST" action="{{ url_for('main.delete_loan', id=loan.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete this loan?')">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="btn btn-sm btn-outline-danger">
                         <span class="material-icons-outlined" style="font-size:16px">delete</span>

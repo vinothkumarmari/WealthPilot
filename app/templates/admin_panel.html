@@ -217,7 +217,7 @@
                                     <span class="material-icons-outlined" style="font-size: 16px;">{{ 'unpublished' if user.is_verified else 'check_circle' }}</span>
                                 </button>
                             </form>
-                            <form method="POST" action="{{ url_for('main.admin_delete_user', id=user.id) }}" style="display:inline" onsubmit="return confirm('Delete user {{ user.username }}?')">
+                            <form method="POST" action="{{ url_for('main.admin_delete_user', id=user.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete user {{ user.username }}?')">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete User">
                                     <span class="material-icons-outlined" style="font-size: 16px;">delete</span>

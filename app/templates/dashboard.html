@@ -733,8 +733,8 @@
     function sendReminders() {
         fetch('{{ url_for("main.send_reminders") }}', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
         .then(r => r.json())
-        .then(d => alert(d.message))
-        .catch(() => alert('Failed to send reminders'));
+        .then(d => wpAlert(d.message, 'success'))
+        .catch(() => wpAlert('Failed to send reminders', 'error'));
     }
 </script>
 {% endblock %}

@@ -81,7 +81,7 @@
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateSip{{ sip.id }}">
                                     <span class="material-icons-outlined" style="font-size:16px">edit</span>
                                 </button>
-                                <form method="POST" action="{{ url_for('main.delete_sip', id=sip.id) }}" style="display:inline" onsubmit="return confirm('Delete this SIP?')">
+                                <form method="POST" action="{{ url_for('main.delete_sip', id=sip.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete this SIP?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <span class="material-icons-outlined" style="font-size:16px">delete</span>

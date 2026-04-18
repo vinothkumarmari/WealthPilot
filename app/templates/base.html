@@ -329,5 +329,105 @@
     }
 
     </script>
+
+    <!-- Custom Modal (replaces browser alert/confirm) -->
+    <div id="wpModal" class="wp-modal-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+        <div class="wp-modal-box" style="background:var(--bs-body-bg,#fff);border-radius:12px;max-width:420px;width:90%;padding:28px 24px 20px;box-shadow:0 8px 32px rgba(0,0,0,.25);animation:wpModalIn .2s ease;">
+            <div id="wpModalIcon" style="text-align:center;margin-bottom:12px;"></div>
+            <h6 id="wpModalTitle" style="text-align:center;margin-bottom:8px;font-weight:600;"></h6>
+            <p id="wpModalMsg" style="text-align:center;color:var(--bs-secondary-color,#666);margin-bottom:20px;word-break:break-word;"></p>
+            <div id="wpModalBtns" style="display:flex;gap:10px;justify-content:center;"></div>
+        </div>
+    </div>
+    <style>
+    @keyframes wpModalIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+    .wp-modal-overlay{display:flex!important;}
+    </style>
+    <script>
+    (function(){
+        /* wpAlert(message, type?)  — replacement for alert()
+           type: 'info' | 'success' | 'warning' | 'error'  */
+        window.wpAlert = function(msg, type) {
+            return new Promise(function(resolve) {
+                _wpShow(msg, type || 'info', false, resolve);
+            });
+        };
+        /* wpConfirm(message, type?)  — replacement for confirm()
+           resolves true/false */
+        window.wpConfirm = function(msg, type) {
+            return new Promise(function(resolve) {
+                _wpShow(msg, type || 'warning', true, resolve);
+            });
+        };
+
+        var icons = {
+            info:    '<span class="material-icons-outlined" style="font-size:48px;color:#2196F3;">info</span>',
+            success: '<span class="material-icons-outlined" style="font-size:48px;color:#4caf50;">check_circle</span>',
+            warning: '<span class="material-icons-outlined" style="font-size:48px;color:#ff9800;">warning</span>',
+            error:   '<span class="material-icons-outlined" style="font-size:48px;color:#f44336;">error</span>'
+        };
+
+        function _wpShow(msg, type, isConfirm, cb) {
+            var overlay = document.getElementById('wpModal');
+            document.getElementById('wpModalIcon').innerHTML = icons[type] || icons.info;
+            document.getElementById('wpModalTitle').textContent = type === 'error' ? 'Error' : type === 'success' ? 'Success' : type === 'warning' ? 'Warning' : 'Notice';
+            document.getElementById('wpModalMsg').textContent = msg;
+            var btnBox = document.getElementById('wpModalBtns');
+            btnBox.innerHTML = '';
+            if (isConfirm) {
+                var btnCancel = document.createElement('button');
+                btnCancel.className = 'btn btn-outline-secondary';
+                btnCancel.textContent = 'Cancel';
+                btnCancel.style.minWidth = '90px';
+                btnCancel.onclick = function() { _wpHide(); cb(false); };
+                btnBox.appendChild(btnCancel);
+                var btnOk = document.createElement('button');
+                btnOk.className = 'btn btn-' + (type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'primary');
+                btnOk.textContent = 'Confirm';
+                btnOk.style.minWidth = '90px';
+                btnOk.onclick = function() { _wpHide(); cb(true); };
+                btnBox.appendChild(btnOk);
+            } else {
+                var btnOk2 = document.createElement('button');
+                btnOk2.className = 'btn btn-primary';
+                btnOk2.textContent = 'OK';
+                btnOk2.style.minWidth = '100px';
+                btnOk2.onclick = function() { _wpHide(); cb(true); };
+                btnBox.appendChild(btnOk2);
+            }
+            overlay.style.display = 'flex';
+            (btnBox.querySelector('.btn-primary') || btnBox.querySelector('.btn-warning') || btnBox.lastChild).focus();
+        }
+        function _wpHide() {
+            document.getElementById('wpModal').style.display = 'none';
+        }
+        // Close on overlay click (outside the box)
+        document.getElementById('wpModal').addEventListener('click', function(e) {
+            if (e.target === this) { _wpHide(); }
+        });
+        // Close on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('wpModal').style.display === 'flex') {
+                _wpHide();
+            }
+        });
+
+        /* wpConfirmSync — for onsubmit="return wpConfirmSync(this, 'msg')"
+           Prevents default, shows confirm modal, submits form on confirm */
+        window.wpConfirmSync = function(form, msg, type) {
+            if (form.dataset.wpConfirmed === '1') {
+                form.dataset.wpConfirmed = '';
+                return true;
+            }
+            wpConfirm(msg, type || 'warning').then(function(ok) {
+                if (ok) {
+                    form.dataset.wpConfirmed = '1';
+                    form.submit();
+                }
+            });
+            return false;
+        };
+    })();
+    </script>
 </body>
 </html>
