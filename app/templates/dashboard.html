@@ -181,10 +181,30 @@
 <div class="row mb-4">
     <div class="col-lg-6 mb-3">
         <div class="card">
-            <div class="card-header">
-                <h6><span class="material-icons-outlined">show_chart</span> {{ t('Monthly Cash Flow') }}</h6>
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h6 class="mb-0"><span class="material-icons-outlined">show_chart</span> {{ t('Cash Flow Trend') }}</h6>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="trendMode" class="form-select form-select-sm" style="min-width: 120px;">
+                        <option value="day">Day Wise</option>
+                        <option value="month" selected>Month Wise</option>
+                        <option value="year">Year Wise</option>
+                    </select>
+                    <input id="trendCount" type="number" class="form-control form-control-sm" value="6" min="1" max="365" style="width: 90px;" title="Number of periods">
+                </div>
             </div>
             <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 mb-2" id="trendPresetWrap">
+                    <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="day" data-count="7">7D</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="day" data-count="30">30D</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="month" data-count="6">6M</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="month" data-count="12">12M</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="year" data-count="5">5Y</button>
+                </div>
+                <div class="d-flex flex-wrap gap-3 mb-2 small">
+                    <span class="text-success">Income: <strong id="trendIncomeTotal">₹0</strong></span>
+                    <span class="text-danger">Expense: <strong id="trendExpenseTotal">₹0</strong></span>
+                    <span>Net: <strong id="trendNetTotal">₹0</strong></span>
+                </div>
                 <canvas id="monthlyTrendChart" height="250"></canvas>
             </div>
         </div>
@@ -489,34 +509,160 @@
 <script>
     const expenseData = {{ expense_by_cat|safe }};
     const trendData = {{ monthly_trend|safe }};
+    const trendSeries = {{ trend_series|safe }};
     const allocationData = {{ allocation|safe }};
+    let monthlyTrendChartInstance = null;
 
-    // Monthly Cash Flow (Income vs Expenses)
-    if (trendData.length > 0) {
-        new Chart(document.getElementById('monthlyTrendChart'), {
+    function formatInr(v) {
+        return '₹' + (v || 0).toLocaleString('en-IN');
+    }
+
+    function setActivePreset(mode, count) {
+        const presetButtons = document.querySelectorAll('.trend-preset');
+        presetButtons.forEach(function (btn) {
+            const isActive = btn.dataset.mode === mode && parseInt(btn.dataset.count || '0', 10) === count;
+            btn.classList.toggle('btn-primary', isActive);
+            btn.classList.toggle('btn-outline-secondary', !isActive);
+        });
+    }
+
+    function saveTrendPreference(mode, count) {
+        try {
+            localStorage.setItem('dashboardTrendPreference', JSON.stringify({ mode: mode, count: count }));
+        } catch (e) {}
+    }
+
+    function loadTrendPreference() {
+        try {
+            const raw = localStorage.getItem('dashboardTrendPreference');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.mode || !parsed.count) return null;
+            return parsed;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function getDefaultCount(mode) {
+        if (mode === 'day') return 30;
+        if (mode === 'year') return 5;
+        return 6;
+    }
+
+    function updateTrendChart() {
+        const modeEl = document.getElementById('trendMode');
+        const countEl = document.getElementById('trendCount');
+        if (!modeEl || !countEl) return;
+
+        const mode = modeEl.value;
+        const source = trendSeries[mode] || [];
+        const maxAllowed = mode === 'year' ? 50 : mode === 'month' ? 240 : 365;
+        countEl.max = String(maxAllowed);
+        let count = parseInt(countEl.value || '0', 10);
+        if (!count || count < 1) count = getDefaultCount(mode);
+        count = Math.min(count, maxAllowed);
+        countEl.value = String(count);
+
+        const plotted = source.slice(-count);
+        const totalIncome = plotted.reduce((sum, r) => sum + (r.income || 0), 0);
+        const totalExpense = plotted.reduce((sum, r) => sum + (r.expense || 0), 0);
+        const net = totalIncome - totalExpense;
+
+        document.getElementById('trendIncomeTotal').textContent = formatInr(totalIncome);
+        document.getElementById('trendExpenseTotal').textContent = formatInr(totalExpense);
+        const netEl = document.getElementById('trendNetTotal');
+        netEl.textContent = formatInr(net);
+        netEl.classList.remove('text-success', 'text-danger');
+        netEl.classList.add(net >= 0 ? 'text-success' : 'text-danger');
+
+        if (monthlyTrendChartInstance) {
+            monthlyTrendChartInstance.destroy();
+        }
+
+        monthlyTrendChartInstance = new Chart(document.getElementById('monthlyTrendChart'), {
             type: 'line',
             data: {
-                labels: trendData.map(d => d.month),
+                labels: plotted.map(d => d.label),
                 datasets: [{
                     label: 'Income',
-                    data: trendData.map(d => d.income),
+                    data: plotted.map(d => d.income),
                     borderColor: '#27ae60',
                     backgroundColor: 'rgba(39, 174, 96, 0.08)',
-                    fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 8
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
                 },{
                     label: 'Expenses',
-                    data: trendData.map(d => d.expense),
+                    data: plotted.map(d => d.expense),
                     borderColor: '#e74c3c',
                     backgroundColor: 'rgba(231, 76, 60, 0.08)',
-                    fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 8
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
                 }]
             },
             options: {
                 responsive: true,
-                scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString() } } },
-                plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 15 } } }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: v => formatInr(v) }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 15 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ' ' + ctx.dataset.label + ': ' + formatInr(ctx.parsed.y || 0);
+                            }
+                        }
+                    }
+                }
             }
         });
+    }
+
+    const trendModeEl = document.getElementById('trendMode');
+    const trendCountEl = document.getElementById('trendCount');
+    if (trendModeEl && trendCountEl) {
+        trendModeEl.addEventListener('change', function () {
+            trendCountEl.value = String(getDefaultCount(trendModeEl.value));
+            setActivePreset(trendModeEl.value, parseInt(trendCountEl.value || '0', 10));
+            saveTrendPreference(trendModeEl.value, parseInt(trendCountEl.value || '0', 10));
+            updateTrendChart();
+        });
+
+        trendCountEl.addEventListener('input', function () {
+            const count = parseInt(trendCountEl.value || '0', 10);
+            setActivePreset(trendModeEl.value, count);
+            saveTrendPreference(trendModeEl.value, count);
+            updateTrendChart();
+        });
+
+        document.querySelectorAll('.trend-preset').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const mode = btn.dataset.mode;
+                const count = parseInt(btn.dataset.count || '0', 10);
+                trendModeEl.value = mode;
+                trendCountEl.value = String(count);
+                setActivePreset(mode, count);
+                saveTrendPreference(mode, count);
+                updateTrendChart();
+            });
+        });
+
+        const savedPref = loadTrendPreference();
+        if (savedPref && ['day', 'month', 'year'].includes(savedPref.mode)) {
+            trendModeEl.value = savedPref.mode;
+            trendCountEl.value = String(parseInt(savedPref.count || '0', 10) || getDefaultCount(savedPref.mode));
+        }
+
+        setActivePreset(trendModeEl.value, parseInt(trendCountEl.value || '0', 10));
+        updateTrendChart();
     }
 
     // Expense Breakdown

@@ -1387,24 +1387,72 @@ def dashboard():
         Expense.category, db.func.sum(Expense.amount)
     ).filter_by(user_id=current_user.id).group_by(Expense.category).all()
 
-    monthly_trend = []
-    for i in range(5, -1, -1):
-        month_date = date.today() - relativedelta(months=i)
-        month_exp = db.session.query(db.func.sum(Expense.amount)).filter(
-            Expense.user_id == current_user.id,
-            db.extract('month', Expense.date) == month_date.month,
-            db.extract('year', Expense.date) == month_date.year
-        ).scalar() or 0
-        month_inc = db.session.query(db.func.sum(Income.amount)).filter(
-            Income.user_id == current_user.id,
-            db.extract('month', Income.date) == month_date.month,
-            db.extract('year', Income.date) == month_date.year
-        ).scalar() or 0
-        monthly_trend.append({
-            'month': month_date.strftime('%b %Y'),
-            'expense': float(month_exp),
-            'income': float(month_inc)
-        })
+    income_points = db.session.query(Income.date, Income.amount).filter_by(user_id=current_user.id).all()
+    expense_points = db.session.query(Expense.date, Expense.amount).filter_by(user_id=current_user.id).all()
+
+    daily_income_map = {}
+    daily_expense_map = {}
+    monthly_income_map = {}
+    monthly_expense_map = {}
+    yearly_income_map = {}
+    yearly_expense_map = {}
+
+    for dt, amount in income_points:
+        d_key = dt
+        m_key = (dt.year, dt.month)
+        y_key = dt.year
+        daily_income_map[d_key] = daily_income_map.get(d_key, 0.0) + float(amount or 0)
+        monthly_income_map[m_key] = monthly_income_map.get(m_key, 0.0) + float(amount or 0)
+        yearly_income_map[y_key] = yearly_income_map.get(y_key, 0.0) + float(amount or 0)
+
+    for dt, amount in expense_points:
+        d_key = dt
+        m_key = (dt.year, dt.month)
+        y_key = dt.year
+        daily_expense_map[d_key] = daily_expense_map.get(d_key, 0.0) + float(amount or 0)
+        monthly_expense_map[m_key] = monthly_expense_map.get(m_key, 0.0) + float(amount or 0)
+        yearly_expense_map[y_key] = yearly_expense_map.get(y_key, 0.0) + float(amount or 0)
+
+    all_day_keys = sorted(set(daily_income_map.keys()) | set(daily_expense_map.keys()))
+    all_month_keys = sorted(set(monthly_income_map.keys()) | set(monthly_expense_map.keys()))
+    all_year_keys = sorted(set(yearly_income_map.keys()) | set(yearly_expense_map.keys()))
+
+    day_trend = [
+        {
+            'label': d.strftime('%d %b %Y'),
+            'income': float(daily_income_map.get(d, 0.0)),
+            'expense': float(daily_expense_map.get(d, 0.0)),
+        }
+        for d in all_day_keys
+    ]
+    month_trend = [
+        {
+            'label': date(y, m, 1).strftime('%b %Y'),
+            'income': float(monthly_income_map.get((y, m), 0.0)),
+            'expense': float(monthly_expense_map.get((y, m), 0.0)),
+        }
+        for (y, m) in all_month_keys
+    ]
+    year_trend = [
+        {
+            'label': str(y),
+            'income': float(yearly_income_map.get(y, 0.0)),
+            'expense': float(yearly_expense_map.get(y, 0.0)),
+        }
+        for y in all_year_keys
+    ]
+
+    trend_series = {
+        'day': day_trend,
+        'month': month_trend,
+        'year': year_trend,
+    }
+
+    # Keep existing monthly trend payload for backward compatibility in template snippets.
+    monthly_trend = [
+        {'month': item['label'], 'expense': item['expense'], 'income': item['income']}
+        for item in month_trend[-6:]
+    ]
 
     goals = FinancialGoal.query.filter_by(user_id=current_user.id).all()
 
@@ -1479,6 +1527,7 @@ def dashboard():
         recent_incomes=recent_incomes,
         expense_by_cat=json.dumps([{'category': c, 'amount': float(a)} for c, a in expense_by_cat]),
         monthly_trend=json.dumps(monthly_trend),
+        trend_series=json.dumps(trend_series),
         goals=goals,
         savings=total_income - total_expenses,
         monthly_commitments=monthly_commitments,

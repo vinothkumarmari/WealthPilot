@@ -12,21 +12,27 @@
                         <p class="text-muted small">Enter the {{ config.OTP_LENGTH }}-digit OTP sent to <strong>{{ email }}</strong></p>
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" autocomplete="off">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-4">
                             <label class="form-label fw-semibold d-block text-center">Enter OTP</label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text"><span class="material-icons-outlined">pin</span></span>
-                                <input type="text" name="otp" class="form-control text-center"
+                                    <input type="text" name="otp" class="form-control text-center"
                                        maxlength="{{ config.OTP_LENGTH }}"
                                        placeholder="{{ config.OTP_LENGTH }}-digit OTP"
+                                        inputmode="numeric"
+                                        pattern="[0-9]*"
+                                        autocomplete="off"
+                                        autocapitalize="off"
+                                        autocorrect="off"
+                                        spellcheck="false"
                                        style="font-size:1.4rem;letter-spacing:0.4rem;font-weight:700;"
                                        required autofocus>
                             </div>
                         </div>
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">{{ verify_label or 'Verify OTP' }}</button>
+                            <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center text-center">{{ verify_label or 'Verify OTP' }}</button>
                         </div>
                         <div class="text-center mt-3">
                             <p class="text-muted mb-1">Didn't receive the OTP?</p>

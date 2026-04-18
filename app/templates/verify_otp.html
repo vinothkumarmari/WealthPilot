@@ -16,7 +16,7 @@
             {% endfor %}
             {% endif %}
             {% endwith %}
-            <form method="POST">
+            <form method="POST" autocomplete="off">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-4">
                     <label class="form-label d-block text-center">Enter OTP</label>
@@ -25,11 +25,17 @@
                         <input type="text" name="otp" class="form-control text-center"
                                placeholder="Enter {{ config.OTP_LENGTH }}-digit OTP"
                                maxlength="{{ config.OTP_LENGTH }}"
+                               inputmode="numeric"
+                               pattern="[0-9]*"
+                               autocomplete="off"
+                               autocapitalize="off"
+                               autocorrect="off"
+                               spellcheck="false"
                                style="font-size: 1.5rem; letter-spacing: 0.5rem; font-weight: 700;"
                                required autofocus>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-accent w-100 btn-lg">{{ verify_label or 'Verify Email' }}</button>
+                <button type="submit" class="btn btn-accent w-100 btn-lg d-flex align-items-center justify-content-center text-center">{{ verify_label or 'Verify Email' }}</button>
             </form>
             <div class="text-center mt-2">
                 <p class="text-muted mb-1">Didn't receive the OTP?</p>
