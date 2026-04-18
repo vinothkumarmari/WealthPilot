@@ -13,44 +13,6 @@
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="d-flex justify-content-end mb-3">
-                        <div class="dropdown">
-                            <button class="btn btn-link p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile photo options">
-                                {% if current_user.profile_photo %}
-                                <img id="profilePreviewImage"
-                                     src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}"
-                                     alt="Profile Photo"
-                                     style="width:64px;height:64px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);"
-                                     onerror="this.style.display='none';document.getElementById('profilePreviewFallback').style.display='inline-flex';">
-                                <span id="profilePreviewFallback" class="material-icons-outlined" style="display:none;font-size:64px;color:var(--accent);">account_circle</span>
-                                {% else %}
-                                <img id="profilePreviewImage" src="" alt="Profile Photo" style="display:none;width:64px;height:64px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);">
-                                <span id="profilePreviewFallback" class="material-icons-outlined" style="font-size:64px;color:var(--accent);">account_circle</span>
-                                {% endif %}
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end p-2" style="min-width:220px;">
-                                <form id="profilePhotoUploadForm" action="{{ url_for('main.update_profile_photo') }}" method="POST" enctype="multipart/form-data" class="d-none">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="file" id="profilePhotoInput" name="profile_photo" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
-                                </form>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="profilePhotoChooseBtn">
-                                    <span class="material-icons-outlined" style="font-size:18px;">upload</span>
-                                    <span>Upload New</span>
-                                </button>
-                                <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="profilePhotoViewBtn" {% if not current_user.profile_photo %}disabled{% endif %}>
-                                    <span class="material-icons-outlined" style="font-size:18px;">open_in_full</span>
-                                    <span>Expand Picture</span>
-                                </button>
-                                <form action="{{ url_for('main.remove_profile_photo') }}" method="POST" class="m-0">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger" {% if not current_user.profile_photo %}disabled{% endif %}>
-                                        <span class="material-icons-outlined" style="font-size:18px;">remove_circle</span>
-                                        <span>Remove</span>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ t('Full Name') }}</label>
@@ -179,12 +141,38 @@
         <div class="card">
             <div class="card-header"><h6>{{ t('Account Summary') }}</h6></div>
             <div class="card-body text-center">
-                {% if current_user.profile_photo %}
-                <img src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);" onerror="this.style.display='none';document.getElementById('accountPhotoFallback').style.display='inline-flex';">
-                <span id="accountPhotoFallback" class="material-icons-outlined" style="display:none;font-size:80px; color: var(--accent)">account_circle</span>
-                {% else %}
-                <span class="material-icons-outlined" style="font-size:80px; color: var(--accent)">account_circle</span>
-                {% endif %}
+                <div class="dropdown d-inline-block mb-2">
+                    <button class="btn btn-link p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile photo options">
+                        {% if current_user.profile_photo %}
+                        <img id="profilePreviewImage" src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);" onerror="this.style.display='none';document.getElementById('accountPhotoFallback').style.display='inline-flex';">
+                        <span id="accountPhotoFallback" class="material-icons-outlined" style="display:none;font-size:80px;color:var(--accent)">account_circle</span>
+                        {% else %}
+                        <img id="profilePreviewImage" src="" alt="Profile Photo" style="display:none;width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);">
+                        <span id="accountPhotoFallback" class="material-icons-outlined" style="font-size:80px;color:var(--accent)">account_circle</span>
+                        {% endif %}
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-2" style="min-width:220px;">
+                        <form id="profilePhotoUploadForm" action="{{ url_for('main.update_profile_photo') }}" method="POST" enctype="multipart/form-data" class="m-0">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="file" id="profilePhotoInput" name="profile_photo" class="d-none" style="display:none;" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
+                        </form>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="profilePhotoChooseBtn">
+                            <span class="material-icons-outlined" style="font-size:18px;">upload</span>
+                            <span>Upload New</span>
+                        </button>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="profilePhotoViewBtn" {% if not current_user.profile_photo %}disabled{% endif %}>
+                            <span class="material-icons-outlined" style="font-size:18px;">open_in_full</span>
+                            <span>Expand Picture</span>
+                        </button>
+                        <form action="{{ url_for('main.remove_profile_photo') }}" method="POST" class="m-0">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger" {% if not current_user.profile_photo %}disabled{% endif %}>
+                                <span class="material-icons-outlined" style="font-size:18px;">remove_circle</span>
+                                <span>Remove</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
                 <h5 class="mt-2">{{ current_user.full_name or current_user.username }}</h5>
                 <p class="text-muted">{{ current_user.email }}</p>
                 <hr>
