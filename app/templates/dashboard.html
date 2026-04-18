@@ -731,10 +731,16 @@
 
     // Send email reminders
     function sendReminders() {
-        fetch('{{ url_for("main.send_reminders") }}', {method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'}})
-        .then(r => r.json())
-        .then(d => wpAlert(d.message, 'success'))
-        .catch(() => wpAlert('Failed to send reminders', 'error'));
+        fetch('{{ url_for("main.send_reminders") }}', {
+            method: 'POST',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('Server error ' + r.status);
+            return r.json();
+        })
+        .then(d => wpAlert(d.message, d.success ? 'success' : 'warning'))
+        .catch(e => wpAlert('Failed to send reminders: ' + e.message, 'error'));
     }
 </script>
 {% endblock %}
