@@ -26,9 +26,8 @@
                 <div class="stat-card stat-income">
                     <span class="material-icons-outlined stat-icon">payments</span>
                     <div class="stat-info">
-                        <span class="stat-label">{{ t('Monthly Income') }}</span>
+                        <span class="stat-label">{{ t('Tracked Income (Month)') }}</span>
                         <span class="stat-value">₹{{ total_income|inr }}</span>
-                        <small class="text-muted">{{ dashboard_income_note }}</small>
                     </div>
                 </div>
             </div>
@@ -85,6 +84,9 @@
                         <span class="stat-value">₹{{ monthly_net_savings|inr }}</span>
                     </div>
                 </div>
+            </div>
+            <div class="col-sm-12">
+                <small class="text-muted d-block mt-1">{{ dashboard_income_note }}. Profile Salary: ₹{{ profile_salary|inr }}.</small>
             </div>
             <div class="col-sm-6 col-md-4">
                 <div class="stat-card" style="border-left: 4px solid #e67e22;">
@@ -194,6 +196,7 @@
                 </div>
             </div>
             <div class="card-body">
+                <small class="text-muted d-block mb-2">Income line includes all income entries (Salary, Freelance, Business, Rental, etc.) for selected period.</small>
                 <div class="d-flex flex-wrap gap-2 mb-2" id="trendPresetWrap">
                     <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="day" data-count="7">7D</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm trend-preset" data-mode="day" data-count="30">30D</button>

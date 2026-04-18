@@ -1392,15 +1392,15 @@ def dashboard():
         db.extract('year', Income.date) == today.year
     ).scalar() or 0
 
-    if float(current_user.monthly_salary or 0) > 0:
-        dashboard_income = float(current_user.monthly_salary)
-        dashboard_income_note = 'From Profile Salary'
-    elif float(month_income_records or 0) > 0:
-        dashboard_income = float(month_income_records)
-        dashboard_income_note = 'From Income tab (this month)'
+    # Top income card should represent actual tracked income entries for this month
+    # (salary, freelance, business, rental, etc.) to match chart behavior.
+    dashboard_income = float(month_income_records or 0)
+    profile_salary = float(current_user.monthly_salary or 0)
+
+    if dashboard_income > 0:
+        dashboard_income_note = 'From Income tab (all sources, this month)'
     else:
-        dashboard_income = 0.0
-        dashboard_income_note = 'Add Profile Salary or Income records'
+        dashboard_income_note = 'No income entries for this month'
 
     monthly_net_savings = float(dashboard_income) - float(month_expenses)
 
@@ -1549,6 +1549,7 @@ def dashboard():
         month_expenses=float(month_expenses),
         monthly_net_savings=float(monthly_net_savings),
         dashboard_income_note=dashboard_income_note,
+        profile_salary=profile_salary,
         total_investments=total_investments_all,
         total_assets=total_assets_value,
         total_debts=total_debts,
