@@ -13,6 +13,39 @@
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded" style="background: var(--sidebar-bg);">
+                        <div class="position-relative">
+                            {% if current_user.profile_photo %}
+                            <img id="profilePreviewImage"
+                                 src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}"
+                                 alt="Profile Photo"
+                                 style="width:88px;height:88px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);"
+                                 onerror="this.style.display='none';document.getElementById('profilePreviewFallback').style.display='inline-flex';">
+                            {% else %}
+                            <img id="profilePreviewImage" src="" alt="Profile Photo" style="display:none;width:88px;height:88px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);">
+                            {% endif %}
+                            <span id="profilePreviewFallback" class="material-icons-outlined" style="font-size:88px;color:var(--accent);{% if current_user.profile_photo %}display:none;{% endif %}">account_circle</span>
+                            <button type="button" class="btn btn-sm btn-primary rounded-circle position-absolute" style="right:-4px;bottom:-4px;width:30px;height:30px;padding:0;" id="profilePhotoEditBtn" title="Edit Photo">
+                                <span class="material-icons-outlined" style="font-size:16px;line-height:28px;">edit</span>
+                            </button>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ t('Profile Photo') }}</div>
+                            <small class="text-muted d-block mb-2">Allowed: PNG, JPG, JPEG, WEBP, GIF.</small>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <input type="file" name="profile_photo" id="profilePhotoInput" class="d-none" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="profilePhotoChooseBtn">
+                                    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">edit</span>
+                                    Edit Photo
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="profilePhotoViewBtn" {% if not current_user.profile_photo %}disabled{% endif %}>
+                                    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">visibility</span>
+                                    View Image
+                                </button>
+                                <small class="text-muted" id="profilePhotoFileName"></small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ t('Full Name') }}</label>
@@ -26,11 +59,6 @@
                             <label class="form-label">{{ t('Email') }}</label>
                             <input type="email" name="email" class="form-control" value="{{ current_user.email }}">
                             <small class="text-muted">Changing email requires OTP verification at the new email address.</small>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">{{ t('Profile Photo') }}</label>
-                            <input type="file" name="profile_photo" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
-                            <small class="text-muted">Allowed: PNG, JPG, JPEG, WEBP, GIF.</small>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ t('Age') }}</label>
@@ -147,7 +175,8 @@
             <div class="card-header"><h6>{{ t('Account Summary') }}</h6></div>
             <div class="card-body text-center">
                 {% if current_user.profile_photo %}
-                <img src="{{ url_for('static', filename=current_user.profile_photo) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);">
+                <img src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);" onerror="this.style.display='none';document.getElementById('accountPhotoFallback').style.display='inline-flex';">
+                <span id="accountPhotoFallback" class="material-icons-outlined" style="display:none;font-size:80px; color: var(--accent)">account_circle</span>
                 {% else %}
                 <span class="material-icons-outlined" style="font-size:80px; color: var(--accent)">account_circle</span>
                 {% endif %}
@@ -177,4 +206,70 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="profilePhotoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">{{ t('Profile Photo') }}</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="profileModalImage" src="" alt="Profile Photo" style="max-width:100%;max-height:65vh;border-radius:10px;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    const input = document.getElementById('profilePhotoInput');
+    const chooseBtn = document.getElementById('profilePhotoChooseBtn');
+    const editBtn = document.getElementById('profilePhotoEditBtn');
+    const viewBtn = document.getElementById('profilePhotoViewBtn');
+    const preview = document.getElementById('profilePreviewImage');
+    const fallback = document.getElementById('profilePreviewFallback');
+    const fileName = document.getElementById('profilePhotoFileName');
+    const modalEl = document.getElementById('profilePhotoModal');
+    const modalImg = document.getElementById('profileModalImage');
+
+    function openPicker() {
+        if (input) input.click();
+    }
+
+    function currentImageSrc() {
+        if (!preview || !preview.src || preview.style.display === 'none') return '';
+        return preview.src;
+    }
+
+    if (chooseBtn) chooseBtn.addEventListener('click', openPicker);
+    if (editBtn) editBtn.addEventListener('click', openPicker);
+
+    if (input) {
+        input.addEventListener('change', function () {
+            const file = input.files && input.files[0] ? input.files[0] : null;
+            if (!file) return;
+            if (fileName) fileName.textContent = file.name;
+            const objectUrl = URL.createObjectURL(file);
+            if (preview) {
+                preview.src = objectUrl;
+                preview.style.display = 'inline-block';
+            }
+            if (fallback) fallback.style.display = 'none';
+            if (viewBtn) viewBtn.disabled = false;
+        });
+    }
+
+    if (viewBtn && modalEl && modalImg) {
+        viewBtn.addEventListener('click', function () {
+            const src = currentImageSrc();
+            if (!src) return;
+            modalImg.src = src;
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        });
+    }
+})();
+</script>
 {% endblock %}

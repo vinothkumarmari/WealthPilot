@@ -324,17 +324,20 @@ def admin_required(f):
     return decorated_function
 
 
-def _sync_user_salary(user):
-    """Auto-update salary from Salary income records without clobbering manual profile salary."""
+def _sync_user_salary(user, force_from_income=False):
+    """Keep user salary in sync while preserving profile-entered salary unless force_from_income is set."""
     salary_total = db.session.query(db.func.sum(Income.amount)).filter_by(
         user_id=user.id, income_type='Salary'
     ).scalar() or 0
     salary_count = Income.query.filter_by(user_id=user.id, income_type='Salary').count()
-    if salary_count > 0:
+
+    # Preserve profile salary by default; only derive from Income rows when requested
+    # or when no profile salary has been set.
+    if salary_count > 0 and (force_from_income or not (user.monthly_salary and user.monthly_salary > 0)):
         user.monthly_salary = salary_total / salary_count
         user.annual_salary = user.monthly_salary * 12
     else:
-        # Keep user-entered profile salary when no Salary income rows are present.
+        # Keep user-entered profile salary when available.
         if user.monthly_salary and user.monthly_salary > 0:
             user.annual_salary = user.monthly_salary * 12
 
@@ -1562,7 +1565,7 @@ def income():
     income_types = Config.INCOME_TYPES
 
     # Keep salary in sync with actual records on every page load
-    _sync_user_salary(current_user)
+    _sync_user_salary(current_user, force_from_income=True)
     db.session.commit()
 
     income_by_type = db.session.query(
@@ -1598,7 +1601,7 @@ def add_income():
     db.session.add(inc)
 
     # Auto-update user salary from salary-type income records
-    _sync_user_salary(current_user)
+    _sync_user_salary(current_user, force_from_income=True)
 
     db.session.commit()
     flash('Income added successfully!', 'success')

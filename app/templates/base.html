@@ -177,7 +177,8 @@
                 </button>
                 <div class="user-info">
                     {% if current_user.profile_photo %}
-                    <img src="{{ url_for('static', filename=current_user.profile_photo) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
+                    <img src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                    <span class="material-icons-outlined" style="display:none;">account_circle</span>
                     {% else %}
                     <span class="material-icons-outlined">account_circle</span>
                     {% endif %}
