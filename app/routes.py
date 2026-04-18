@@ -1510,7 +1510,12 @@ def dashboard():
     year_keys = list(range(today.year - 19, today.year + 1))
 
     if profile_monthly_salary > 0:
+        # Only inject salary for months on or after the user's registration month
+        user_joined = current_user.created_at.date() if current_user.created_at else today
+        user_joined_ym = (user_joined.year, user_joined.month)
         for (y, m) in month_keys:
+            if (y, m) < user_joined_ym:
+                continue
             if float(salary_month_map.get((y, m), 0.0)) <= 0:
                 monthly_income_map[(y, m)] = float(monthly_income_map.get((y, m), 0.0)) + profile_monthly_salary
                 yearly_income_map[y] = float(yearly_income_map.get(y, 0.0)) + profile_monthly_salary
