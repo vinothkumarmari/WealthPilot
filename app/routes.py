@@ -1,7 +1,7 @@
 """
 WealthPilot - All Routes (Blueprint)
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
@@ -139,6 +139,47 @@ def _parse_int_form(field_name, *, min_value=None, max_value=None, default=None)
     if max_value is not None and value > max_value:
         raise ValueError(f'{field_name.replace("_", " ").capitalize()} must be at most {max_value}.')
     return value
+
+
+def _store_profile_photo(user, profile_photo):
+    """Persist profile image in DB so it survives app restarts/deploys."""
+    ext = profile_photo.filename.rsplit('.', 1)[-1].lower() if '.' in profile_photo.filename else ''
+    allowed_photo_exts = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+    if ext not in allowed_photo_exts:
+        raise ValueError('Profile photo must be PNG, JPG, JPEG, WEBP, or GIF.')
+
+    data = profile_photo.read()
+    if not data:
+        raise ValueError('Selected image file is empty.')
+    max_size = 5 * 1024 * 1024
+    if len(data) > max_size:
+        raise ValueError('Profile photo must be 5MB or smaller.')
+
+    mime = (profile_photo.mimetype or '').strip().lower()
+    if not mime.startswith('image/'):
+        mime_map = {
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'webp': 'image/webp',
+            'gif': 'image/gif',
+        }
+        mime = mime_map.get(ext, 'image/jpeg')
+
+    # Keep old disk cleanup for legacy files, but primary source is DB.
+    old_photo = (user.profile_photo or '').replace('\\', '/')
+    if old_photo.startswith('uploads/profile_photos/'):
+        old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
+        if os.path.exists(old_photo_path):
+            try:
+                os.remove(old_photo_path)
+            except OSError:
+                pass
+
+    user.profile_photo_data = data
+    user.profile_photo_mime = mime
+    user.profile_photo_updated_at = datetime.now(timezone.utc)
+    user.profile_photo = None
 
 
 def send_otp_email(user_email, otp_code, purpose='registration'):
@@ -1690,27 +1731,11 @@ def profile():
 
         profile_photo = request.files.get('profile_photo')
         if profile_photo and profile_photo.filename:
-            ext = profile_photo.filename.rsplit('.', 1)[-1].lower() if '.' in profile_photo.filename else ''
-            allowed_photo_exts = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
-            if ext not in allowed_photo_exts:
-                flash('Profile photo must be PNG, JPG, JPEG, WEBP, or GIF.', 'danger')
+            try:
+                _store_profile_photo(current_user, profile_photo)
+            except ValueError as e:
+                flash(str(e), 'danger')
                 return render_template('profile.html')
-
-            photo_dir = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), 'uploads', 'profile_photos')
-            os.makedirs(photo_dir, exist_ok=True)
-            photo_name = secure_filename(f"u{current_user.id}_{secrets.token_hex(8)}.{ext}")
-            photo_path = os.path.join(photo_dir, photo_name)
-            profile_photo.save(photo_path)
-
-            old_photo = (current_user.profile_photo or '').replace('\\', '/')
-            if old_photo.startswith('uploads/profile_photos/'):
-                old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
-                if os.path.exists(old_photo_path):
-                    try:
-                        os.remove(old_photo_path)
-                    except OSError:
-                        pass
-            current_user.profile_photo = f'uploads/profile_photos/{photo_name}'
 
         if current_user.pending_email:
             otp = _issue_user_otp(current_user, commit=False)
@@ -1739,28 +1764,11 @@ def update_profile_photo():
         flash('No image selected.', 'warning')
         return redirect(url_for('main.profile'))
 
-    ext = profile_photo.filename.rsplit('.', 1)[-1].lower() if '.' in profile_photo.filename else ''
-    allowed_photo_exts = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
-    if ext not in allowed_photo_exts:
-        flash('Profile photo must be PNG, JPG, JPEG, WEBP, or GIF.', 'danger')
+    try:
+        _store_profile_photo(current_user, profile_photo)
+    except ValueError as e:
+        flash(str(e), 'danger')
         return redirect(url_for('main.profile'))
-
-    photo_dir = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), 'uploads', 'profile_photos')
-    os.makedirs(photo_dir, exist_ok=True)
-    photo_name = secure_filename(f"u{current_user.id}_{secrets.token_hex(8)}.{ext}")
-    photo_path = os.path.join(photo_dir, photo_name)
-    profile_photo.save(photo_path)
-
-    old_photo = (current_user.profile_photo or '').replace('\\', '/')
-    if old_photo.startswith('uploads/profile_photos/'):
-        old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
-        if os.path.exists(old_photo_path):
-            try:
-                os.remove(old_photo_path)
-            except OSError:
-                pass
-
-    current_user.profile_photo = f'uploads/profile_photos/{photo_name}'
     db.session.commit()
     flash('Profile photo updated.', 'success')
     return redirect(url_for('main.profile'))
@@ -1778,9 +1786,34 @@ def remove_profile_photo():
             except OSError:
                 pass
     current_user.profile_photo = None
+    current_user.profile_photo_data = None
+    current_user.profile_photo_mime = None
+    current_user.profile_photo_updated_at = datetime.now(timezone.utc)
     db.session.commit()
     flash('Profile photo removed.', 'info')
     return redirect(url_for('main.profile'))
+
+
+@main.route('/profile/photo/current')
+@login_required
+def current_user_profile_photo():
+    if getattr(current_user, 'profile_photo_data', None):
+        return send_file(
+            io.BytesIO(current_user.profile_photo_data),
+            mimetype=(current_user.profile_photo_mime or 'image/jpeg'),
+            as_attachment=False,
+            max_age=0,
+        )
+
+    old_photo = (current_user.profile_photo or '').replace('\\', '/')
+    if old_photo.startswith('uploads/profile_photos/'):
+        old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
+        if os.path.exists(old_photo_path):
+            folder = os.path.dirname(old_photo_path)
+            filename = os.path.basename(old_photo_path)
+            return send_from_directory(folder, filename)
+
+    return ('', 404)
 
 
 @main.route('/verify-email-change-otp', methods=['GET', 'POST'])

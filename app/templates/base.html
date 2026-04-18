@@ -176,8 +176,10 @@
                     <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
                 </button>
                 <div class="user-info">
-                    {% if current_user.profile_photo %}
-                    <img src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                    {% set has_profile_photo = current_user.profile_photo_data or current_user.profile_photo %}
+                    {% set profile_photo_ver = (current_user.profile_photo_updated_at.timestamp()|int) if current_user.profile_photo_updated_at else 0 %}
+                    {% if has_profile_photo %}
+                    <img src="{{ url_for('main.current_user_profile_photo', v=profile_photo_ver) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
                     <span class="material-icons-outlined" style="display:none;">account_circle</span>
                     {% else %}
                     <span class="material-icons-outlined">account_circle</span>

@@ -142,9 +142,11 @@
             <div class="card-header"><h6>{{ t('Account Summary') }}</h6></div>
             <div class="card-body text-center">
                 <div class="dropdown d-inline-block mb-2">
+                    {% set has_profile_photo = current_user.profile_photo_data or current_user.profile_photo %}
+                    {% set profile_photo_ver = (current_user.profile_photo_updated_at.timestamp()|int) if current_user.profile_photo_updated_at else 0 %}
                     <button class="btn btn-link p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile photo options">
-                        {% if current_user.profile_photo %}
-                        <img id="profilePreviewImage" src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);" onerror="this.style.display='none';document.getElementById('accountPhotoFallback').style.display='inline-flex';">
+                        {% if has_profile_photo %}
+                        <img id="profilePreviewImage" src="{{ url_for('main.current_user_profile_photo', v=profile_photo_ver) }}" alt="Profile Photo" style="width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);" onerror="this.style.display='none';document.getElementById('accountPhotoFallback').style.display='inline-flex';">
                         <span id="accountPhotoFallback" class="material-icons-outlined" style="display:none;font-size:80px;color:var(--accent)">account_circle</span>
                         {% else %}
                         <img id="profilePreviewImage" src="" alt="Profile Photo" style="display:none;width:90px;height:90px;object-fit:cover;border-radius:50%;border:2px solid var(--accent);">
@@ -160,13 +162,13 @@
                             <span class="material-icons-outlined" style="font-size:18px;">upload</span>
                             <span>Upload New</span>
                         </button>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="profilePhotoViewBtn" {% if not current_user.profile_photo %}disabled{% endif %}>
+                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="profilePhotoViewBtn" {% if not has_profile_photo %}disabled{% endif %}>
                             <span class="material-icons-outlined" style="font-size:18px;">open_in_full</span>
                             <span>Expand Picture</span>
                         </button>
                         <form action="{{ url_for('main.remove_profile_photo') }}" method="POST" class="m-0">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger" {% if not current_user.profile_photo %}disabled{% endif %}>
+                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger" {% if not has_profile_photo %}disabled{% endif %}>
                                 <span class="material-icons-outlined" style="font-size:18px;">remove_circle</span>
                                 <span>Remove</span>
                             </button>
@@ -222,7 +224,7 @@
     const chooseBtn = document.getElementById('profilePhotoChooseBtn');
     const viewBtn = document.getElementById('profilePhotoViewBtn');
     const preview = document.getElementById('profilePreviewImage');
-    const fallback = document.getElementById('profilePreviewFallback');
+    const fallback = document.getElementById('accountPhotoFallback');
     const uploadForm = document.getElementById('profilePhotoUploadForm');
     const modalEl = document.getElementById('profilePhotoModal');
     const modalImg = document.getElementById('profileModalImage');

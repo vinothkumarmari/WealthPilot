@@ -326,6 +326,15 @@ def _ensure_user_columns(app):
                 if 'profile_photo' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN profile_photo VARCHAR(255)"))
                     app.logger.info('Added column: user.profile_photo')
+                if 'profile_photo_data' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN profile_photo_data BLOB"))
+                    app.logger.info('Added column: user.profile_photo_data')
+                if 'profile_photo_mime' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN profile_photo_mime VARCHAR(100)"))
+                    app.logger.info('Added column: user.profile_photo_mime')
+                if 'profile_photo_updated_at' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN profile_photo_updated_at DATETIME"))
+                    app.logger.info('Added column: user.profile_photo_updated_at')
                 if 'active_session_nonce' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN active_session_nonce VARCHAR(64)"))
                     app.logger.info('Added column: user.active_session_nonce')
@@ -362,6 +371,15 @@ def _ensure_user_columns(app):
                 if 'profile_photo' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN profile_photo VARCHAR(255)"))
                     app.logger.info('Added column: user.profile_photo')
+                if 'profile_photo_data' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN profile_photo_data BYTEA"))
+                    app.logger.info('Added column: user.profile_photo_data')
+                if 'profile_photo_mime' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN profile_photo_mime VARCHAR(100)"))
+                    app.logger.info('Added column: user.profile_photo_mime')
+                if 'profile_photo_updated_at' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN profile_photo_updated_at TIMESTAMP"))
+                    app.logger.info('Added column: user.profile_photo_updated_at')
                 if 'active_session_nonce' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN active_session_nonce VARCHAR(64)"))
                     app.logger.info('Added column: user.active_session_nonce')
