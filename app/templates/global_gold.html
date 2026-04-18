@@ -1,0 +1,678 @@
+{% extends 'base.html' %}
+{% block title %}Global Gold Prices - WealthPilot{% endblock %}
+{% block content %}
+
+<!-- ══════════ PAGE HEADER ══════════ -->
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h4><span class="material-icons-outlined">public</span> {{ t('Global Gold & Silver Prices — Live Market Data') }}</h4>
+        <small class="text-muted">
+            Last updated: {{ data.last_updated }} &nbsp;|&nbsp;
+            Source: <a href="https://www.livepriceofgold.com/" target="_blank" rel="noopener">{{ data.source }}</a>
+            {% if data.success %}<span class="badge bg-success ms-2"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">circle</span> LIVE</span>{% else %}<span class="badge bg-warning ms-2">Offline</span>{% endif %}
+        </small>
+    </div>
+    <button class="btn btn-outline-primary btn-sm" onclick="location.reload()" title="Refresh prices">
+        <span class="material-icons-outlined" style="font-size:16px">refresh</span> {{ t('Refresh') }}
+    </button>
+</div>
+
+{% if not data.success %}
+<div class="alert alert-warning">
+    <span class="material-icons-outlined" style="font-size:18px">warning</span>
+    {{ t('Unable to fetch live prices.') }} {{ data.error|default('Please try again later.') }}
+</div>
+{% endif %}
+
+<!-- ══════════ SPOT PRICE TICKER CARDS ══════════ -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card p-3 h-100 border-warning">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <small class="text-muted">{{ t('Spot Gold') }} / {{ t('Ounce') }}</small>
+                    <h3 class="mb-0" style="color:#FFD700">${{ "{:,.2f}".format(data.spot.gold_oz|default(0)) }}</h3>
+                </div>
+                <span class="material-icons-outlined" style="color:#FFD700;font-size:32px">monetization_on</span>
+            </div>
+            {% if data.spot.gold_high %}
+            <div class="mt-2 d-flex justify-content-between small text-muted">
+                <span>H: ${{ "{:,.2f}".format(data.spot.gold_high) }}</span>
+                <span>L: ${{ "{:,.2f}".format(data.spot.gold_low) }}</span>
+                {% if data.spot.gold_change_pct is defined %}
+                <span class="badge bg-{{ 'success' if data.spot.gold_change_pct >= 0 else 'danger' }}">
+                    {{ '{:+.2f}'.format(data.spot.gold_change_pct) }}%
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <small class="text-muted">{{ t('Gold') }} / {{ t('Gram') }}</small>
+                    <h3 class="mb-0" style="color:#DAA520">${{ "{:,.3f}".format(data.spot.gold_gram|default(0)) }}</h3>
+                </div>
+                <span class="material-icons-outlined" style="color:#DAA520;font-size:32px">scale</span>
+            </div>
+            <small class="text-muted mt-2 d-block">1 oz = 31.1035 grams</small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <small class="text-muted">{{ t('Gold') }} / {{ t('Tola') }}</small>
+                    <h3 class="mb-0" style="color:#B8860B">${{ "{:,.2f}".format(data.spot.gold_tola|default(0)) }}</h3>
+                </div>
+                <span class="material-icons-outlined" style="color:#B8860B;font-size:32px">diamond</span>
+            </div>
+            <small class="text-muted mt-2 d-block">1 tola = 11.6638 grams</small>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card p-3 h-100 border-secondary">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <small class="text-muted">{{ t('Spot Silver') }} / {{ t('Ounce') }}</small>
+                    <h3 class="mb-0" style="color:#C0C0C0">${{ "{:,.4f}".format(data.spot.silver_oz|default(0)) }}</h3>
+                </div>
+                <span class="material-icons-outlined" style="color:#C0C0C0;font-size:32px">hexagon</span>
+            </div>
+            {% if data.spot.silver_high %}
+            <div class="mt-2 d-flex justify-content-between small text-muted">
+                <span>H: ${{ "{:,.3f}".format(data.spot.silver_high) }}</span>
+                <span>L: ${{ "{:,.3f}".format(data.spot.silver_low) }}</span>
+                {% if data.spot.silver_change_pct is defined %}
+                <span class="badge bg-{{ 'success' if data.spot.silver_change_pct >= 0 else 'danger' }}">
+                    {{ '{:+.2f}'.format(data.spot.silver_change_pct) }}%
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ EURO / DOLLAR ══════════ -->
+{% if data.spot.euro_dollar %}
+<div class="mb-4">
+    <span class="badge bg-dark fs-6 px-3 py-2">
+        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">currency_exchange</span>
+        EUR/USD &nbsp; {{ "{:.4f}".format(data.spot.euro_dollar) }}
+    </span>
+</div>
+{% endif %}
+
+<!-- ══════════ MAIN TABS ══════════ -->
+<ul class="nav nav-tabs" id="globalTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="tab" href="#tabGoldGlobal" role="tab">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">public</span> {{ t('Global Gold') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabIndiaPurity" role="tab">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">stars</span> {{ t('India Purities') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabSilver" role="tab">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">hexagon</span> {{ t('Silver') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabExchange" role="tab">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">currency_exchange</span> {{ t('Exchange Rates') }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tabCalc" role="tab">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">calculate</span> {{ t('Calculator') }}
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content mt-0">
+
+    <!-- ══ TAB 1: GLOBAL GOLD PRICES ══ -->
+    <div class="tab-pane fade show active" id="tabGoldGlobal" role="tabpanel">
+        <div class="card border-top-0 rounded-0 rounded-bottom">
+            <div class="card-body">
+                <h6 class="mb-3">
+                    <span class="material-icons-outlined" style="font-size:18px;color:#FFD700">public</span>
+                    {{ t('Gold Prices Worldwide') }} — {{ data.global_gold|length }} {{ t('Countries') }}
+                </h6>
+                {% if data.global_gold %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover table-bordered mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>{{ t('Country') }}</th>
+                                <th>{{ t('Currency') }}</th>
+                                <th class="text-end">{{ t('Per Gram') }}</th>
+                                <th class="text-end">{{ t('Per Ounce') }}</th>
+                                <th class="text-end">{{ t('Per Tola') }}</th>
+                                <th class="text-end">{{ t('Per KG') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in data.global_gold %}
+                            <tr{% if c.currency == 'INR' %} class="table-warning"{% endif %}>
+                                <td><strong>{{ c.name }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ c.currency }}</span></td>
+                                <td class="text-end fw-bold">{{ "{:,.2f}".format(c.gram) }}</td>
+                                <td class="text-end">{{ "{:,.2f}".format(c.ounce) }}</td>
+                                <td class="text-end">{{ "{:,.2f}".format(c.tola) }}</td>
+                                <td class="text-end">{{ "{:,.0f}".format(c.kg) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted mt-2 d-block">{{ t('All prices are spot market rates. Local premiums may vary.') }}</small>
+                {% else %}
+                <div class="alert alert-info mb-0">{{ t('Global gold price data is currently unavailable.') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB 2: INDIA GOLD PURITIES ══ -->
+    <div class="tab-pane fade" id="tabIndiaPurity" role="tabpanel">
+        <div class="card border-top-0 rounded-0 rounded-bottom">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="mb-0">
+                        <span class="material-icons-outlined" style="font-size:18px;color:#FFD700">stars</span>
+                        {{ t('India Gold Prices by Purity') }} (INR)
+                    </h6>
+                    <div class="btn-group btn-group-sm" id="unitGroup">
+                        <button class="btn btn-warning active" data-unit="gram" onclick="switchGoldUnit('gram')">{{ t('Gram') }}</button>
+                        <button class="btn btn-outline-warning" data-unit="ounce" onclick="switchGoldUnit('ounce')">{{ t('Ounce') }}</button>
+                        <button class="btn btn-outline-warning" data-unit="tola" onclick="switchGoldUnit('tola')">{{ t('Tola') }}</button>
+                        <button class="btn btn-outline-warning" data-unit="kg" onclick="switchGoldUnit('kg')">{{ t('KG') }}</button>
+                    </div>
+                </div>
+                {% if data.gold_purities %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover table-bordered mb-0" id="purityTable">
+                        <thead class="table-warning">
+                            <tr>
+                                <th>{{ t('Karat') }}</th>
+                                <th>{{ t('Purity') }}</th>
+                                <th class="text-end">{{ t('Price') }} (₹) <small class="text-muted purity-unit-label">/ gram</small></th>
+                                <th class="text-end">{{ t('High') }}</th>
+                                <th class="text-end">{{ t('Low') }}</th>
+                                <th class="text-end">{{ t('Change') }}</th>
+                                <th>{{ t('Best For') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for p in data.gold_purities %}
+                            <tr data-gram="{{ p.gram }}" data-ounce="{{ p.ounce }}" data-tola="{{ p.tola }}" data-kg="{{ p.kg }}"
+                                data-high="{{ p.high|default(0) }}" data-low="{{ p.low|default(0) }}">
+                                <td><span class="badge bg-warning text-dark fw-bold">{{ p.karat }}</span></td>
+                                <td>{{ p.purity }}</td>
+                                <td class="text-end fw-bold purity-price">₹{{ "{:,.2f}".format(p.gram) }}</td>
+                                <td class="text-end purity-high">{% if p.high %}₹{{ "{:,.2f}".format(p.high) }}{% else %}—{% endif %}</td>
+                                <td class="text-end purity-low">{% if p.low %}₹{{ "{:,.2f}".format(p.low) }}{% else %}—{% endif %}</td>
+                                <td class="text-end">
+                                    {% if p.change %}
+                                    <span class="badge bg-{{ 'success' if p.change >= 0 else 'danger' }}">
+                                        {{ '{:+,.2f}'.format(p.change) }}
+                                    </span>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td><small>{{ p.desc }}</small></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">{{ t('Purity data is currently unavailable.') }}</div>
+                {% endif %}
+
+                <!-- Unit Conversion Reference -->
+                <div class="card bg-light mt-3">
+                    <div class="card-body py-2">
+                        <small class="text-muted">
+                            <strong>{{ t('Unit Conversions') }}:</strong>
+                            1 ounce = 31.1035g &nbsp;|&nbsp;
+                            1 tola = 11.6638g &nbsp;|&nbsp;
+                            1 kg = 1000g &nbsp;|&nbsp;
+                            1 pennyweight = 1.5552g &nbsp;|&nbsp;
+                            1 baht = 15.2441g
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB 3: SILVER PRICES ══ -->
+    <div class="tab-pane fade" id="tabSilver" role="tabpanel">
+        <div class="card border-top-0 rounded-0 rounded-bottom">
+            <div class="card-body">
+
+                <!-- Global Silver Table -->
+                <h6 class="mb-3">
+                    <span class="material-icons-outlined" style="font-size:18px;color:#C0C0C0">public</span>
+                    {{ t('Silver Prices Worldwide') }}
+                </h6>
+                {% if data.global_silver %}
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm table-hover table-bordered mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>{{ t('Country') }}</th>
+                                <th>{{ t('Currency') }}</th>
+                                <th class="text-end">{{ t('Per Gram') }}</th>
+                                <th class="text-end">{{ t('Per Ounce') }}</th>
+                                <th class="text-end">{{ t('Per Tola') }}</th>
+                                <th class="text-end">{{ t('Per KG') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in data.global_silver %}
+                            <tr{% if c.currency == 'INR' %} class="table-active"{% endif %}>
+                                <td><strong>{{ c.name }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ c.currency }}</span></td>
+                                <td class="text-end fw-bold">{{ "{:,.3f}".format(c.gram) }}</td>
+                                <td class="text-end">{{ "{:,.2f}".format(c.ounce) }}</td>
+                                <td class="text-end">{{ "{:,.2f}".format(c.tola) }}</td>
+                                <td class="text-end">{{ "{:,.0f}".format(c.kg) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- India Silver Purities -->
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="mb-0">
+                        <span class="material-icons-outlined" style="font-size:18px;color:#C0C0C0">stars</span>
+                        {{ t('India Silver Prices by Purity') }} (INR)
+                    </h6>
+                    <div class="btn-group btn-group-sm" id="silverUnitGroup">
+                        <button class="btn btn-secondary active" data-unit="gram" onclick="switchSilverUnit('gram')">{{ t('Gram') }}</button>
+                        <button class="btn btn-outline-secondary" data-unit="ounce" onclick="switchSilverUnit('ounce')">{{ t('Ounce') }}</button>
+                        <button class="btn btn-outline-secondary" data-unit="tola" onclick="switchSilverUnit('tola')">{{ t('Tola') }}</button>
+                        <button class="btn btn-outline-secondary" data-unit="kg" onclick="switchSilverUnit('kg')">{{ t('KG') }}</button>
+                    </div>
+                </div>
+                {% if data.silver_purities %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover table-bordered mb-0" id="silverPurityTable">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th>{{ t('Type') }}</th>
+                                <th>{{ t('Purity') }}</th>
+                                <th class="text-end">{{ t('Price') }} (₹) <small class="text-muted silver-unit-label">/ gram</small></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for s in data.silver_purities %}
+                            <tr data-gram="{{ s.gram }}" data-ounce="{{ s.ounce }}" data-tola="{{ s.tola }}" data-kg="{{ s.kg }}">
+                                <td><span class="badge bg-secondary">{{ s.name }}</span></td>
+                                <td>{{ s.purity }}</td>
+                                <td class="text-end fw-bold silver-price">₹{{ "{:,.2f}".format(s.gram) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-0">{{ t('Silver purity data is currently unavailable.') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB 4: EXCHANGE RATES ══ -->
+    <div class="tab-pane fade" id="tabExchange" role="tabpanel">
+        <div class="card border-top-0 rounded-0 rounded-bottom">
+            <div class="card-body">
+                <h6 class="mb-3">
+                    <span class="material-icons-outlined" style="font-size:18px;color:#1976d2">currency_exchange</span>
+                    {{ t('Exchange Rates — INR') }}
+                </h6>
+                {% if data.exchange_rates %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover table-bordered mb-0">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>{{ t('Currency Pair') }}</th>
+                                <th class="text-end">{{ t('Rate') }}</th>
+                                {% if data.exchange_rates[0].bid %}
+                                <th class="text-end">{{ t('Bid') }}</th>
+                                <th class="text-end">{{ t('Ask') }}</th>
+                                <th class="text-end">{{ t('Spread') }}</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for ex in data.exchange_rates %}
+                            <tr>
+                                <td><strong>{{ ex.pair }}</strong></td>
+                                <td class="text-end fw-bold">{{ "{:,.4f}".format(ex.rate) }}</td>
+                                {% if ex.bid %}
+                                <td class="text-end text-success">{{ "{:,.2f}".format(ex.bid) }}</td>
+                                <td class="text-end text-danger">{{ "{:,.2f}".format(ex.ask) }}</td>
+                                <td class="text-end">
+                                    {% if ex.bid and ex.ask %}
+                                    <small class="text-muted">{{ "{:.2f}".format(ex.ask - ex.bid) }}</small>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <small class="text-muted mt-2 d-block">{{ t('Exchange rates are indicative. Check with your bank for actual rates.') }}</small>
+                {% else %}
+                <div class="alert alert-info mb-0">{{ t('Exchange rate data is currently unavailable.') }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ TAB 5: GOLD & SILVER CALCULATOR ══ -->
+    <div class="tab-pane fade" id="tabCalc" role="tabpanel">
+        <div class="card border-top-0 rounded-0 rounded-bottom">
+            <div class="card-body">
+                <div class="row">
+
+                    <!-- Gold Calculator -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-warning h-100">
+                            <div class="card-header bg-warning bg-opacity-25">
+                                <h6 class="mb-0">
+                                    <span class="material-icons-outlined" style="font-size:18px;color:#FFD700">calculate</span>
+                                    {{ t('Gold Price Calculator') }}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label small">{{ t('Weight / Quantity') }}</label>
+                                    <input type="number" class="form-control" id="calcWeight" value="1" min="0.01" step="0.01" oninput="calcGold()">
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Unit') }}</label>
+                                        <select class="form-select" id="calcUnit" onchange="calcGold()">
+                                            <option value="gram">{{ t('Gram') }}</option>
+                                            <option value="ounce">{{ t('Ounce') }} (oz)</option>
+                                            <option value="tola">{{ t('Tola') }}</option>
+                                            <option value="kg">{{ t('Kilogram') }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Karat / Purity') }}</label>
+                                        <select class="form-select" id="calcPurity" onchange="calcGold()">
+                                            <option value="0.999">24K (99.9%)</option>
+                                            <option value="0.916">22K (91.6%)</option>
+                                            <option value="0.875">21K (87.5%)</option>
+                                            <option value="0.750">18K (75.0%)</option>
+                                            <option value="0.585">14K (58.5%)</option>
+                                            <option value="0.417">10K (41.7%)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small">{{ t('Currency') }}</label>
+                                    <select class="form-select" id="calcCurrency" onchange="calcGold()">
+                                        {% for c in data.global_gold %}
+                                        <option value="{{ c.currency }}"{% if c.currency == 'INR' %} selected{% endif %}>{{ c.name }} ({{ c.currency }})</option>
+                                        {% endfor %}
+                                        {% if not data.global_gold %}
+                                        <option value="USD">USD</option>
+                                        <option value="INR" selected>INR</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Spread') }} (%)</label>
+                                        <input type="number" class="form-control" id="calcSpread" value="0" min="0" max="20" step="0.5" oninput="calcGold()">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Labor Cost') }} (%)</label>
+                                        <input type="number" class="form-control" id="calcLabor" value="0" min="0" max="20" step="0.5" oninput="calcGold()">
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="text-center">
+                                    <small class="text-muted">{{ t('Estimated Value') }}</small>
+                                    <h3 class="mb-0" style="color:#FFD700">
+                                        <span id="calcCurrencyLabel">INR</span>
+                                        <span id="calcResult">0.00</span>
+                                    </h3>
+                                    <div class="mt-1 small" id="calcBidAsk"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Silver Calculator -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card border-secondary h-100">
+                            <div class="card-header bg-secondary bg-opacity-25">
+                                <h6 class="mb-0">
+                                    <span class="material-icons-outlined" style="font-size:18px;color:#C0C0C0">calculate</span>
+                                    {{ t('Silver Price Calculator') }}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label small">{{ t('Weight / Quantity') }}</label>
+                                    <input type="number" class="form-control" id="silverCalcWeight" value="1" min="0.01" step="0.01" oninput="calcSilver()">
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Unit') }}</label>
+                                        <select class="form-select" id="silverCalcUnit" onchange="calcSilver()">
+                                            <option value="gram">{{ t('Gram') }}</option>
+                                            <option value="ounce">{{ t('Ounce') }} (oz)</option>
+                                            <option value="tola">{{ t('Tola') }}</option>
+                                            <option value="kg">{{ t('Kilogram') }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Purity') }}</label>
+                                        <select class="form-select" id="silverCalcPurity" onchange="calcSilver()">
+                                            <option value="0.999">999 Fine (99.9%)</option>
+                                            <option value="0.958">958 Britannia</option>
+                                            <option value="0.925">925 Sterling</option>
+                                            <option value="0.916">916 (22K)</option>
+                                            <option value="0.875">875 (21K)</option>
+                                            <option value="0.800">800 Jewelry</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small">{{ t('Currency') }}</label>
+                                    <select class="form-select" id="silverCalcCurrency" onchange="calcSilver()">
+                                        {% for c in data.global_gold %}
+                                        <option value="{{ c.currency }}"{% if c.currency == 'INR' %} selected{% endif %}>{{ c.name }} ({{ c.currency }})</option>
+                                        {% endfor %}
+                                        {% if not data.global_gold %}
+                                        <option value="USD">USD</option>
+                                        <option value="INR" selected>INR</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Spread') }} (%)</label>
+                                        <input type="number" class="form-control" id="silverCalcSpread" value="0" min="0" max="20" step="0.5" oninput="calcSilver()">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small">{{ t('Labor Cost') }} (%)</label>
+                                        <input type="number" class="form-control" id="silverCalcLabor" value="0" min="0" max="20" step="0.5" oninput="calcSilver()">
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="text-center">
+                                    <small class="text-muted">{{ t('Estimated Value') }}</small>
+                                    <h3 class="mb-0" style="color:#C0C0C0">
+                                        <span id="silverCalcCurrLabel">INR</span>
+                                        <span id="silverCalcResult">0.00</span>
+                                    </h3>
+                                    <div class="mt-1 small" id="silverCalcBidAsk"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Conversion Reference -->
+                <div class="card bg-light">
+                    <div class="card-body py-2">
+                        <h6 class="mb-2 small"><span class="material-icons-outlined" style="font-size:16px">info</span> {{ t('Gold Unit Conversions') }}</h6>
+                        <div class="row small text-muted">
+                            <div class="col-md-4">
+                                <strong>1 ounce (oz)</strong> = 31.1035 grams<br>
+                                <strong>1 tola</strong> = 11.6638 grams
+                            </div>
+                            <div class="col-md-4">
+                                <strong>1 pennyweight (dwt)</strong> = 1.5552 grams<br>
+                                <strong>1 grain (gr)</strong> = 0.0648 grams
+                            </div>
+                            <div class="col-md-4">
+                                <strong>1 pound (lb)</strong> = 453.5924 grams<br>
+                                <strong>1 baht</strong> = 15.2441 grams
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /tab-content -->
+
+<!-- ══════════ JAVASCRIPT ══════════ -->
+<script>
+const SPOT = {{ data.spot | tojson }};
+const GLOBAL_GOLD = {{ data.global_gold | tojson }};
+
+/* ── Gold purity unit switcher ── */
+function switchGoldUnit(unit) {
+    document.querySelectorAll('#unitGroup button').forEach(b => {
+        b.classList.remove('active', 'btn-warning');
+        b.classList.add('btn-outline-warning');
+    });
+    const btn = document.querySelector('#unitGroup button[data-unit="' + unit + '"]');
+    if (btn) { btn.classList.add('active', 'btn-warning'); btn.classList.remove('btn-outline-warning'); }
+    document.querySelectorAll('.purity-unit-label').forEach(el => el.textContent = '/ ' + unit);
+
+    document.querySelectorAll('#purityTable tbody tr').forEach(row => {
+        const val = parseFloat(row.dataset[unit]) || 0;
+        const cell = row.querySelector('.purity-price');
+        if (cell) cell.textContent = '₹' + val.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    });
+}
+
+/* ── Silver purity unit switcher ── */
+function switchSilverUnit(unit) {
+    document.querySelectorAll('#silverUnitGroup button').forEach(b => {
+        b.classList.remove('active', 'btn-secondary');
+        b.classList.add('btn-outline-secondary');
+    });
+    const btn = document.querySelector('#silverUnitGroup button[data-unit="' + unit + '"]');
+    if (btn) { btn.classList.add('active', 'btn-secondary'); btn.classList.remove('btn-outline-secondary'); }
+    document.querySelectorAll('.silver-unit-label').forEach(el => el.textContent = '/ ' + unit);
+
+    document.querySelectorAll('#silverPurityTable tbody tr').forEach(row => {
+        const val = parseFloat(row.dataset[unit]) || 0;
+        const cell = row.querySelector('.silver-price');
+        if (cell) cell.textContent = '₹' + val.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    });
+}
+
+/* ── Get exchange rate from global gold data ── */
+function _getRate(currency) {
+    const usdGram = SPOT.gold_gram || 1;
+    if (currency === 'USD') return 1;
+    for (const c of GLOBAL_GOLD) {
+        if (c.currency === currency) return c.gram / usdGram;
+    }
+    return 1;
+}
+
+const _unitMul = { gram: 1, ounce: 31.1035, tola: 11.6638, kg: 1000 };
+
+/* ── Gold Calculator ── */
+function calcGold() {
+    const weight = parseFloat(document.getElementById('calcWeight').value) || 0;
+    const unit = document.getElementById('calcUnit').value;
+    const purity = parseFloat(document.getElementById('calcPurity').value) || 0.999;
+    const currency = document.getElementById('calcCurrency').value;
+    const spread = parseFloat(document.getElementById('calcSpread').value) || 0;
+    const labor = parseFloat(document.getElementById('calcLabor').value) || 0;
+
+    const fx = _getRate(currency);
+    const weightG = weight * (_unitMul[unit] || 1);
+    const pricePerG = (SPOT.gold_gram || 0) * fx * purity / 0.999;
+    const basePrice = weightG * pricePerG;
+
+    const bid = basePrice * (1 - spread / 100);
+    const ask = basePrice * (1 + spread / 100) * (1 + labor / 100);
+    const display = (spread || labor) ? ask : basePrice;
+
+    document.getElementById('calcResult').textContent = display.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('calcCurrencyLabel').textContent = currency;
+
+    const ba = document.getElementById('calcBidAsk');
+    if (spread || labor) {
+        ba.innerHTML = '<span class="text-success">Bid: ' + bid.toLocaleString('en-IN', {minimumFractionDigits: 2}) +
+                       '</span> &nbsp;|&nbsp; <span class="text-danger">Ask: ' + ask.toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</span>';
+    } else {
+        ba.innerHTML = '';
+    }
+}
+
+/* ── Silver Calculator ── */
+function calcSilver() {
+    const weight = parseFloat(document.getElementById('silverCalcWeight').value) || 0;
+    const unit = document.getElementById('silverCalcUnit').value;
+    const purity = parseFloat(document.getElementById('silverCalcPurity').value) || 0.999;
+    const currency = document.getElementById('silverCalcCurrency').value;
+    const spread = parseFloat(document.getElementById('silverCalcSpread').value) || 0;
+    const labor = parseFloat(document.getElementById('silverCalcLabor').value) || 0;
+
+    const fx = _getRate(currency);
+    const weightG = weight * (_unitMul[unit] || 1);
+    const pricePerG = (SPOT.silver_gram || 0) * fx * purity / 0.999;
+    const basePrice = weightG * pricePerG;
+
+    const bid = basePrice * (1 - spread / 100);
+    const ask = basePrice * (1 + spread / 100) * (1 + labor / 100);
+    const display = (spread || labor) ? ask : basePrice;
+
+    document.getElementById('silverCalcResult').textContent = display.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('silverCalcCurrLabel').textContent = currency;
+
+    const ba = document.getElementById('silverCalcBidAsk');
+    if (spread || labor) {
+        ba.innerHTML = '<span class="text-success">Bid: ' + bid.toLocaleString('en-IN', {minimumFractionDigits: 2}) +
+                       '</span> &nbsp;|&nbsp; <span class="text-danger">Ask: ' + ask.toLocaleString('en-IN', {minimumFractionDigits: 2}) + '</span>';
+    } else {
+        ba.innerHTML = '';
+    }
+}
+
+/* ── Initial calculation on page load ── */
+document.addEventListener('DOMContentLoaded', function() {
+    calcGold();
+    calcSilver();
+});
+</script>
+{% endblock %}

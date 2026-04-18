@@ -4191,6 +4191,14 @@ def api_live_rates():
     return jsonify(live)
 
 
+@main.route('/global-gold-prices')
+@login_required
+def global_gold_prices():
+    from .global_gold_rates import fetch_global_gold_rates
+    data = fetch_global_gold_rates()
+    return render_template('global_gold.html', data=data)
+
+
 # ======================== RATE MONITOR ========================
 
 @main.route('/rate-monitor')

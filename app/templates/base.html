@@ -79,6 +79,10 @@
                 <span class="material-icons-outlined">diamond</span>
                 <span>{{ t('Gold & Silver') }}</span>
             </a>
+            <a href="{{ url_for('main.global_gold_prices') }}" class="nav-link {% if request.endpoint == 'main.global_gold_prices' %}active{% endif %}">
+                <span class="material-icons-outlined">public</span>
+                <span>{{ t('Global Gold') }}</span>
+            </a>
             <a href="{{ url_for('main.assets') }}" class="nav-link {% if request.endpoint == 'main.assets' %}active{% endif %}">
                 <span class="material-icons-outlined">real_estate_agent</span>
                 <span>{{ t('Assets') }}</span>
