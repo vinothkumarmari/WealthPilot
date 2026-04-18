@@ -4066,11 +4066,19 @@ def gold_silver():
 
     if live.get('success'):
         gold_data = {}
+        prev_day = live.get('prev_day', {})
+        purity_map = {'24K': 'gold_999', '22K': 'gold_916', '18K': 'gold_750'}
         for karat in ['24K', '22K', '18K']:
             g = live['gold'][karat]
             price = g['price_per_gram'] or 0
             history_day = live.get('gold_history', [])
-            prev_price = history_day[-2][karat] if len(history_day) >= 2 else price
+            # Use prev_day from AM/PM table for accurate per-commodity change
+            prev_key = purity_map[karat]
+            prev_price = prev_day.get(prev_key, 0) if prev_day else 0
+            if not prev_price and len(history_day) >= 2:
+                prev_price = history_day[-2].get(karat, price)
+            if not prev_price:
+                prev_price = price
             change = price - prev_price
             change_pct = (change / prev_price * 100) if prev_price else 0
             avg = sum(h[karat] for h in history_day) / len(history_day) if history_day else price
@@ -4101,7 +4109,12 @@ def gold_silver():
         s = live['silver']
         s_price = s['price_per_gram'] or 0
         s_history_day = live.get('silver_history', [])
-        s_prev = s_history_day[-2]['price'] if len(s_history_day) >= 2 else s_price
+        # Use prev_day for accurate silver change
+        s_prev = prev_day.get('silver', 0) if prev_day else 0
+        if not s_prev and len(s_history_day) >= 2:
+            s_prev = s_history_day[-2].get('price', s_price)
+        if not s_prev:
+            s_prev = s_price
         s_change = s_price - s_prev
         s_change_pct = (s_change / s_prev * 100) if s_prev else 0
         s_avg = sum(h['price'] for h in s_history_day) / len(s_history_day) if s_history_day else s_price
