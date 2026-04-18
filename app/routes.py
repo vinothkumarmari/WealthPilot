@@ -1379,6 +1379,9 @@ def dashboard():
         else:
             effective_salary = total_income
 
+    # Show profile salary on dashboard when no income records exist.
+    dashboard_income = float(total_income) if float(total_income) > 0 else float(effective_salary or 0)
+
     health = advisor.analyze_financial_health(
         effective_salary, total_expenses, total_investments, total_debts
     )
@@ -1519,7 +1522,7 @@ def dashboard():
     ]
 
     return render_template('dashboard.html',
-        total_income=total_income,
+        total_income=dashboard_income,
         total_expenses=total_expenses,
         total_investments=total_investments_all,
         total_assets=total_assets_value,
@@ -1532,7 +1535,7 @@ def dashboard():
         monthly_trend=json.dumps(monthly_trend),
         trend_series=json.dumps(trend_series),
         goals=goals,
-        savings=total_income - total_expenses,
+        savings=dashboard_income - total_expenses,
         monthly_commitments=monthly_commitments,
         total_sum_assured=total_sum_assured,
         allocation=json.dumps(allocation),
@@ -1700,6 +1703,58 @@ def profile():
         flash('Profile updated!', 'success')
         return redirect(url_for('main.profile'))
     return render_template('profile.html')
+
+
+@main.route('/profile/photo', methods=['POST'])
+@login_required
+def update_profile_photo():
+    profile_photo = request.files.get('profile_photo')
+    if not profile_photo or not profile_photo.filename:
+        flash('No image selected.', 'warning')
+        return redirect(url_for('main.profile'))
+
+    ext = profile_photo.filename.rsplit('.', 1)[-1].lower() if '.' in profile_photo.filename else ''
+    allowed_photo_exts = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+    if ext not in allowed_photo_exts:
+        flash('Profile photo must be PNG, JPG, JPEG, WEBP, or GIF.', 'danger')
+        return redirect(url_for('main.profile'))
+
+    photo_dir = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), 'uploads', 'profile_photos')
+    os.makedirs(photo_dir, exist_ok=True)
+    photo_name = secure_filename(f"u{current_user.id}_{secrets.token_hex(8)}.{ext}")
+    photo_path = os.path.join(photo_dir, photo_name)
+    profile_photo.save(photo_path)
+
+    old_photo = (current_user.profile_photo or '').replace('\\', '/')
+    if old_photo.startswith('uploads/profile_photos/'):
+        old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
+        if os.path.exists(old_photo_path):
+            try:
+                os.remove(old_photo_path)
+            except OSError:
+                pass
+
+    current_user.profile_photo = f'uploads/profile_photos/{photo_name}'
+    db.session.commit()
+    flash('Profile photo updated.', 'success')
+    return redirect(url_for('main.profile'))
+
+
+@main.route('/profile/photo/remove', methods=['POST'])
+@login_required
+def remove_profile_photo():
+    old_photo = (current_user.profile_photo or '').replace('\\', '/')
+    if old_photo.startswith('uploads/profile_photos/'):
+        old_photo_path = os.path.join(main.static_folder or os.path.join(os.path.dirname(__file__), 'static'), old_photo)
+        if os.path.exists(old_photo_path):
+            try:
+                os.remove(old_photo_path)
+            except OSError:
+                pass
+    current_user.profile_photo = None
+    db.session.commit()
+    flash('Profile photo removed.', 'info')
+    return redirect(url_for('main.profile'))
 
 
 @main.route('/verify-email-change-otp', methods=['GET', 'POST'])
