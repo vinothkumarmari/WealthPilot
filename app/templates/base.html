@@ -175,38 +175,14 @@
                 <button class="btn btn-link" onclick="toggleTheme()" title="Toggle theme">
                     <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
                 </button>
-                <div class="dropdown user-info">
-                    <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profile photo actions">
-                        {% if current_user.profile_photo %}
-                        <img id="topbarAvatarImage" src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';document.getElementById('topbarAvatarFallback').style.display='inline-flex';">
-                        <span id="topbarAvatarFallback" class="material-icons-outlined" style="display:none;">account_circle</span>
-                        {% else %}
-                        <img id="topbarAvatarImage" src="" alt="Profile" style="display:none;width:28px;height:28px;border-radius:50%;object-fit:cover;">
-                        <span id="topbarAvatarFallback" class="material-icons-outlined">account_circle</span>
-                        {% endif %}
-                        <span>{{ current_user.full_name or current_user.username }}</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end p-2" style="min-width:220px;">
-                        <form id="topbarAvatarUploadForm" action="{{ url_for('main.update_profile_photo') }}" method="POST" enctype="multipart/form-data" class="d-none">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="file" id="topbarAvatarInput" name="profile_photo" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
-                        </form>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="topbarUploadPhotoBtn">
-                            <span class="material-icons-outlined" style="font-size:18px;">upload</span>
-                            <span>Upload New</span>
-                        </button>
-                        <button type="button" class="dropdown-item d-flex align-items-center gap-2" id="topbarExpandPhotoBtn" {% if not current_user.profile_photo %}disabled{% endif %}>
-                            <span class="material-icons-outlined" style="font-size:18px;">open_in_full</span>
-                            <span>Expand Picture</span>
-                        </button>
-                        <form action="{{ url_for('main.remove_profile_photo') }}" method="POST" class="m-0">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger" {% if not current_user.profile_photo %}disabled{% endif %}>
-                                <span class="material-icons-outlined" style="font-size:18px;">remove_circle</span>
-                                <span>Remove</span>
-                            </button>
-                        </form>
-                    </div>
+                <div class="user-info">
+                    {% if current_user.profile_photo %}
+                    <img src="{{ url_for('static', filename=(current_user.profile_photo|replace('\\', '/'))) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                    <span class="material-icons-outlined" style="display:none;">account_circle</span>
+                    {% else %}
+                    <span class="material-icons-outlined">account_circle</span>
+                    {% endif %}
+                    <span>{{ current_user.full_name or current_user.username }}</span>
                 </div>
             </div>
         </div>
@@ -318,22 +294,6 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 
-    {% if current_user.is_authenticated %}
-    <div class="modal fade" id="topbarPhotoModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title">Profile Photo</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <img id="topbarPhotoModalImage" src="" alt="Profile Photo" style="max-width:100%;max-height:65vh;border-radius:10px;">
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
     <!-- PWA Service Worker Registration -->
     <script>
     if ('serviceWorker' in navigator) {
@@ -366,37 +326,6 @@
         setInterval(updateNotifBadge, 60000);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const uploadBtn = document.getElementById('topbarUploadPhotoBtn');
-        const avatarInput = document.getElementById('topbarAvatarInput');
-        const uploadForm = document.getElementById('topbarAvatarUploadForm');
-        const expandBtn = document.getElementById('topbarExpandPhotoBtn');
-        const avatarImage = document.getElementById('topbarAvatarImage');
-        const modalEl = document.getElementById('topbarPhotoModal');
-        const modalImg = document.getElementById('topbarPhotoModalImage');
-
-        if (uploadBtn && avatarInput) {
-            uploadBtn.addEventListener('click', function () {
-                avatarInput.click();
-            });
-        }
-
-        if (avatarInput && uploadForm) {
-            avatarInput.addEventListener('change', function () {
-                if (avatarInput.files && avatarInput.files.length > 0) {
-                    uploadForm.submit();
-                }
-            });
-        }
-
-        if (expandBtn && avatarImage && modalEl && modalImg) {
-            expandBtn.addEventListener('click', function () {
-                if (!avatarImage.src) return;
-                modalImg.src = avatarImage.src;
-                bootstrap.Modal.getOrCreateInstance(modalEl).show();
-            });
-        }
-    });
     </script>
 </body>
 </html>
