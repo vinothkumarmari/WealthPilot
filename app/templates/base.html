@@ -293,6 +293,121 @@
         }
     });
     </script>
+
+    <!-- WealthPilot Toast & Confirm (replaces browser alert/confirm) -->
+    <div id="wpToastContainer" style="position:fixed;top:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:420px;width:100%;"></div>
+    <div id="wpConfirmOverlay" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.35);align-items:flex-start;justify-content:center;padding-top:80px;">
+        <div id="wpConfirmBox" style="background:var(--bs-body-bg,#fff);border-radius:10px;padding:20px 24px 16px;box-shadow:0 6px 24px rgba(0,0,0,.3);max-width:400px;width:90%;animation:wpSlideIn .2s ease;">
+            <p id="wpConfirmMsg" style="margin:0 0 16px;font-size:15px;"></p>
+            <div id="wpConfirmBtns" style="display:flex;gap:10px;justify-content:flex-end;"></div>
+        </div>
+    </div>
+    <style>
+    @keyframes wpSlideIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes wpToastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes wpToastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
+    .wp-toast{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;font-size:14px;line-height:1.4;box-shadow:0 4px 16px rgba(0,0,0,.18);animation:wpToastIn .3s ease;transition:opacity .2s,transform .2s;}
+    .wp-toast-success{background:#d1e7dd;color:#0a3622;border-left:4px solid #198754;}
+    .wp-toast-error{background:#f8d7da;color:#58151c;border-left:4px solid #dc3545;}
+    .wp-toast-warning{background:#fff3cd;color:#664d03;border-left:4px solid #ffc107;}
+    .wp-toast-info{background:#cff4fc;color:#055160;border-left:4px solid #0dcaf0;}
+    .wp-toast .wp-toast-icon{font-size:20px;flex-shrink:0;}
+    .wp-toast .wp-toast-close{margin-left:auto;cursor:pointer;opacity:.6;background:none;border:none;font-size:18px;padding:0 2px;color:inherit;flex-shrink:0;}
+    .wp-toast .wp-toast-close:hover{opacity:1;}
+    </style>
+    <script>
+    (function(){
+        var toastIcons = {
+            success:'check_circle', error:'error', warning:'warning', info:'info'
+        };
+
+        /* wpAlert — shows a toast notification (top-right, auto-dismiss) */
+        window.wpAlert = function(msg, type) {
+            type = type || 'info';
+            return new Promise(function(resolve) {
+                var container = document.getElementById('wpToastContainer');
+                var toast = document.createElement('div');
+                toast.className = 'wp-toast wp-toast-' + type;
+                toast.innerHTML = '<span class="material-icons-outlined wp-toast-icon">' + (toastIcons[type]||'info') + '</span>'
+                    + '<span>' + _escHtml(msg) + '</span>'
+                    + '<button class="wp-toast-close" title="Close">&times;</button>';
+                container.appendChild(toast);
+
+                var timer = setTimeout(function() { _removeToast(toast, resolve); }, 5000);
+                toast.querySelector('.wp-toast-close').onclick = function() {
+                    clearTimeout(timer);
+                    _removeToast(toast, resolve);
+                };
+            });
+        };
+
+        function _removeToast(el, cb) {
+            el.style.animation = 'wpToastOut .25s ease forwards';
+            setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); if (cb) cb(true); }, 260);
+        }
+
+        function _escHtml(s) {
+            var d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        /* wpConfirm — shows a centered confirm dialog with backdrop */
+        window.wpConfirm = function(msg, type) {
+            type = type || 'warning';
+            return new Promise(function(resolve) {
+                var overlay = document.getElementById('wpConfirmOverlay');
+                var box = document.getElementById('wpConfirmBox');
+                box.style.borderLeft = '4px solid ' + ({success:'#198754',error:'#dc3545',warning:'#ffc107',info:'#0dcaf0'}[type]||'#0dcaf0');
+                document.getElementById('wpConfirmMsg').textContent = msg;
+                var btnBox = document.getElementById('wpConfirmBtns');
+                btnBox.innerHTML = '';
+
+                var btnCancel = document.createElement('button');
+                btnCancel.className = 'btn btn-sm btn-outline-secondary';
+                btnCancel.textContent = 'Cancel';
+                btnCancel.onclick = function(){ overlay.style.display='none'; resolve(false); };
+                btnBox.appendChild(btnCancel);
+
+                var btnOk = document.createElement('button');
+                var cls = type==='error'?'danger':type==='warning'?'warning':'primary';
+                btnOk.className = 'btn btn-sm btn-' + cls;
+                btnOk.textContent = 'Confirm';
+                btnOk.onclick = function(){ overlay.style.display='none'; resolve(true); };
+                btnBox.appendChild(btnOk);
+
+                overlay.style.display = 'flex';
+                btnOk.focus();
+            });
+        };
+
+        /* wpConfirmSync — for onsubmit="return wpConfirmSync(this, 'msg')" */
+        window.wpConfirmSync = function(form, msg, type) {
+            if (form.dataset.wpConfirmed === '1') {
+                form.dataset.wpConfirmed = '';
+                return true;
+            }
+            wpConfirm(msg, type || 'warning').then(function(ok) {
+                if (ok) {
+                    form.dataset.wpConfirmed = '1';
+                    form.submit();
+                }
+            });
+            return false;
+        };
+
+        // Close confirm on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var overlay = document.getElementById('wpConfirmOverlay');
+                if (overlay.style.display === 'flex') {
+                    overlay.style.display = 'none';
+                }
+            }
+        });
+    })();
+    </script>
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 
@@ -328,114 +443,6 @@
         setInterval(updateNotifBadge, 60000);
     }
 
-    </script>
-
-    <!-- Custom Modal (replaces browser alert/confirm) -->
-    <div id="wpModal" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;">
-        <div id="wpModalBar" class="alert alert-success alert-dismissible fade show mx-4 mt-3" role="alert" style="animation:wpModalIn .25s ease;">
-            <span id="wpModalMsg"></span>
-            <div id="wpModalBtns" style="display:inline-flex;gap:8px;margin-left:16px;"></div>
-            <button type="button" class="btn-close" id="wpModalClose"></button>
-        </div>
-        <div id="wpModalBackdrop" style="display:none;position:fixed;inset:0;z-index:-1;background:rgba(0,0,0,.25);"></div>
-    </div>
-    <style>
-    @keyframes wpModalIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-    </style>
-    <script>
-    (function(){
-        var typeToClass = {
-            info: 'alert-info',
-            success: 'alert-success',
-            warning: 'alert-warning',
-            error: 'alert-danger'
-        };
-
-        window.wpAlert = function(msg, type) {
-            return new Promise(function(resolve) {
-                _wpShow(msg, type || 'info', false, resolve);
-            });
-        };
-        window.wpConfirm = function(msg, type) {
-            return new Promise(function(resolve) {
-                _wpShow(msg, type || 'warning', true, resolve);
-            });
-        };
-
-        function _wpShow(msg, type, isConfirm, cb) {
-            var overlay = document.getElementById('wpModal');
-            var bar = document.getElementById('wpModalBar');
-            var backdrop = document.getElementById('wpModalBackdrop');
-            // Reset alert class
-            bar.className = 'alert ' + (typeToClass[type] || 'alert-info') + ' alert-dismissible fade show mx-4 mt-3';
-            bar.style.animation = 'none';
-            bar.offsetHeight; // reflow
-            bar.style.animation = 'wpModalIn .25s ease';
-            document.getElementById('wpModalMsg').textContent = msg;
-            var btnBox = document.getElementById('wpModalBtns');
-            btnBox.innerHTML = '';
-
-            if (isConfirm) {
-                backdrop.style.display = 'block';
-                var btnCancel = document.createElement('button');
-                btnCancel.className = 'btn btn-sm btn-outline-secondary';
-                btnCancel.textContent = 'Cancel';
-                btnCancel.onclick = function() { _wpHide(); cb(false); };
-                btnBox.appendChild(btnCancel);
-                var btnOk = document.createElement('button');
-                btnOk.className = 'btn btn-sm btn-' + (type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'primary');
-                btnOk.textContent = 'Confirm';
-                btnOk.onclick = function() { _wpHide(); cb(true); };
-                btnBox.appendChild(btnOk);
-            } else {
-                backdrop.style.display = 'none';
-            }
-
-            document.getElementById('wpModalClose').onclick = function() {
-                _wpHide();
-                cb(isConfirm ? false : true);
-            };
-            overlay.style.display = 'block';
-
-            // Auto-dismiss alerts (non-confirm) after 4 seconds
-            if (!isConfirm) {
-                clearTimeout(window._wpAutoClose);
-                window._wpAutoClose = setTimeout(function() {
-                    if (overlay.style.display === 'block') { _wpHide(); cb(true); }
-                }, 4000);
-            }
-        }
-
-        function _wpHide() {
-            document.getElementById('wpModal').style.display = 'none';
-            document.getElementById('wpModalBackdrop').style.display = 'none';
-            clearTimeout(window._wpAutoClose);
-        }
-            document.getElementById('wpModal').style.display = 'none';
-        }
-        // Close on Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && document.getElementById('wpModal').style.display === 'block') {
-                _wpHide();
-            }
-        });
-
-        /* wpConfirmSync — for onsubmit="return wpConfirmSync(this, 'msg')"
-           Prevents default, shows confirm modal, submits form on confirm */
-        window.wpConfirmSync = function(form, msg, type) {
-            if (form.dataset.wpConfirmed === '1') {
-                form.dataset.wpConfirmed = '';
-                return true;
-            }
-            wpConfirm(msg, type || 'warning').then(function(ok) {
-                if (ok) {
-                    form.dataset.wpConfirmed = '1';
-                    form.submit();
-                }
-            });
-            return false;
-        };
-    })();
     </script>
 </body>
 </html>
