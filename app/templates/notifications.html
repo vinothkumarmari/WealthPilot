@@ -4,13 +4,13 @@
 <div class="page-header d-flex justify-content-between align-items-center">
     <div>
         <h4><span class="material-icons-outlined">notifications</span> {{ t('Notifications') }}</h4>
-        <p class="text-muted">{{ unread_count }} unread notification{{ 's' if unread_count != 1 else '' }}</p>
+        <p class="text-muted">{{ unread_count }} {{ t('unread notification') }}{{ 's' if unread_count != 1 else '' }}</p>
     </div>
     {% if unread_count > 0 %}
     <form method="POST" action="{{ url_for('main.mark_all_notifications_read') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-outline-primary btn-sm">
-            <span class="material-icons-outlined" style="font-size:16px">done_all</span> Mark All Read
+            <span class="material-icons-outlined" style="font-size:16px">done_all</span> {{ t('Mark All Read') }}
         </button>
     </form>
     {% endif %}
@@ -46,14 +46,14 @@
     </div>
     <div class="col-lg-4">
         <div class="card">
-            <div class="card-header"><h6><span class="material-icons-outlined">info</span> About Notifications</h6></div>
+            <div class="card-header"><h6><span class="material-icons-outlined">info</span> {{ t('About Notifications') }}</h6></div>
             <div class="card-body">
-                <p class="small text-muted mb-2">WealthPilot automatically alerts you about:</p>
+                <p class="small text-muted mb-2">{{ t('WealthPilot automatically alerts you about:') }}</p>
                 <ul class="small text-muted mb-0">
-                    <li><span class="text-warning">Policy premiums</span> due within 7 days</li>
-                    <li><span class="text-danger">Loan EMIs</span> due within 7 days</li>
-                    <li><span class="text-info">Goal deadlines</span> approaching (30 days)</li>
-                    <li><span class="text-info">SIP investments</span> due within 3 days</li>
+                    <li><span class="text-warning">{{ t('Policy premiums') }}</span> {{ t('due within 7 days') }}</li>
+                    <li><span class="text-danger">{{ t('Loan EMIs') }}</span> {{ t('due within 7 days') }}</li>
+                    <li><span class="text-info">{{ t('Goal deadlines') }}</span> {{ t('approaching (30 days)') }}</li>
+                    <li><span class="text-info">{{ t('SIP investments') }}</span> {{ t('due within 3 days') }}</li>
                 </ul>
             </div>
         </div>
@@ -62,8 +62,8 @@
 {% else %}
 <div class="text-center py-5">
     <span class="material-icons-outlined text-muted" style="font-size:64px">notifications_none</span>
-    <h5 class="text-muted mt-3">No notifications yet</h5>
-    <p class="text-muted">You'll see alerts here when payments are due or goals are approaching.</p>
+    <h5 class="text-muted mt-3">{{ t('No notifications yet') }}</h5>
+    <p class="text-muted">{{ t("You'll see alerts here when payments are due or goals are approaching.") }}</p>
 </div>
 {% endif %}
 {% endblock %}

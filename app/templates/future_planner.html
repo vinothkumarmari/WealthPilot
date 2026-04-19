@@ -2,16 +2,16 @@
 {% block title %}Future Planner {{ data.profile.target_year }}+ - WealthPilot{% endblock %}
 {% block content %}
 <div class="page-header mb-3">
-    <h4><span class="material-icons-outlined">rocket_launch</span> Future Planner {{ data.profile.target_year }}+</h4>
-    <p class="text-muted mb-0">Build a long-horizon strategy for wealth, resilience, and financial freedom in the AI-first economy.</p>
+    <h4><span class="material-icons-outlined">rocket_launch</span> {{ t('Future Planner') }} {{ data.profile.target_year }}+</h4>
+    <p class="text-muted mb-0">{{ t('Build a long-horizon strategy for wealth, resilience, and financial freedom in the AI-first economy.') }}</p>
 </div>
 
 {% if (data.profile.monthly_salary or 0) <= 0 %}
 <div class="alert alert-warning d-flex align-items-start" role="alert">
     <span class="material-icons-outlined me-2">info</span>
     <div>
-        <strong>Targets are currently zero because monthly salary is not set.</strong>
-        Update your salary in <a href="{{ url_for('main.profile') }}" class="alert-link">Profile Settings</a> to generate personalized Future Planner targets.
+        <strong>{{ t('Targets are currently zero because monthly salary is not set.') }}</strong>
+        {{ t('Update your salary in') }} <a href="{{ url_for('main.profile') }}" class="alert-link">{{ t('Profile Settings') }}</a> {{ t('to generate personalized targets.') }}
     </div>
 </div>
 {% endif %}
@@ -20,10 +20,10 @@
     <div class="col-12">
         <div class="card bg-gradient-accent text-white">
             <div class="card-body d-flex flex-wrap justify-content-around align-items-center py-3">
-                <div class="text-center px-3"><small>Current Age</small><h5>{{ data.profile.age }}</h5></div>
-                <div class="text-center px-3"><small>Risk</small><h5>{{ data.profile.risk_appetite|title }}</h5></div>
-                <div class="text-center px-3"><small>Monthly Salary</small><h5>₹{{ "{:,.0f}".format(data.profile.monthly_salary) }}</h5></div>
-                <div class="text-center px-3"><small>Years to {{ data.profile.target_year }}</small><h5>{{ data.profile.years_to_target }}</h5></div>
+                <div class="text-center px-3"><small>{{ t('Current Age') }}</small><h5>{{ data.profile.age }}</h5></div>
+                <div class="text-center px-3"><small>{{ t('Risk') }}</small><h5>{{ data.profile.risk_appetite|title }}</h5></div>
+                <div class="text-center px-3"><small>{{ t('Monthly Salary') }}</small><h5>₹{{ "{:,.0f}".format(data.profile.monthly_salary) }}</h5></div>
+                <div class="text-center px-3"><small>{{ t('Years to Target') }} {{ data.profile.target_year }}</small><h5>{{ data.profile.years_to_target }}</h5></div>
             </div>
         </div>
     </div>
@@ -33,7 +33,7 @@
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100">
             <div class="card-body">
-                <small class="text-muted">Monthly Investment Target</small>
+                <small class="text-muted">{{ t('Monthly Investment Target') }}</small>
                 <h4 class="text-primary">₹{{ "{:,.0f}".format(data.plan.monthly_investment_target) }}</h4>
             </div>
         </div>
@@ -41,7 +41,7 @@
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100">
             <div class="card-body">
-                <small class="text-muted">Emergency Fund Target</small>
+                <small class="text-muted">{{ t('Emergency Fund Target') }}</small>
                 <h4 class="text-success">₹{{ "{:,.0f}".format(data.plan.emergency_fund_target) }}</h4>
             </div>
         </div>
@@ -49,7 +49,7 @@
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100">
             <div class="card-body">
-                <small class="text-muted">Projected Corpus by {{ data.profile.target_year }}</small>
+                <small class="text-muted">{{ t('Projected Corpus by') }} {{ data.profile.target_year }}</small>
                 <h4 class="text-info">₹{{ "{:,.0f}".format(data.plan.projected_corpus_target) }}</h4>
             </div>
         </div>
@@ -57,7 +57,7 @@
     <div class="col-lg-3 col-md-6 mb-3">
         <div class="card h-100">
             <div class="card-body">
-                <small class="text-muted">Inflation-Adjusted Corpus</small>
+                <small class="text-muted">{{ t('Inflation-Adjusted Corpus') }}</small>
                 <h4 class="text-warning">₹{{ "{:,.0f}".format(data.plan.inflation_adjusted_corpus_target) }}</h4>
             </div>
         </div>
@@ -67,18 +67,18 @@
 <div class="row mb-4">
     <div class="col-lg-6 mb-3">
         <div class="card h-100">
-            <div class="card-header"><strong>Portfolio Allocation Blueprint</strong></div>
+            <div class="card-header"><strong>{{ t('Portfolio Allocation Blueprint') }}</strong></div>
             <div class="card-body">
                 <div class="d-flex justify-content-between border-bottom py-2">
-                    <span>Growth Equity</span>
+                    <span>{{ t('Growth Equity') }}</span>
                     <strong>{{ data.plan.allocation.growth_equity }}%</strong>
                 </div>
                 <div class="d-flex justify-content-between border-bottom py-2">
-                    <span>Stable Debt</span>
+                    <span>{{ t('Stable Debt') }}</span>
                     <strong>{{ data.plan.allocation.stable_debt }}%</strong>
                 </div>
                 <div class="d-flex justify-content-between py-2">
-                    <span>Alternatives (Gold/Global/Theme)</span>
+                    <span>{{ t('Alternatives (Gold/Global/Theme)') }}</span>
                     <strong>{{ data.plan.allocation.alternatives }}%</strong>
                 </div>
                 <hr>
@@ -88,7 +88,7 @@
     </div>
     <div class="col-lg-6 mb-3">
         <div class="card h-100">
-            <div class="card-header"><strong>Future Risk Radar</strong></div>
+            <div class="card-header"><strong>{{ t('Future Risk Radar') }}</strong></div>
             <div class="card-body">
                 {% for r in data.future_risks %}
                 <div class="small py-2 border-bottom">{{ r }}</div>
@@ -101,15 +101,15 @@
 <div class="row mb-3">
     <div class="col-12">
         <div class="card">
-            <div class="card-header"><strong>{{ data.profile.target_year }} Milestones</strong></div>
+            <div class="card-header"><strong>{{ data.profile.target_year }} {{ t('Milestones') }}</strong></div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <thead>
                             <tr>
-                                <th>Year</th>
-                                <th>Milestone</th>
-                                <th>Action</th>
+                                <th>{{ t('Year') }}</th>
+                                <th>{{ t('Milestone') }}</th>
+                                <th>{{ t('Action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
