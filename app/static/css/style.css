@@ -30,85 +30,26 @@
     --sidebar-bg: #131320;
 }
 
-/* ============ THEME-AWARE TABLE FIX ============ */
-/* In light mode, table-dark looks wrong — override to light styling */
-[data-bs-theme="light"] .table-dark {
-    --bs-table-bg: #f8f9fa;
-    --bs-table-color: #2d3436;
-    --bs-table-border-color: #e9ecef;
-    --bs-table-striped-bg: #f0f2f5;
-    --bs-table-hover-bg: #e9ecef;
-    --bs-table-hover-color: #2d3436;
-    color: #2d3436;
-    border-color: #e9ecef;
-}
+/* ============ GOLD/SILVER TABLE HEADER CLASSES ============ */
+/* AM rates - warm gold tones */
+.gs-am-head { background: #f5e6c8; color: #7a5a00; font-weight: 700; }
+.gs-am-sub { background: #faf0dd; color: #8a6a10; }
+/* PM rates - green tones */
+.gs-pm-head { background: #d4edda; color: #1a5928; font-weight: 700; }
+.gs-pm-sub { background: #e2f5e9; color: #1e6b30; }
+/* Silver columns */
+.gs-silver-head { background: #e9ecef; color: #495057; }
 
-[data-bs-theme="light"] .table-dark thead {
-    --bs-table-bg: #e9ecef;
-    color: #2d3436;
-}
-
-[data-bs-theme="light"] .table-dark th,
-[data-bs-theme="light"] .table-dark td {
-    background: inherit;
-    color: inherit;
-}
-
-/* In light mode, .text-muted in tables should be readable */
-[data-bs-theme="light"] .table-dark .text-muted {
-    color: #636e72 !important;
-}
-
-/* ============ THEME-AWARE MODAL FIX ============ */
-/* Modal bg-dark in light theme should be white */
-[data-bs-theme="light"] .modal-content.bg-dark {
-    background-color: #ffffff !important;
-    color: #2d3436 !important;
-}
-
-[data-bs-theme="light"] .modal-content.bg-dark .modal-header {
-    border-color: #e9ecef !important;
-}
-
-[data-bs-theme="light"] .modal-content.bg-dark .form-control,
-[data-bs-theme="light"] .modal-content.bg-dark .form-select {
-    background-color: #ffffff;
-    color: #2d3436;
-    border-color: #d8e4fb;
-}
-
-[data-bs-theme="light"] .modal-content.bg-dark .form-label {
-    color: #3b4f6d;
-}
-
-[data-bs-theme="light"] .modal-content.bg-dark .modal-title {
-    color: #2d3436;
-}
-
-[data-bs-theme="light"] .modal-content.bg-dark .btn-close-white {
-    filter: none;
-}
+[data-bs-theme="dark"] .gs-am-head { background: #4a3000; color: #FFD700; }
+[data-bs-theme="dark"] .gs-am-sub { background: #5a4000; color: #FFE44D; }
+[data-bs-theme="dark"] .gs-pm-head { background: #003000; color: #90EE90; }
+[data-bs-theme="dark"] .gs-pm-sub { background: #005000; color: #AAFFAA; }
+[data-bs-theme="dark"] .gs-silver-head { background: #4a4a4a; color: #ccc; }
 
 /* ============ THEME-AWARE BADGE FIX ============ */
 [data-bs-theme="light"] .badge.bg-dark {
     background-color: #e9ecef !important;
     color: #2d3436 !important;
-}
-
-/* ============ DASHED BORDER CARD FIX ============ */
-[data-bs-theme="light"] .card[style*="border:2px dashed rgba(255,255,255"] {
-    border-color: rgba(0, 0, 0, 0.15) !important;
-}
-
-[data-bs-theme="light"] .card[style*="color:rgba(255,255,255,0.3)"] {
-    color: rgba(0, 0, 0, 0.25) !important;
-}
-
-/* ============ THEAD TABLE-DARK WITH CUSTOM BG ============ */
-/* Gold/silver pages use thead.table-dark — in light mode, keep custom colors but ensure readability */
-[data-bs-theme="light"] thead.table-dark {
-    --bs-table-bg: #e2e6ea;
-    color: #2d3436;
 }
 
 * { box-sizing: border-box; }

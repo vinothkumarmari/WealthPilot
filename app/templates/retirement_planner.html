@@ -38,7 +38,7 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <table class="table table-dark table-sm mb-0">
+                <table class="table table-sm mb-0">
                     <tr><td class="text-muted">{{ t('Current Age') }}</td><td class="text-end"><strong>{{ plan.age }}</strong></td></tr>
                     <tr><td class="text-muted">{{ t('Retirement Age') }}</td><td class="text-end"><strong>{{ plan.retirement_age }}</strong></td></tr>
                     <tr><td class="text-muted">{{ t('Years to Retire') }}</td><td class="text-end"><strong>{{ plan.years_to_retire }}</strong></td></tr>
@@ -47,7 +47,7 @@
                 </table>
             </div>
             <div class="col-md-6">
-                <table class="table table-dark table-sm mb-0">
+                <table class="table table-sm mb-0">
                     <tr><td class="text-muted">{{ t('Corpus Needed') }}</td><td class="text-end"><strong class="text-info">₹{{ plan.corpus_needed|int|string }}</strong></td></tr>
                     <tr><td class="text-muted">{{ t('Existing Corpus') }}</td><td class="text-end"><strong>₹{{ plan.existing_corpus|int|string }}</strong></td></tr>
                     <tr><td class="text-muted">{{ t('Projected Value at Retirement') }}</td><td class="text-end"><strong>₹{{ plan.future_existing|int|string }}</strong></td></tr>

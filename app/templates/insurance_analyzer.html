@@ -10,7 +10,7 @@
 <div class="text-center mb-4">
     <div class="d-inline-block position-relative" style="width:120px;height:120px">
         <svg viewBox="0 0 36 36" style="width:120px;height:120px;transform:rotate(-90deg)">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+            <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="3" opacity="0.15"/>
             <circle cx="18" cy="18" r="16" fill="none" stroke="{{ '#00b894' if family_score >= 75 else '#fdcb6e' if family_score >= 50 else '#e17055' }}" stroke-width="3" stroke-dasharray="{{ family_score }},100" stroke-linecap="round"/>
         </svg>
         <div class="position-absolute top-50 start-50 translate-middle">

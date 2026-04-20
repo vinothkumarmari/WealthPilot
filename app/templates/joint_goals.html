@@ -44,7 +44,7 @@
     </div>
     {% else %}
     <div class="col-12 text-center py-5">
-        <span class="material-icons-outlined" style="font-size:64px;color:rgba(255,255,255,0.2)">flag</span>
+        <span class="material-icons-outlined" style="font-size:64px;opacity:0.2">flag</span>
         <p class="text-muted mt-2">{{ t('No goals yet. Add a joint family goal to get started.') }}</p>
     </div>
     {% endfor %}
@@ -53,12 +53,12 @@
 <!-- Add Goal Modal -->
 <div class="modal fade" id="addGoalModal">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark">
+        <div class="modal-content">
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header border-secondary">
+                <div class="modal-header">
                     <h5 class="modal-title">{{ t('Add Joint Goal') }}</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">

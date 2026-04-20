@@ -72,12 +72,12 @@
 <!-- Add Member Modal -->
 <div class="modal fade" id="addMemberModal">
     <div class="modal-dialog">
-        <div class="modal-content bg-dark">
+            <div class="modal-content">
             <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header border-secondary">
+                <div class="modal-header">
                     <h5 class="modal-title">{{ t('Add Family Member') }}</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
