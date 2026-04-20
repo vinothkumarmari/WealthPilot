@@ -1,7 +1,8 @@
 {
-  "name": "WealthPilot - Smart Finance Manager",
+  "name": "WealthPilot™ - Smart Finance Manager",
   "short_name": "WealthPilot",
   "description": "AI-powered personal finance manager with investment suggestions, budget planning, gold/silver tracking, tax planning and more.",
+  "id": "/",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
