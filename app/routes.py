@@ -105,8 +105,7 @@ def generate_otp():
 def _hash_otp(otp_code):
     """Hash OTP before storing it in DB."""
     secret = (Config.SECRET_KEY or 'wealthpilot-otp-secret').encode('utf-8')
-    # Keep within legacy DB column size (otp_code VARCHAR(10)).
-    return hmac.new(secret, str(otp_code).encode('utf-8'), hashlib.sha256).hexdigest()[:10]
+    return hmac.new(secret, str(otp_code).encode('utf-8'), hashlib.sha256).hexdigest()
 
 
 def _parse_float_form(field_name, *, min_value=None, default=None):
@@ -313,7 +312,7 @@ def _is_valid_user_otp(user, entered_otp):
 
     stored = user.otp_code or ''
     entered_hash = _hash_otp(entered_otp)
-    is_match = hmac.compare_digest(stored, entered_hash) or hmac.compare_digest(stored, entered_otp)
+    is_match = hmac.compare_digest(stored, entered_hash)
     if not is_match:
         if OTP_HARDENING_ENABLED:
             user.otp_attempts = int(getattr(user, 'otp_attempts', 0) or 0) + 1
@@ -922,6 +921,7 @@ def billing_callback():
     txn.status = 'paid'
     txn.paid_at = datetime.now(timezone.utc)
     db.session.commit()
+    session.pop('_cached_plan', None)
 
     flash('Payment successful and verified.', 'success')
     return redirect(url_for('main.dashboard'))
@@ -958,6 +958,7 @@ def verify_billing_payment():
     txn.status = 'paid'
     txn.paid_at = datetime.now(timezone.utc)
     db.session.commit()
+    session.pop('_cached_plan', None)
     return jsonify({'success': True, 'message': 'Payment verified successfully.'})
 
 

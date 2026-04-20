@@ -35,7 +35,7 @@ class User(UserMixin, db.Model):
     def is_active(self):
         """Flask-Login checks this; disabled users cannot log in."""
         return bool(self.is_active_user)
-    otp_code = db.Column(db.String(10))
+    otp_code = db.Column(db.String(64))
     otp_expiry = db.Column(db.DateTime)
     otp_attempts = db.Column(db.Integer, default=0)
     otp_locked_until = db.Column(db.DateTime)
@@ -69,6 +69,9 @@ class User(UserMixin, db.Model):
 
 
 class Income(db.Model):
+    __table_args__ = (
+        db.Index('ix_income_user_date', 'user_id', 'date'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     source = db.Column(db.String(100), nullable=False)
@@ -81,6 +84,9 @@ class Income(db.Model):
 
 
 class Expense(db.Model):
+    __table_args__ = (
+        db.Index('ix_expense_user_date', 'user_id', 'date'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category = db.Column(db.String(50), nullable=False)
@@ -124,6 +130,9 @@ class Asset(db.Model):
 
 
 class InsurancePolicy(db.Model):
+    __table_args__ = (
+        db.Index('ix_policy_user_status', 'user_id', 'status'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     policy_type = db.Column(db.String(50), nullable=False)  # Life, Term, Health, ULIP, Endowment, etc.
@@ -217,6 +226,9 @@ class Budget(db.Model):
 
 
 class Loan(db.Model):
+    __table_args__ = (
+        db.Index('ix_loan_user_active', 'user_id', 'is_active'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     loan_type = db.Column(db.String(50), nullable=False)  # Home, Car, Personal, Education, Credit Card, Gold, Two Wheeler
@@ -286,6 +298,9 @@ class Notification(db.Model):
 
 
 class PaymentTransaction(db.Model):
+    __table_args__ = (
+        db.Index('ix_payment_user_status', 'user_id', 'status'),
+    )
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     plan_code = db.Column(db.String(20), nullable=False)  # pro_monthly, family_monthly

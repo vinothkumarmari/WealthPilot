@@ -11,12 +11,20 @@ from flask_login import LoginManager, current_user
 from flask_mail import Mail
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash
 from sqlalchemy import text
 from .models import db
 from .config import Config
+
+
+def _get_real_ip():
+    """Return client IP behind reverse proxy (Render / nginx)."""
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.remote_addr or '127.0.0.1'
+
 
 login_manager = LoginManager()
 login_manager.login_view = 'main.login'
@@ -24,13 +32,18 @@ login_manager.login_message_category = 'info'
 
 mail = Mail()
 csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
+limiter = Limiter(key_func=_get_real_ip, default_limits=["200 per minute"])
 migrate = Migrate()
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # ── Session cookie security ──
+    app.config.setdefault('SESSION_COOKIE_SECURE', not app.debug)
+    app.config.setdefault('SESSION_COOKIE_HTTPONLY', True)
+    app.config.setdefault('SESSION_COOKIE_SAMESITE', 'Lax')
 
     # ── Logging ──
     log_level = logging.DEBUG if app.debug else logging.INFO
@@ -116,21 +129,30 @@ def create_app():
         try:
             if _cu and _cu.is_authenticated:
                 lang = getattr(_cu, 'language', 'en') or 'en'
-                from .models import PaymentTransaction
-                latest_paid = PaymentTransaction.query.filter_by(user_id=_cu.id, status='paid').order_by(PaymentTransaction.paid_at.desc()).first()
 
-                current_plan = 'Free'
-                if _cu.is_admin:
-                    user_plan_code = 'family_monthly'
-                    current_plan = 'Admin (Full Access)'
-                elif latest_paid and latest_paid.plan_code == 'pro_monthly':
-                    user_plan_code = 'pro_monthly'
-                    current_plan = 'WealthPilot Pro'
-                elif latest_paid and latest_paid.plan_code == 'family_monthly':
-                    user_plan_code = 'family_monthly'
-                    current_plan = 'WealthPilot Family'
-                elif latest_paid:
-                    current_plan = latest_paid.plan_code
+                # Cache plan lookup in session to avoid DB query on every request
+                cached = session.get('_cached_plan')
+                if cached and cached.get('uid') == _cu.id:
+                    user_plan_code = cached['plan']
+                    current_plan = cached['plan_name']
+                else:
+                    from .models import PaymentTransaction
+                    latest_paid = PaymentTransaction.query.filter_by(user_id=_cu.id, status='paid').order_by(PaymentTransaction.paid_at.desc()).first()
+
+                    current_plan = 'Free'
+                    if _cu.is_admin:
+                        user_plan_code = 'family_monthly'
+                        current_plan = 'Admin (Full Access)'
+                    elif latest_paid and latest_paid.plan_code == 'pro_monthly':
+                        user_plan_code = 'pro_monthly'
+                        current_plan = 'WealthPilot Pro'
+                    elif latest_paid and latest_paid.plan_code == 'family_monthly':
+                        user_plan_code = 'family_monthly'
+                        current_plan = 'WealthPilot Family'
+                    elif latest_paid:
+                        current_plan = latest_paid.plan_code
+
+                    session['_cached_plan'] = {'uid': _cu.id, 'plan': user_plan_code, 'plan_name': current_plan}
 
                 suggestion = None
                 if user_plan_code == 'starter':
@@ -244,6 +266,15 @@ def create_app():
     def check_session_timeout():
         try:
             if current_user.is_authenticated:
+                # Force-logout users disabled by admin
+                if not current_user.is_active:
+                    from flask_login import logout_user
+                    from flask import flash, redirect, url_for
+                    logout_user()
+                    session.clear()
+                    flash('Your account has been disabled. Contact admin.', 'danger')
+                    return redirect(url_for('main.login'))
+
                 session_nonce = session.get('_session_nonce')
                 active_nonce = getattr(current_user, 'active_session_nonce', None)
                 if active_nonce and session_nonce != active_nonce:
@@ -420,6 +451,8 @@ def _ensure_user_columns(app):
                 if 'is_active_user' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN is_active_user BOOLEAN DEFAULT TRUE"))
                     app.logger.info('Added column: user.is_active_user')
+                # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
+                conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN otp_code TYPE VARCHAR(64)"))
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')
