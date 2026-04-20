@@ -19,150 +19,247 @@
     width: min(1080px, 96vw);
     display: grid;
     grid-template-columns: 1.05fr 0.95fr;
-    border-radius: 20px;
+    border-radius: 22px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    box-shadow: 0 28px 56px rgba(7, 12, 28, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 28px 56px rgba(7, 12, 28, 0.48), 0 0 80px rgba(59, 130, 246, 0.08);
     backdrop-filter: blur(4px);
 }
 
 .login-story {
     padding: 36px 34px;
     color: #ecf3ff;
-    background: linear-gradient(155deg, rgba(8, 20, 43, 0.88), rgba(14, 33, 66, 0.72));
+    background: linear-gradient(155deg, rgba(8, 20, 43, 0.92), rgba(14, 33, 66, 0.78));
+    position: relative;
+    overflow: hidden;
+}
+
+.login-story::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(110, 231, 215, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .story-brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 10px;
     font-weight: 700;
-    letter-spacing: 0.2px;
-    margin-bottom: 18px;
+    letter-spacing: 0.3px;
+    margin-bottom: 20px;
+    padding: 6px 16px 6px 10px;
+    background: rgba(110, 231, 215, 0.1);
+    border: 1px solid rgba(110, 231, 215, 0.2);
+    border-radius: 999px;
+    font-size: 0.88rem;
 }
 
-.story-brand .material-icons-outlined { color: #6ee7d7; }
+.story-brand .material-icons-outlined {
+    color: #6ee7d7;
+    font-size: 20px;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px rgba(110, 231, 215, 0.3)); }
+    50% { opacity: 0.7; filter: drop-shadow(0 0 8px rgba(110, 231, 215, 0.6)); }
+}
 
 .story-title {
-    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    font-size: clamp(1.55rem, 2.8vw, 2rem);
     font-weight: 800;
-    line-height: 1.18;
+    line-height: 1.22;
     margin-bottom: 10px;
+    background: linear-gradient(135deg, #ffffff 0%, #a5d8ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .story-sub {
-    color: rgba(230, 242, 255, 0.86);
-    font-size: 0.98rem;
-    margin-bottom: 24px;
+    color: rgba(200, 220, 255, 0.82);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 22px;
 }
 
 .story-pill-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 22px;
 }
 
 .story-pill {
-    border: 1px solid rgba(170, 205, 255, 0.35);
-    color: #d8e9ff;
-    background: rgba(26, 58, 103, 0.4);
+    border: 1px solid rgba(110, 231, 215, 0.25);
+    color: #b8f0e6;
+    background: linear-gradient(135deg, rgba(110, 231, 215, 0.08), rgba(59, 130, 246, 0.08));
     border-radius: 999px;
-    font-size: 0.79rem;
-    padding: 5px 10px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 5px 13px;
+    letter-spacing: 0.2px;
+    transition: all 0.3s ease;
+}
+
+.story-pill:hover {
+    background: linear-gradient(135deg, rgba(110, 231, 215, 0.18), rgba(59, 130, 246, 0.15));
+    border-color: rgba(110, 231, 215, 0.45);
+    transform: translateY(-1px);
 }
 
 .pulse-card {
     border-radius: 14px;
-    border: 1px solid rgba(146, 192, 255, 0.3);
-    background: rgba(23, 52, 94, 0.46);
-    padding: 14px 14px 12px;
+    border: 1px solid rgba(146, 192, 255, 0.18);
+    background: linear-gradient(145deg, rgba(23, 52, 94, 0.5), rgba(15, 35, 68, 0.6));
+    padding: 16px 16px 14px;
     margin-bottom: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.pulse-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(110, 231, 215, 0.4), rgba(59, 130, 246, 0.4), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pulse-card:hover {
+    border-color: rgba(110, 231, 215, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.pulse-card:hover::before {
+    opacity: 1;
 }
 
 .pulse-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
 }
 
 .pulse-head strong {
     font-size: 0.92rem;
     font-weight: 700;
+    color: #e2f0ff;
 }
 
 .pulse-time {
-    font-size: 0.74rem;
-    color: rgba(196, 223, 255, 0.9);
+    font-size: 0.72rem;
+    color: rgba(110, 231, 215, 0.8);
+    background: rgba(110, 231, 215, 0.08);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.pulse-card > div:nth-child(2) {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: rgba(200, 220, 255, 0.85);
 }
 
 .pulse-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 8px;
-    font-size: 0.79rem;
+    margin-top: 10px;
+    font-size: 0.78rem;
 }
 
 .pulse-meta span {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    color: #d9ecff;
+    gap: 5px;
+    color: #6ee7d7;
+    font-weight: 600;
+    background: rgba(110, 231, 215, 0.06);
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(110, 231, 215, 0.12);
 }
 
 .pulse-meta .material-icons-outlined {
-    font-size: 16px;
+    font-size: 15px;
     color: #6ee7d7;
 }
 
 .login-card {
-    background: #f8fbff;
-    padding: 34px 28px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+    padding: 38px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .login-head {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .login-head .material-icons-outlined {
-    font-size: 44px;
+    font-size: 48px;
     color: #2563eb;
+    background: linear-gradient(135deg, #2563eb, #6ee7d7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
 }
 
 .login-head h3 {
     font-weight: 800;
     margin: 6px 0 4px;
     color: #1d293f;
+    font-size: 1.4rem;
 }
 
 .login-head p {
     color: #5b6f8f;
     margin: 0;
+    font-size: 0.92rem;
 }
 
 .login-card .form-label {
     color: #3b4f6d;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+    letter-spacing: 0.2px;
 }
 
 .login-card .input-group-text {
     background: #edf3ff;
     border-color: #d8e4fb;
     color: #48658f;
+    border-radius: 10px 0 0 10px;
 }
 
 .login-card .form-control {
     border-color: #d8e4fb;
     color: #223150;
+    border-radius: 0 10px 10px 0;
+    padding: 10px 14px;
 }
 
 .login-card .form-control:focus {
     border-color: #5ca8ff;
-    box-shadow: 0 0 0 0.2rem rgba(73, 156, 255, 0.2);
+    box-shadow: 0 0 0 0.2rem rgba(73, 156, 255, 0.15);
 }
 
 .login-card .form-check-label {
@@ -171,13 +268,27 @@
 
 .login-card .btn-accent {
     font-weight: 700;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.3px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, #2563eb, #1e4fd8);
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.login-card .btn-accent:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    background: linear-gradient(135deg, #3b7bff, #2563eb);
 }
 
 .link-row {
     text-align: center;
-    margin-top: 10px;
+    margin-top: 14px;
     color: #5d6f8c;
+    font-size: 0.9rem;
 }
 
 .link-row a {
@@ -187,6 +298,17 @@
 }
 
 .link-row a:hover { text-decoration: underline; }
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#pulse-content .story-title { animation: fadeInUp 0.5s ease forwards; }
+#pulse-content .story-sub { animation: fadeInUp 0.5s ease 0.1s forwards; opacity: 0; }
+#pulse-content .story-pill-row { animation: fadeInUp 0.5s ease 0.2s forwards; opacity: 0; }
+#pulse-content .pulse-card:first-of-type { animation: fadeInUp 0.5s ease 0.3s forwards; opacity: 0; }
+#pulse-content .pulse-card:last-of-type { animation: fadeInUp 0.5s ease 0.4s forwards; opacity: 0; }
 
 @media (max-width: 900px) {
     .login-shell {
