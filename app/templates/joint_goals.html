@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Joint Goals - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h4><span class="material-icons-outlined">flag</span> {{ t('Joint Goal Tracking') }}</h4>
+        <p class="text-muted">{{ t('Track financial goals for the entire family') }}</p>
+    </div>
+    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addGoalModal">
+        <span class="material-icons-outlined">add</span> {{ t('Add Goal') }}
+    </button>
+</div>
+
+<div class="row">
+    {% for goal in goals %}
+    {% set progress = (goal.current_saved / goal.target_amount * 100) if goal.target_amount > 0 else 0 %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="mb-1">{{ goal.goal_name }}</h6>
+                        <span class="badge bg-{{ 'danger' if goal.priority == 'high' else 'warning' if goal.priority == 'medium' else 'info' }}-subtle text-{{ 'danger' if goal.priority == 'high' else 'warning' if goal.priority == 'medium' else 'info' }}">{{ goal.priority|title }}</span>
+                        {% if goal.member and goal.member != 'Self' %}<span class="badge bg-accent-subtle text-accent">{{ goal.member }}</span>{% endif %}
+                        {% if goal.category %}<span class="badge bg-primary-subtle text-primary">{{ goal.category }}</span>{% endif %}
+                    </div>
+                    <form method="POST" action="{{ url_for('main.delete_joint_goal', id=goal.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete goal?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><span class="material-icons-outlined" style="font-size:16px">delete</span></button>
+                    </form>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">₹{{ goal.current_saved|int|string }} / ₹{{ goal.target_amount|int|string }}</small>
+                    <div class="progress mt-1" style="height:8px">
+                        <div class="progress-bar bg-{{ 'success' if progress >= 75 else 'accent' if progress >= 40 else 'warning' }}" style="width:{{ [progress, 100]|min }}%"></div>
+                    </div>
+                </div>
+                <small class="text-muted">{{ t('Member') }}: <strong>{{ goal.member or 'Self' }}</strong></small>
+                {% if goal.target_date %}
+                <br><small class="text-muted">{{ t('Target') }}: {{ goal.target_date.strftime('%b %Y') }}</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <span class="material-icons-outlined" style="font-size:64px;color:rgba(255,255,255,0.2)">flag</span>
+        <p class="text-muted mt-2">{{ t('No goals yet. Add a joint family goal to get started.') }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Add Goal Modal -->
+<div class="modal fade" id="addGoalModal">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">{{ t('Add Joint Goal') }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('Goal Name') }} *</label>
+                        <input type="text" name="goal_name" class="form-control" required maxlength="150">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">{{ t('Target Amount') }} (₹) *</label>
+                            <input type="number" name="target_amount" class="form-control" required min="1" step="0.01">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">{{ t('Current Saved') }} (₹)</label>
+                            <input type="number" name="current_saved" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">{{ t('Member') }}</label>
+                            <select name="member" class="form-select">
+                                {% for m in members %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">{{ t('Priority') }}</label>
+                            <select name="priority" class="form-select">
+                                <option value="low">{{ t('Low') }}</option>
+                                <option value="medium" selected>{{ t('Medium') }}</option>
+                                <option value="high">{{ t('High') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">{{ t('Category') }}</label>
+                            <input type="text" name="category" class="form-control" placeholder="house, car, education...">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">{{ t('Target Date') }}</label>
+                            <input type="date" name="target_date" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('Cancel') }}</button>
+                    <button type="submit" class="btn btn-accent">{{ t('Add Goal') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

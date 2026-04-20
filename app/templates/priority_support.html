@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Priority Support - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">support_agent</span> {{ t('Priority Email Support') }}</h4>
+    <p class="text-muted">{{ t('Family plan members get priority responses within 24 hours') }}</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <span class="material-icons-outlined" style="font-size:48px;color:#fdcb6e">verified</span>
+                    <h5 class="mt-2">{{ t('Family Plan - Priority Support') }}</h5>
+                    <p class="text-muted">{{ t('Your requests are prioritized over free and pro users') }}</p>
+                </div>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('Your Email') }}</label>
+                        <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('Subject') }} *</label>
+                        <input type="text" name="subject" class="form-control" required maxlength="200" placeholder="{{ t('Brief description of your issue') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ t('Message') }} *</label>
+                        <textarea name="message" class="form-control" rows="6" required maxlength="2000" placeholder="{{ t('Describe your issue in detail...') }}"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">
+                        <span class="material-icons-outlined">send</span> {{ t('Send Priority Request') }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h6><span class="material-icons-outlined">info</span> {{ t('Support Information') }}</h6>
+                <ul class="mb-0">
+                    <li>{{ t('Response time: Within 24 hours') }}</li>
+                    <li>{{ t('Direct email to the WealthPilot team') }}</li>
+                    <li>{{ t('Include screenshots if applicable') }}</li>
+                    <li>{{ t('For account issues, mention your username') }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

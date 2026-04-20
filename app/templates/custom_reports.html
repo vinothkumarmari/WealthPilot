@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block title %}Custom Reports - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">summarize</span> {{ t('Custom Financial Reports') }}</h4>
+    <p class="text-muted">{{ t('Comprehensive reports filtered by member and period') }}</p>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form class="row g-2 align-items-end" method="GET">
+            <div class="col-auto">
+                <label class="form-label small">{{ t('Member') }}</label>
+                <select name="member" class="form-select form-select-sm">
+                    <option value="All" {{ 'selected' if selected == 'All' }}>{{ t('All Members') }}</option>
+                    {% for m in members %}<option value="{{ m }}" {{ 'selected' if selected == m }}>{{ m }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small">{{ t('Period') }}</label>
+                <select name="period" class="form-select form-select-sm">
+                    <option value="all" {{ 'selected' if period == 'all' }}>{{ t('All Time') }}</option>
+                    <option value="1m" {{ 'selected' if period == '1m' }}>{{ t('Last 1 Month') }}</option>
+                    <option value="3m" {{ 'selected' if period == '3m' }}>{{ t('Last 3 Months') }}</option>
+                    <option value="6m" {{ 'selected' if period == '6m' }}>{{ t('Last 6 Months') }}</option>
+                    <option value="1y" {{ 'selected' if period == '1y' }}>{{ t('Last 1 Year') }}</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-accent">{{ t('Generate Report') }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Cards -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <span class="material-icons-outlined text-success">payments</span>
+                <h6 class="text-muted mt-1">{{ t('Total Income') }}</h6>
+                <h4 class="mb-0">₹{{ report.total_income|int|string }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <span class="material-icons-outlined text-danger">receipt_long</span>
+                <h6 class="text-muted mt-1">{{ t('Total Expenses') }}</h6>
+                <h4 class="mb-0">₹{{ report.total_expenses|int|string }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <span class="material-icons-outlined" style="color:#00b894">savings</span>
+                <h6 class="text-muted mt-1">{{ t('Savings') }}</h6>
+                <h4 class="mb-0 {{ 'text-success' if report.savings >= 0 else 'text-danger' }}">₹{{ report.savings|int|string }}</h4>
+                <small class="text-muted">{{ report.savings_rate }}% {{ t('rate') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card text-center border-accent">
+            <div class="card-body">
+                <span class="material-icons-outlined text-accent">account_balance</span>
+                <h6 class="text-muted mt-1">{{ t('Net Worth') }}</h6>
+                <h4 class="mb-0">₹{{ report.net_worth|int|string }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Expense Category Breakdown -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0">{{ t('Expense Category Breakdown') }}</h6></div>
+            <div class="card-body">
+                {% if report.category_breakdown %}
+                {% for cat, amt in report.category_breakdown|dictsort(by='value', reverse=true) %}
+                {% set pct = (amt / report.total_expenses * 100) if report.total_expenses > 0 else 0 %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small>{{ cat }}</small>
+                        <small>₹{{ amt|int|string }} ({{ pct|round(1) }}%)</small>
+                    </div>
+                    <div class="progress" style="height:6px">
+                        <div class="progress-bar bg-accent" style="width:{{ pct }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">{{ t('No expense data') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Investment & Loan Summary -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0">{{ t('Investments & Loans') }}</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Total Invested') }}</span><strong>₹{{ report.total_invested|int|string }}</strong></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Current Value') }}</span><strong>₹{{ report.total_current_value|int|string }}</strong></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Investment Gain') }}</span><strong class="{{ 'text-success' if report.investment_gain >= 0 else 'text-danger' }}">₹{{ report.investment_gain|int|string }}</strong></div>
+                </div>
+                <hr class="border-secondary">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Loan Outstanding') }}</span><strong class="text-warning">₹{{ report.total_loan_outstanding|int|string }}</strong></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Monthly EMI') }}</span><strong>₹{{ report.total_emi|int|string }}</strong></div>
+                </div>
+                <hr class="border-secondary">
+                <div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Insurance Cover') }}</span><strong>₹{{ report.total_insurance_cover|int|string }}</strong></div>
+                    <div class="d-flex justify-content-between"><span class="text-muted">{{ t('Annual Premium') }}</span><strong>₹{{ report.total_premium_annual|int|string }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

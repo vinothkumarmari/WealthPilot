@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Retirement Planner - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">elderly</span> {{ t('Retirement Planning for Family') }}</h4>
+    <p class="text-muted">{{ t('Plan retirement corpus for each family member') }}</p>
+</div>
+
+<!-- Family Total -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card border-accent">
+            <div class="card-body text-center">
+                <h6 class="text-muted">{{ t('Total Family Retirement Gap') }}</h6>
+                <h3 class="{{ 'text-danger' if total_gap > 0 else 'text-success' }}">₹{{ total_gap|int|string }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card border-accent">
+            <div class="card-body text-center">
+                <h6 class="text-muted">{{ t('Total Monthly SIP Needed') }}</h6>
+                <h3 class="text-warning">₹{{ total_sip|int|string }}/{{ t('month') }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Per-Member Plans -->
+{% for plan in plans %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><span class="material-icons-outlined">person</span> {{ plan.name }}</h6>
+        <span class="badge bg-{{ 'success' if plan.gap == 0 else 'warning' if plan.gap < 5000000 else 'danger' }}">
+            {{ t('On Track') if plan.gap == 0 else t('Needs Attention') }}
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-dark table-sm mb-0">
+                    <tr><td class="text-muted">{{ t('Current Age') }}</td><td class="text-end"><strong>{{ plan.age }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Retirement Age') }}</td><td class="text-end"><strong>{{ plan.retirement_age }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Years to Retire') }}</td><td class="text-end"><strong>{{ plan.years_to_retire }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Current Monthly Expenses') }}</td><td class="text-end"><strong>₹{{ plan.monthly_expenses|int|string }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Future Monthly Expenses') }} <small>(6% {{ t('inflation') }})</small></td><td class="text-end"><strong>₹{{ plan.future_monthly_expenses|int|string }}</strong></td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-dark table-sm mb-0">
+                    <tr><td class="text-muted">{{ t('Corpus Needed') }}</td><td class="text-end"><strong class="text-info">₹{{ plan.corpus_needed|int|string }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Existing Corpus') }}</td><td class="text-end"><strong>₹{{ plan.existing_corpus|int|string }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Projected Value at Retirement') }}</td><td class="text-end"><strong>₹{{ plan.future_existing|int|string }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Gap') }}</td><td class="text-end"><strong class="{{ 'text-success' if plan.gap == 0 else 'text-danger' }}">₹{{ plan.gap|int|string }}</strong></td></tr>
+                    <tr><td class="text-muted">{{ t('Monthly SIP Needed') }}</td><td class="text-end"><strong class="text-warning">₹{{ plan.monthly_sip_needed|int|string }}</strong></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h6><span class="material-icons-outlined">info</span> {{ t('Assumptions') }}</h6>
+        <ul class="mb-0 text-muted small">
+            <li>{{ t('Inflation rate: 6% per annum') }}</li>
+            <li>{{ t('Expected investment return: 10% per annum') }}</li>
+            <li>{{ t('Retirement age: 60 years') }}</li>
+            <li>{{ t('Life expectancy: 85 years') }}</li>
+            <li>{{ t('These are estimates. Actual needs may vary based on lifestyle and health.') }}</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Shared Expenses - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">receipt_long</span> {{ t('Shared Expense Tracking') }}</h4>
+    <p class="text-muted">{{ t('View expenses by family member') }}</p>
+</div>
+
+<!-- Member Filter -->
+<div class="mb-4">
+    <div class="btn-group flex-wrap">
+        <a href="{{ url_for('main.shared_expenses', member='All') }}" class="btn btn-sm {{ 'btn-accent' if selected == 'All' else 'btn-outline-secondary' }}">{{ t('All') }}</a>
+        {% for m in members %}
+        <a href="{{ url_for('main.shared_expenses', member=m) }}" class="btn btn-sm {{ 'btn-accent' if selected == m else 'btn-outline-secondary' }}">{{ m }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Per-Member Summary Cards -->
+<div class="row mb-4">
+    {% for name, total in summary.items() %}
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card {{ 'border-accent' if selected == name else '' }}">
+            <div class="card-body text-center py-3">
+                <h6 class="text-muted">{{ name }}</h6>
+                <h5 class="mb-0">₹{{ total|int|string }}</h5>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Expenses Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ t('Date') }}</th>
+                        <th>{{ t('Category') }}</th>
+                        <th>{{ t('Description') }}</th>
+                        <th>{{ t('Member') }}</th>
+                        <th class="text-end">{{ t('Amount') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in expenses %}
+                    <tr>
+                        <td>{{ e.date.strftime('%d %b %Y') if e.date else '-' }}</td>
+                        <td>{{ e.category }}</td>
+                        <td>{{ e.description or '-' }}</td>
+                        <td><span class="badge bg-info-subtle text-info">{{ e.member or 'Self' }}</span></td>
+                        <td class="text-end">₹{{ e.amount|int|string }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">{{ t('No expenses found for this filter.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

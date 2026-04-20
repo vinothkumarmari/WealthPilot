@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Insurance Analyzer - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">health_and_safety</span> {{ t('Insurance Coverage Analyzer') }}</h4>
+    <p class="text-muted">{{ t('Analyze insurance coverage gaps for your family') }}</p>
+</div>
+
+<!-- Family Score -->
+<div class="text-center mb-4">
+    <div class="d-inline-block position-relative" style="width:120px;height:120px">
+        <svg viewBox="0 0 36 36" style="width:120px;height:120px;transform:rotate(-90deg)">
+            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+            <circle cx="18" cy="18" r="16" fill="none" stroke="{{ '#00b894' if family_score >= 75 else '#fdcb6e' if family_score >= 50 else '#e17055' }}" stroke-width="3" stroke-dasharray="{{ family_score }},100" stroke-linecap="round"/>
+        </svg>
+        <div class="position-absolute top-50 start-50 translate-middle">
+            <h3 class="mb-0">{{ family_score }}%</h3>
+        </div>
+    </div>
+    <h5 class="mt-2">{{ t('Family Coverage Score') }}</h5>
+    <p class="text-muted">
+        {% if family_score >= 75 %}{{ t('Good coverage! Minor gaps to address.') }}
+        {% elif family_score >= 50 %}{{ t('Moderate coverage. Some gaps need attention.') }}
+        {% else %}{{ t('Low coverage! Significant gaps found.') }}{% endif %}
+    </p>
+</div>
+
+<!-- Per-Member Analysis -->
+{% for a in analysis %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><span class="material-icons-outlined">person</span> {{ a.name }} <small class="text-muted">({{ t('Age') }} {{ a.age }})</small></h6>
+        <div>
+            <span class="badge bg-{{ 'success' if a.score >= 75 else 'warning' if a.score >= 50 else 'danger' }}">{{ a.score }}% {{ t('covered') }}</span>
+            <span class="badge bg-info-subtle text-info">{{ a.policies_count }} {{ t('policies') }}</span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <h6 class="text-muted">{{ t('Current Coverage') }}</h6>
+                <div class="d-flex justify-content-between"><span>{{ t('Total Cover') }}</span><strong>₹{{ a.total_cover|int|string }}</strong></div>
+                <div class="d-flex justify-content-between"><span>{{ t('Annual Premium') }}</span><strong>₹{{ a.annual_premium|int|string }}</strong></div>
+                {% if a.type_breakdown %}
+                <hr class="border-secondary">
+                {% for ptype, cover in a.type_breakdown.items() %}
+                <div class="d-flex justify-content-between"><small class="text-muted">{{ ptype }}</small><small>₹{{ cover|int|string }}</small></div>
+                {% endfor %}
+                {% endif %}
+            </div>
+            <div class="col-md-8 mb-3">
+                {% if a.gaps %}
+                <h6 class="text-muted">{{ t('Coverage Gaps') }}</h6>
+                {% for gap in a.gaps %}
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>{{ gap.type }}</span>
+                        <span class="text-danger">{{ t('Gap') }}: ₹{{ gap.gap|int|string }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">{{ t('Recommended') }}: ₹{{ gap.recommended|int|string }}</small>
+                        <small class="text-muted">{{ t('Current') }}: ₹{{ gap.current|int|string }}</small>
+                    </div>
+                    {% set fill = (gap.current / gap.recommended * 100) if gap.recommended > 0 else 0 %}
+                    <div class="progress mt-1" style="height:6px">
+                        <div class="progress-bar bg-{{ 'success' if fill >= 75 else 'warning' if fill >= 40 else 'danger' }}" style="width:{{ fill }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-3">
+                    <span class="material-icons-outlined text-success" style="font-size:36px">verified</span>
+                    <p class="text-success mt-1 mb-0">{{ t('Adequately covered!') }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<div class="card mt-4">
+    <div class="card-body">
+        <h6><span class="material-icons-outlined">info</span> {{ t('Recommendations') }}</h6>
+        <ul class="mb-0 text-muted small">
+            <li>{{ t('Term insurance: 10-15x annual income recommended') }}</li>
+            <li>{{ t('Health insurance: Minimum ₹10 lakh per person') }}</li>
+            <li>{{ t('Life insurance: Covers long-term family financial needs') }}</li>
+            <li>{{ t('Review coverage annually as income and family needs change') }}</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

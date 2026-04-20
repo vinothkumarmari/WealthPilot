@@ -403,6 +403,15 @@ def _ensure_user_columns(app):
                 if 'is_active_user' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN is_active_user BOOLEAN DEFAULT 1"))
                     app.logger.info('Added column: user.is_active_user')
+                # Add member column to expense and financial_goal tables
+                exp_cols = {r[1] for r in conn.execute(text("PRAGMA table_info(expense)")).fetchall()}
+                if 'member' not in exp_cols:
+                    conn.execute(text("ALTER TABLE expense ADD COLUMN member VARCHAR(100) DEFAULT 'Self'"))
+                    app.logger.info('Added column: expense.member')
+                goal_cols = {r[1] for r in conn.execute(text("PRAGMA table_info(financial_goal)")).fetchall()}
+                if 'member' not in goal_cols:
+                    conn.execute(text("ALTER TABLE financial_goal ADD COLUMN member VARCHAR(100) DEFAULT 'Self'"))
+                    app.logger.info('Added column: financial_goal.member')
                 conn.commit()
             else:
                 rows = conn.execute(text(
@@ -453,6 +462,15 @@ def _ensure_user_columns(app):
                     app.logger.info('Added column: user.is_active_user')
                 # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
                 conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN otp_code TYPE VARCHAR(64)"))
+                # Add member column to expense and financial_goal tables
+                exp_cols = {r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='expense'")).fetchall()}
+                if 'member' not in exp_cols:
+                    conn.execute(text("ALTER TABLE expense ADD COLUMN member VARCHAR(100) DEFAULT 'Self'"))
+                    app.logger.info('Added column: expense.member')
+                goal_cols = {r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='financial_goal'")).fetchall()}
+                if 'member' not in goal_cols:
+                    conn.execute(text("ALTER TABLE financial_goal ADD COLUMN member VARCHAR(100) DEFAULT 'Self'"))
+                    app.logger.info('Added column: financial_goal.member')
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')

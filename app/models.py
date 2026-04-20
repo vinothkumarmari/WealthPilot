@@ -94,6 +94,7 @@ class Expense(db.Model):
     date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
     description = db.Column(db.String(300))
     is_recurring = db.Column(db.Boolean, default=False)
+    member = db.Column(db.String(100), default='Self')  # family member
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -195,6 +196,7 @@ class FinancialGoal(db.Model):
     target_date = db.Column(db.Date)
     priority = db.Column(db.String(20), default='medium')  # low, medium, high
     category = db.Column(db.String(50))  # house, car, education, retirement, etc.
+    member = db.Column(db.String(100), default='Self')  # family member
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -312,3 +314,18 @@ class PaymentTransaction(db.Model):
     razorpay_signature = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     paid_at = db.Column(db.DateTime)
+
+
+class FamilyMember(db.Model):
+    __table_args__ = (
+        db.Index('ix_family_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    relationship = db.Column(db.String(50), nullable=False)  # Spouse, Son, Daughter, Father, Mother, etc.
+    age = db.Column(db.Integer)
+    occupation = db.Column(db.String(100))
+    monthly_income = db.Column(db.Float, default=0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('family_members', lazy=True, cascade='all, delete-orphan'))

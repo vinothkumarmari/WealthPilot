@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -401,6 +401,15 @@ MODULE_PLAN_REQUIREMENTS = {
     # Family modules
     'main.future_planner': 'family_monthly',
     'main.govt_schemes': 'family_monthly',
+    'main.family_members': 'family_monthly',
+    'main.family_dashboard': 'family_monthly',
+    'main.joint_goals': 'family_monthly',
+    'main.shared_expenses': 'family_monthly',
+    'main.member_investments': 'family_monthly',
+    'main.priority_support': 'family_monthly',
+    'main.custom_reports': 'family_monthly',
+    'main.retirement_planner': 'family_monthly',
+    'main.insurance_analyzer': 'family_monthly',
 }
 
 
@@ -4654,3 +4663,434 @@ def notification_count():
     except OperationalError:
         db.session.rollback()
         return jsonify(count=0)
+
+
+# ======================== FAMILY MODULES ========================
+
+def _get_family_members():
+    """Return list of family member names including 'Self'."""
+    members = FamilyMember.query.filter_by(user_id=current_user.id).all()
+    return ['Self'] + [m.name for m in members]
+
+
+@main.route('/family-members', methods=['GET', 'POST'])
+@login_required
+@subscription_required('family_monthly')
+def family_members():
+    if request.method == 'POST':
+        existing = FamilyMember.query.filter_by(user_id=current_user.id).count()
+        if existing >= 5:
+            flash('Maximum 5 family members allowed.', 'warning')
+            return redirect(url_for('main.family_members'))
+        name = (request.form.get('name') or '').strip()
+        relationship = (request.form.get('relationship') or '').strip()
+        if not name or not relationship:
+            flash('Name and relationship are required.', 'danger')
+            return redirect(url_for('main.family_members'))
+        member = FamilyMember(
+            user_id=current_user.id,
+            name=name,
+            relationship=relationship,
+            age=int(request.form.get('age') or 0) or None,
+            occupation=(request.form.get('occupation') or '').strip() or None,
+            monthly_income=float(request.form.get('monthly_income') or 0),
+        )
+        db.session.add(member)
+        db.session.commit()
+        flash(f'{name} added to your family.', 'success')
+        return redirect(url_for('main.family_members'))
+
+    members = FamilyMember.query.filter_by(user_id=current_user.id).all()
+    return render_template('family_members.html', members=members)
+
+
+@main.route('/family-members/delete/<int:id>', methods=['POST'])
+@login_required
+@subscription_required('family_monthly')
+def delete_family_member(id):
+    member = FamilyMember.query.get_or_404(id)
+    if member.user_id != current_user.id:
+        flash('Unauthorized.', 'danger')
+        return redirect(url_for('main.family_members'))
+    db.session.delete(member)
+    db.session.commit()
+    flash(f'{member.name} removed from your family.', 'success')
+    return redirect(url_for('main.family_members'))
+
+
+@main.route('/family-dashboard')
+@login_required
+@subscription_required('family_monthly')
+def family_dashboard():
+    members = FamilyMember.query.filter_by(user_id=current_user.id).all()
+    member_names = ['Self'] + [m.name for m in members]
+    uid = current_user.id
+
+    # Aggregate per member
+    family_data = []
+    for name in member_names:
+        income = db.session.query(db.func.sum(Income.amount)).filter_by(user_id=uid).scalar() or 0 if name == 'Self' else 0
+        expenses = db.session.query(db.func.sum(Expense.amount)).filter(Expense.user_id == uid, Expense.member == name).scalar() or 0
+        investments = db.session.query(db.func.sum(Investment.current_value)).filter(Investment.user_id == uid, Investment.member == name).scalar() or 0
+        loans_total = 0
+        if name == 'Self':
+            loans_total = db.session.query(db.func.sum(Loan.outstanding_balance)).filter(Loan.user_id == uid, Loan.is_active == True).scalar() or 0
+        policies_cover = db.session.query(db.func.sum(InsurancePolicy.sum_assured)).filter(InsurancePolicy.user_id == uid, InsurancePolicy.member == name, InsurancePolicy.status == 'active').scalar() or 0
+
+        fm = next((m for m in members if m.name == name), None)
+        family_data.append({
+            'name': name,
+            'relationship': fm.relationship if fm else 'Self',
+            'age': fm.age if fm else (current_user.age or 0),
+            'income': float(income),
+            'expenses': float(expenses),
+            'investments': float(investments),
+            'loans': float(loans_total),
+            'insurance_cover': float(policies_cover),
+        })
+
+    # Totals
+    totals = {
+        'income': sum(d['income'] for d in family_data),
+        'expenses': sum(d['expenses'] for d in family_data),
+        'investments': sum(d['investments'] for d in family_data),
+        'loans': sum(d['loans'] for d in family_data),
+        'insurance_cover': sum(d['insurance_cover'] for d in family_data),
+    }
+    totals['net_worth'] = totals['investments'] - totals['loans']
+
+    return render_template('family_dashboard.html', family_data=family_data, totals=totals, members=members)
+
+
+@main.route('/joint-goals', methods=['GET', 'POST'])
+@login_required
+@subscription_required('family_monthly')
+def joint_goals():
+    member_names = _get_family_members()
+    if request.method == 'POST':
+        goal_name = (request.form.get('goal_name') or '').strip()
+        target_amount = float(request.form.get('target_amount') or 0)
+        if not goal_name or target_amount <= 0:
+            flash('Goal name and target amount are required.', 'danger')
+            return redirect(url_for('main.joint_goals'))
+        goal = FinancialGoal(
+            user_id=current_user.id,
+            goal_name=goal_name,
+            target_amount=target_amount,
+            current_saved=float(request.form.get('current_saved') or 0),
+            target_date=datetime.strptime(request.form['target_date'], '%Y-%m-%d').date() if request.form.get('target_date') else None,
+            priority=request.form.get('priority', 'medium'),
+            category=request.form.get('category', ''),
+            member=request.form.get('member', 'Self'),
+        )
+        db.session.add(goal)
+        db.session.commit()
+        flash(f'Joint goal "{goal_name}" added.', 'success')
+        return redirect(url_for('main.joint_goals'))
+
+    goals = FinancialGoal.query.filter_by(user_id=current_user.id).all()
+    return render_template('joint_goals.html', goals=goals, members=member_names)
+
+
+@main.route('/joint-goals/delete/<int:id>', methods=['POST'])
+@login_required
+@subscription_required('family_monthly')
+def delete_joint_goal(id):
+    goal = FinancialGoal.query.get_or_404(id)
+    if goal.user_id != current_user.id:
+        flash('Unauthorized.', 'danger')
+        return redirect(url_for('main.joint_goals'))
+    db.session.delete(goal)
+    db.session.commit()
+    flash('Goal deleted.', 'success')
+    return redirect(url_for('main.joint_goals'))
+
+
+@main.route('/shared-expenses')
+@login_required
+@subscription_required('family_monthly')
+def shared_expenses():
+    member_names = _get_family_members()
+    selected = request.args.get('member', 'All')
+    query = Expense.query.filter_by(user_id=current_user.id)
+    if selected != 'All':
+        query = query.filter_by(member=selected)
+    expenses = query.order_by(Expense.date.desc()).limit(200).all()
+
+    # Per-member summary
+    summary = {}
+    for name in member_names:
+        total = db.session.query(db.func.sum(Expense.amount)).filter(Expense.user_id == current_user.id, Expense.member == name).scalar() or 0
+        summary[name] = float(total)
+
+    return render_template('shared_expenses.html', expenses=expenses, members=member_names, selected=selected, summary=summary)
+
+
+@main.route('/member-investments')
+@login_required
+@subscription_required('family_monthly')
+def member_investments():
+    member_names = _get_family_members()
+    selected = request.args.get('member', 'All')
+    query = Investment.query.filter_by(user_id=current_user.id)
+    if selected != 'All':
+        query = query.filter_by(member=selected)
+    investments = query.order_by(Investment.created_at.desc()).all()
+
+    # Per-member summary
+    summary = {}
+    for name in member_names:
+        invested = db.session.query(db.func.sum(Investment.amount_invested)).filter(Investment.user_id == current_user.id, Investment.member == name).scalar() or 0
+        current = db.session.query(db.func.sum(Investment.current_value)).filter(Investment.user_id == current_user.id, Investment.member == name).scalar() or 0
+        summary[name] = {'invested': float(invested), 'current': float(current)}
+
+    return render_template('member_investments.html', investments=investments, members=member_names, selected=selected, summary=summary)
+
+
+@main.route('/priority-support', methods=['GET', 'POST'])
+@login_required
+@subscription_required('family_monthly')
+def priority_support():
+    if request.method == 'POST':
+        subject = (request.form.get('subject') or '').strip()
+        message = (request.form.get('message') or '').strip()
+        if not subject or not message:
+            flash('Subject and message are required.', 'danger')
+            return redirect(url_for('main.priority_support'))
+        try:
+            from flask_mail import Message as MailMessage
+            from . import mail as app_mail
+            msg = MailMessage(
+                subject=f'[Priority Support] {subject} - {current_user.username}',
+                sender=current_user.email,
+                recipients=[Config.ADMIN_EMAIL],
+                body=f"From: {current_user.full_name or current_user.username} ({current_user.email})\n"
+                     f"Plan: Family\n\n{message}",
+            )
+            app_mail.send(msg)
+            flash('Your priority support request has been sent. We will respond within 24 hours.', 'success')
+        except Exception as e:
+            flash(f'Could not send email. Please try again later.', 'warning')
+        return redirect(url_for('main.priority_support'))
+    return render_template('priority_support.html')
+
+
+@main.route('/custom-reports')
+@login_required
+@subscription_required('family_monthly')
+def custom_reports():
+    uid = current_user.id
+    member_names = _get_family_members()
+    selected = request.args.get('member', 'All')
+    period = request.args.get('period', 'all')
+
+    from datetime import date as dt_date
+    today = dt_date.today()
+    start_date = None
+    if period == '1m':
+        start_date = today - timedelta(days=30)
+    elif period == '3m':
+        start_date = today - timedelta(days=90)
+    elif period == '6m':
+        start_date = today - timedelta(days=180)
+    elif period == '1y':
+        start_date = today - timedelta(days=365)
+
+    # Income
+    inc_q = db.session.query(db.func.sum(Income.amount)).filter_by(user_id=uid)
+    if start_date:
+        inc_q = inc_q.filter(Income.date >= start_date)
+    total_income = float(inc_q.scalar() or 0)
+
+    # Expenses by member
+    exp_q = Expense.query.filter_by(user_id=uid)
+    if selected != 'All':
+        exp_q = exp_q.filter_by(member=selected)
+    if start_date:
+        exp_q = exp_q.filter(Expense.date >= start_date)
+    expenses = exp_q.all()
+    total_expenses = sum(e.amount for e in expenses)
+
+    # Expense by category
+    cat_data = {}
+    for e in expenses:
+        cat_data[e.category] = cat_data.get(e.category, 0) + e.amount
+
+    # Investments
+    inv_q = Investment.query.filter_by(user_id=uid)
+    if selected != 'All':
+        inv_q = inv_q.filter_by(member=selected)
+    invs = inv_q.all()
+    total_invested = sum(i.amount_invested for i in invs)
+    total_current = sum(i.current_value for i in invs)
+
+    # Loans
+    active_loans = Loan.query.filter_by(user_id=uid, is_active=True).all()
+    total_loan_outstanding = sum(l.outstanding_balance for l in active_loans)
+    total_emi = sum(l.emi_amount for l in active_loans)
+
+    # Insurance
+    policies = InsurancePolicy.query.filter_by(user_id=uid, status='active')
+    if selected != 'All':
+        policies = policies.filter_by(member=selected)
+    policies = policies.all()
+    total_cover = sum(p.sum_assured for p in policies)
+    total_premium_annual = sum(p.premium_amount * (12 if p.premium_frequency == 'monthly' else 4 if p.premium_frequency == 'quarterly' else 2 if p.premium_frequency == 'half-yearly' else 1) for p in policies)
+
+    report = {
+        'total_income': total_income,
+        'total_expenses': total_expenses,
+        'savings': total_income - total_expenses,
+        'savings_rate': round((total_income - total_expenses) / total_income * 100, 1) if total_income > 0 else 0,
+        'category_breakdown': cat_data,
+        'total_invested': total_invested,
+        'total_current_value': total_current,
+        'investment_gain': total_current - total_invested,
+        'total_loan_outstanding': total_loan_outstanding,
+        'total_emi': total_emi,
+        'total_insurance_cover': total_cover,
+        'total_premium_annual': total_premium_annual,
+        'net_worth': total_current - total_loan_outstanding,
+    }
+    return render_template('custom_reports.html', report=report, members=member_names, selected=selected, period=period)
+
+
+@main.route('/retirement-planner')
+@login_required
+@subscription_required('family_monthly')
+def retirement_planner():
+    member_names = _get_family_members()
+    members_data = FamilyMember.query.filter_by(user_id=current_user.id).all()
+
+    plans = []
+    # Self
+    age = current_user.age or 30
+    salary = current_user.monthly_salary or 0
+    monthly_expenses = db.session.query(db.func.sum(Expense.amount)).filter(Expense.user_id == current_user.id, Expense.member == 'Self').scalar() or (salary * 0.6)
+    monthly_expenses = float(monthly_expenses)
+    retirement_age = 60
+    life_expectancy = 85
+    inflation = 6.0
+    expected_return = 10.0
+    years_to_retire = max(retirement_age - age, 1)
+    years_in_retirement = life_expectancy - retirement_age
+    future_monthly = monthly_expenses * ((1 + inflation/100) ** years_to_retire)
+    corpus_needed = future_monthly * 12 * ((1 - (1 / (1 + (expected_return - inflation)/100) ** years_in_retirement)) / ((expected_return - inflation)/100)) if (expected_return - inflation) > 0 else future_monthly * 12 * years_in_retirement
+    current_investments = db.session.query(db.func.sum(Investment.current_value)).filter(Investment.user_id == current_user.id, Investment.member == 'Self').scalar() or 0
+    pf_balance = db.session.query(db.func.sum(ProvidentFund.total_balance)).filter_by(user_id=current_user.id).scalar() or 0
+    existing_corpus = float(current_investments) + float(pf_balance)
+    future_existing = existing_corpus * ((1 + expected_return/100) ** years_to_retire)
+    gap = max(corpus_needed - future_existing, 0)
+    monthly_sip = gap * ((expected_return/100/12) / ((1 + expected_return/100/12) ** (years_to_retire * 12) - 1)) if years_to_retire > 0 else 0
+
+    plans.append({
+        'name': 'Self',
+        'age': age,
+        'retirement_age': retirement_age,
+        'years_to_retire': years_to_retire,
+        'monthly_expenses': monthly_expenses,
+        'future_monthly_expenses': round(future_monthly),
+        'corpus_needed': round(corpus_needed),
+        'existing_corpus': round(existing_corpus),
+        'future_existing': round(future_existing),
+        'gap': round(gap),
+        'monthly_sip_needed': round(monthly_sip),
+    })
+
+    # Family members
+    for m in members_data:
+        m_age = m.age or 30
+        m_expenses = float(db.session.query(db.func.sum(Expense.amount)).filter(Expense.user_id == current_user.id, Expense.member == m.name).scalar() or (float(m.monthly_income or 0) * 0.5 or 15000))
+        m_years = max(retirement_age - m_age, 1)
+        m_future = m_expenses * ((1 + inflation/100) ** m_years)
+        m_corpus = m_future * 12 * ((1 - (1 / (1 + (expected_return - inflation)/100) ** years_in_retirement)) / ((expected_return - inflation)/100)) if (expected_return - inflation) > 0 else m_future * 12 * years_in_retirement
+        m_inv = float(db.session.query(db.func.sum(Investment.current_value)).filter(Investment.user_id == current_user.id, Investment.member == m.name).scalar() or 0)
+        m_future_inv = m_inv * ((1 + expected_return/100) ** m_years)
+        m_gap = max(m_corpus - m_future_inv, 0)
+        m_sip = m_gap * ((expected_return/100/12) / ((1 + expected_return/100/12) ** (m_years * 12) - 1)) if m_years > 0 else 0
+
+        plans.append({
+            'name': m.name,
+            'age': m_age,
+            'retirement_age': retirement_age,
+            'years_to_retire': m_years,
+            'monthly_expenses': m_expenses,
+            'future_monthly_expenses': round(m_future),
+            'corpus_needed': round(m_corpus),
+            'existing_corpus': round(m_inv),
+            'future_existing': round(m_future_inv),
+            'gap': round(m_gap),
+            'monthly_sip_needed': round(m_sip),
+        })
+
+    total_gap = sum(p['gap'] for p in plans)
+    total_sip = sum(p['monthly_sip_needed'] for p in plans)
+    return render_template('retirement_planner.html', plans=plans, total_gap=total_gap, total_sip=total_sip)
+
+
+@main.route('/insurance-analyzer')
+@login_required
+@subscription_required('family_monthly')
+def insurance_analyzer():
+    member_names = _get_family_members()
+    members_data = FamilyMember.query.filter_by(user_id=current_user.id).all()
+    uid = current_user.id
+
+    analysis = []
+    for name in member_names:
+        policies = InsurancePolicy.query.filter(InsurancePolicy.user_id == uid, InsurancePolicy.member == name, InsurancePolicy.status == 'active').all()
+        total_cover = sum(p.sum_assured for p in policies)
+        annual_premium = sum(p.premium_amount * (12 if p.premium_frequency == 'monthly' else 4 if p.premium_frequency == 'quarterly' else 2 if p.premium_frequency == 'half-yearly' else 1) for p in policies)
+
+        # Type breakdown
+        type_cover = {}
+        for p in policies:
+            type_cover[p.policy_type] = type_cover.get(p.policy_type, 0) + p.sum_assured
+
+        # Recommended coverage
+        if name == 'Self':
+            annual_income = (current_user.monthly_salary or 0) * 12
+            age = current_user.age or 30
+        else:
+            fm = next((m for m in members_data if m.name == name), None)
+            annual_income = (fm.monthly_income or 0) * 12 if fm else 0
+            age = fm.age if fm else 30
+
+        # Life cover: 10-15x annual income
+        rec_life = annual_income * 12
+        # Health cover: ₹5-10L per person
+        rec_health = 1000000
+        # Term cover: 15x if <40, 10x if 40-55
+        rec_term = annual_income * (15 if age < 40 else 10 if age < 55 else 5)
+
+        existing_life = type_cover.get('Life', 0) + type_cover.get('Endowment', 0) + type_cover.get('ULIP', 0)
+        existing_term = type_cover.get('Term', 0)
+        existing_health = type_cover.get('Health', 0)
+
+        gaps = []
+        if existing_term < rec_term and annual_income > 0:
+            gaps.append({'type': 'Term Insurance', 'recommended': rec_term, 'current': existing_term, 'gap': rec_term - existing_term})
+        if existing_health < rec_health:
+            gaps.append({'type': 'Health Insurance', 'recommended': rec_health, 'current': existing_health, 'gap': rec_health - existing_health})
+        if existing_life < rec_life and annual_income > 0:
+            gaps.append({'type': 'Life Insurance', 'recommended': rec_life, 'current': existing_life, 'gap': rec_life - existing_life})
+
+        score = 100
+        if gaps:
+            total_gap = sum(g['gap'] for g in gaps)
+            total_rec = sum(g['recommended'] for g in gaps)
+            score = max(0, int(100 - (total_gap / total_rec * 100))) if total_rec > 0 else 100
+
+        analysis.append({
+            'name': name,
+            'age': age,
+            'policies_count': len(policies),
+            'total_cover': total_cover,
+            'annual_premium': annual_premium,
+            'type_breakdown': type_cover,
+            'gaps': gaps,
+            'score': score,
+        })
+
+    family_score = round(sum(a['score'] for a in analysis) / len(analysis)) if analysis else 0
+    return render_template('insurance_analyzer.html', analysis=analysis, family_score=family_score)

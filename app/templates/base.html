@@ -150,6 +150,54 @@
                 <span class="material-icons-outlined">receipt_long</span>
                 <span>{{ t('Indian Budget') }}</span>
             </a>
+
+            <div class="sidebar-divider"><small>{{ t('FAMILY') }}</small></div>
+            <a href="{{ url_for('main.family_members') }}" class="nav-link {% if request.endpoint == 'main.family_members' %}active{% endif %}">
+                <span class="material-icons-outlined">family_restroom</span>
+                <span>{{ t('Family Members') }}</span>
+                {% if not has_access('main.family_members') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.family_dashboard') }}" class="nav-link {% if request.endpoint == 'main.family_dashboard' %}active{% endif %}">
+                <span class="material-icons-outlined">dashboard_customize</span>
+                <span>{{ t('Family Dashboard') }}</span>
+                {% if not has_access('main.family_dashboard') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.joint_goals') }}" class="nav-link {% if request.endpoint == 'main.joint_goals' %}active{% endif %}">
+                <span class="material-icons-outlined">flag_circle</span>
+                <span>{{ t('Joint Goals') }}</span>
+                {% if not has_access('main.joint_goals') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.shared_expenses') }}" class="nav-link {% if request.endpoint == 'main.shared_expenses' %}active{% endif %}">
+                <span class="material-icons-outlined">group_work</span>
+                <span>{{ t('Shared Expenses') }}</span>
+                {% if not has_access('main.shared_expenses') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.member_investments') }}" class="nav-link {% if request.endpoint == 'main.member_investments' %}active{% endif %}">
+                <span class="material-icons-outlined">diversity_3</span>
+                <span>{{ t('Member Investments') }}</span>
+                {% if not has_access('main.member_investments') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.retirement_planner') }}" class="nav-link {% if request.endpoint == 'main.retirement_planner' %}active{% endif %}">
+                <span class="material-icons-outlined">elderly</span>
+                <span>{{ t('Retirement Planner') }}</span>
+                {% if not has_access('main.retirement_planner') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.insurance_analyzer') }}" class="nav-link {% if request.endpoint == 'main.insurance_analyzer' %}active{% endif %}">
+                <span class="material-icons-outlined">health_and_safety</span>
+                <span>{{ t('Insurance Analyzer') }}</span>
+                {% if not has_access('main.insurance_analyzer') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.custom_reports') }}" class="nav-link {% if request.endpoint == 'main.custom_reports' %}active{% endif %}">
+                <span class="material-icons-outlined">summarize</span>
+                <span>{{ t('Custom Reports') }}</span>
+                {% if not has_access('main.custom_reports') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.priority_support') }}" class="nav-link {% if request.endpoint == 'main.priority_support' %}active{% endif %}">
+                <span class="material-icons-outlined">support_agent</span>
+                <span>{{ t('Priority Support') }}</span>
+                {% if not has_access('main.priority_support') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
+
             {% if current_user.is_admin %}
             <a href="{{ url_for('main.admin_panel') }}" class="nav-link {% if request.endpoint == 'main.admin_panel' %}active{% endif %}" style="color: #ff6b35;">
                 <span class="material-icons-outlined">admin_panel_settings</span>

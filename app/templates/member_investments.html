@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Member Investments - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">trending_up</span> {{ t('Member-wise Investment View') }}</h4>
+    <p class="text-muted">{{ t('Track investments by family member') }}</p>
+</div>
+
+<!-- Member Filter -->
+<div class="mb-4">
+    <div class="btn-group flex-wrap">
+        <a href="{{ url_for('main.member_investments', member='All') }}" class="btn btn-sm {{ 'btn-accent' if selected == 'All' else 'btn-outline-secondary' }}">{{ t('All') }}</a>
+        {% for m in members %}
+        <a href="{{ url_for('main.member_investments', member=m) }}" class="btn btn-sm {{ 'btn-accent' if selected == m else 'btn-outline-secondary' }}">{{ m }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Per-Member Summary -->
+<div class="row mb-4">
+    {% for name, data in summary.items() %}
+    {% set gain = data.current - data.invested %}
+    <div class="col-md-4 col-lg-3 mb-3">
+        <div class="card {{ 'border-accent' if selected == name else '' }}">
+            <div class="card-body py-3">
+                <h6 class="text-muted text-center">{{ name }}</h6>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">{{ t('Invested') }}</small>
+                    <small>₹{{ data.invested|int|string }}</small>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">{{ t('Current') }}</small>
+                    <small>₹{{ data.current|int|string }}</small>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">{{ t('Gain/Loss') }}</small>
+                    <small class="{{ 'text-success' if gain >= 0 else 'text-danger' }}">{{ '+' if gain >= 0 else '' }}₹{{ gain|int|string }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Investments Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>{{ t('Name') }}</th>
+                        <th>{{ t('Type') }}</th>
+                        <th>{{ t('Member') }}</th>
+                        <th>{{ t('Platform') }}</th>
+                        <th class="text-end">{{ t('Invested') }}</th>
+                        <th class="text-end">{{ t('Current Value') }}</th>
+                        <th class="text-end">{{ t('Return') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in investments %}
+                    {% set ret = inv.current_value - inv.amount_invested %}
+                    <tr>
+                        <td>{{ inv.name }}</td>
+                        <td><span class="badge bg-primary-subtle text-primary">{{ inv.investment_type }}</span></td>
+                        <td><span class="badge bg-info-subtle text-info">{{ inv.member or 'Self' }}</span></td>
+                        <td>{{ inv.platform or '-' }}</td>
+                        <td class="text-end">₹{{ inv.amount_invested|int|string }}</td>
+                        <td class="text-end">₹{{ inv.current_value|int|string }}</td>
+                        <td class="text-end {{ 'text-success' if ret >= 0 else 'text-danger' }}">{{ '+' if ret >= 0 else '' }}₹{{ ret|int|string }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">{{ t('No investments found for this filter.') }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
