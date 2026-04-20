@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us - WealthPilot{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+    <div class="text-center mb-4">
+        <span class="material-icons-outlined" style="font-size:48px;color:var(--accent);">support_agent</span>
+        <h3 class="fw-bold mt-2">Contact Us</h3>
+        <p class="text-muted">We'd love to hear from you. Reach out for support, feedback, or business inquiries.</p>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#6C5CE7;">email</span>
+                    <h6 class="fw-bold">Email</h6>
+                    <p class="text-muted small mb-1">General inquiries & support</p>
+                    <a href="mailto:support@mywealthpilot.in" class="text-decoration-none">support@mywealthpilot.in</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#00b894;">language</span>
+                    <h6 class="fw-bold">Website</h6>
+                    <p class="text-muted small mb-1">Visit our website</p>
+                    <a href="https://mywealthpilot.in" class="text-decoration-none" target="_blank" rel="noopener">mywealthpilot.in</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#fdcb6e;">schedule</span>
+                    <h6 class="fw-bold">Response Time</h6>
+                    <p class="text-muted small mb-1">We typically respond within</p>
+                    <strong>24-48 business hours</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><span class="material-icons-outlined align-middle">help_outline</span> Frequently Asked</h5>
+            <div class="accordion" id="contactFaq">
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">How do I reset my password?</button></h6>
+                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Click "Forgot Password" on the login page. You'll receive an OTP on your registered email to set a new password.</div></div>
+                </div>
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">How do I upgrade or downgrade my plan?</button></h6>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Go to the Pricing page from the sidebar and select a new plan. Your current subscription will be adjusted accordingly.</div></div>
+                </div>
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">Is my financial data secure?</button></h6>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Yes. We use SSL encryption, secure session cookies, and hashed credentials. We don't use any third-party tracking scripts. See our <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>.</div></div>
+                </div>
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">Can I get a refund?</button></h6>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Yes, we offer a full refund within 7 days of purchase if you're not satisfied. See our <a href="{{ url_for('main.refund_policy') }}">Refund Policy</a>.</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% extends 'base_public.html' if not current_user.is_authenticated else 'base.html' %}
+{% block title %}Contact Us - WealthPilot{% endblock %}
+{% block public_content %}{% endblock %}
+{% block content %}{% endblock %}
+
+{% block body_content %}
+<div class="container py-5" style="max-width: 900px;">
+    <div class="text-center mb-5">
+        <span class="material-icons-outlined" style="font-size:48px;color:var(--accent, #6C5CE7);">support_agent</span>
+        <h2 class="fw-bold mt-2">Contact Us</h2>
+        <p class="text-muted">We'd love to hear from you. Reach out for support, feedback, or business inquiries.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#6C5CE7;">email</span>
+                    <h6 class="fw-bold">Email</h6>
+                    <p class="text-muted small mb-1">For general inquiries & support</p>
+                    <a href="mailto:support@mywealthpilot.in" class="text-decoration-none">support@mywealthpilot.in</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#00b894;">language</span>
+                    <h6 class="fw-bold">Website</h6>
+                    <p class="text-muted small mb-1">Visit our website</p>
+                    <a href="https://mywealthpilot.in" class="text-decoration-none" target="_blank">mywealthpilot.in</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#fdcb6e;">schedule</span>
+                    <h6 class="fw-bold">Response Time</h6>
+                    <p class="text-muted small mb-1">We typically respond within</p>
+                    <strong>24-48 business hours</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3"><span class="material-icons-outlined align-middle">help_outline</span> Frequently Asked</h5>
+            <div class="accordion" id="contactFaq">
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">How do I reset my password?</button></h6>
+                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Click "Forgot Password" on the login page. You'll receive an OTP on your registered email to set a new password.</div></div>
+                </div>
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">How do I upgrade or downgrade my plan?</button></h6>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Go to the Pricing page from the sidebar and select a new plan. Your current subscription will be adjusted accordingly.</div></div>
+                </div>
+                <div class="accordion-item">
+                    <h6 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">Is my financial data secure?</button></h6>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#contactFaq"><div class="accordion-body text-muted small">Yes. We use SSL encryption, secure session cookies, and hashed credentials. We don't use any third-party tracking scripts. Read our Privacy Policy for full details.</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('main.index') }}" class="btn btn-outline-secondary">
+            <span class="material-icons-outlined align-middle" style="font-size:18px;">arrow_back</span> Back
+        </a>
+    </div>
+</div>
+{% endblock body_content %}

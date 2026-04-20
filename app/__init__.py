@@ -331,16 +331,23 @@ def _seed_admin(app):
     from .models import User
     admin = User.query.filter_by(username=Config.ADMIN_USERNAME).first()
     if not admin:
-        admin = User(
-            username=Config.ADMIN_USERNAME,
-            email=Config.ADMIN_EMAIL,
-            password_hash=generate_password_hash(Config.ADMIN_PASSWORD),
-            full_name=Config.ADMIN_FULL_NAME,
-            is_admin=True,
-            is_verified=True
-        )
-        db.session.add(admin)
-        app.logger.info(f'Admin account "{Config.ADMIN_USERNAME}" created.')
+        # Check if email already exists (avoid unique constraint violation)
+        existing = User.query.filter_by(email=Config.ADMIN_EMAIL).first()
+        if existing:
+            existing.is_admin = True
+            existing.is_verified = True
+            app.logger.info(f'Existing user "{existing.username}" promoted to admin.')
+        else:
+            admin = User(
+                username=Config.ADMIN_USERNAME,
+                email=Config.ADMIN_EMAIL,
+                password_hash=generate_password_hash(Config.ADMIN_PASSWORD),
+                full_name=Config.ADMIN_FULL_NAME,
+                is_admin=True,
+                is_verified=True
+            )
+            db.session.add(admin)
+            app.logger.info(f'Admin account "{Config.ADMIN_USERNAME}" created.')
     else:
         # Update admin credentials from env vars on each restart
         admin.email = Config.ADMIN_EMAIL

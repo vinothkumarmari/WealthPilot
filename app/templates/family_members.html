@@ -58,9 +58,9 @@
 
     {% if members|length < 5 %}
     <div class="col-md-6 col-lg-4 mb-3">
-        <div class="card h-100 border-dashed" style="border:2px dashed rgba(255,255,255,0.2);cursor:pointer" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+        <div class="card h-100" style="border:2px dashed var(--border-color);cursor:pointer" data-bs-toggle="modal" data-bs-target="#addMemberModal">
             <div class="card-body text-center d-flex flex-column justify-content-center">
-                <span class="material-icons-outlined" style="font-size:48px;color:rgba(255,255,255,0.3)">add_circle_outline</span>
+                <span class="material-icons-outlined" style="font-size:48px;color:var(--text-secondary);opacity:0.5">add_circle_outline</span>
                 <p class="text-muted mt-2">{{ t('Add Family Member') }}</p>
                 <small class="text-muted">{{ members|length }}/5 {{ t('members added') }}</small>
             </div>

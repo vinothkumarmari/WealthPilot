@@ -46,9 +46,9 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
     ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
     
-    # Admin Configuration (use env vars in production)
-    ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'vinoth')
-    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Auto@360')
+    # Admin Configuration (MUST be set via env vars in production)
+    ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+    ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', secrets.token_urlsafe(24))
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@wealthpilot.com')
     ADMIN_FULL_NAME = os.environ.get('ADMIN_FULL_NAME', 'Vinoth - Founder & CEO')
     

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}About Us - WealthPilot{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+    <div class="text-center mb-4">
+        <span class="material-icons-outlined" style="font-size:48px;color:var(--accent);">account_balance_wallet</span>
+        <h3 class="fw-bold mt-2">About WealthPilot</h3>
+        <p class="text-muted">Your personal finance command center</p>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold"><span class="material-icons-outlined align-middle">info</span> Our Mission</h5>
+            <p>WealthPilot is a personal finance management platform built to help individuals and families take control of their money. We believe that financial awareness is the first step toward financial freedom.</p>
+            <p class="mb-0">Our goal is to provide a simple, secure, and comprehensive tool that lets you track income, manage expenses, monitor investments, plan for retirement, and achieve your financial goals — all from one dashboard.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#6C5CE7;">security</span>
+                    <h6 class="fw-bold">Privacy First</h6>
+                    <p class="text-muted small mb-0">No third-party tracking. No ads. No selling your data. Your finances stay private.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#00b894;">translate</span>
+                    <h6 class="fw-bold">Multi-Language</h6>
+                    <p class="text-muted small mb-0">Available in English, Tamil, Hindi, and Telugu to serve diverse users across India.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <span class="material-icons-outlined mb-2" style="font-size:36px;color:#fdcb6e;">family_restroom</span>
+                    <h6 class="fw-bold">Family Planning</h6>
+                    <p class="text-muted small mb-0">Family plan lets you manage finances for your entire household together.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="fw-bold"><span class="material-icons-outlined align-middle">featured_play_list</span> What We Offer</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="mb-0">
+                        <li>Income & Expense tracking</li>
+                        <li>Investment portfolio monitoring</li>
+                        <li>Financial goal planning</li>
+                        <li>Insurance policy management</li>
+                        <li>Loan & EMI tracking</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="mb-0">
+                        <li>AI-powered budget suggestions</li>
+                        <li>Tax planning tools</li>
+                        <li>SIP & mutual fund tracker</li>
+                        <li>Retirement planner</li>
+                        <li>Gold & silver price tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="fw-bold"><span class="material-icons-outlined align-middle">business</span> Company Information</h5>
+            <table class="table table-sm mb-0">
+                <tr><td class="text-muted" style="width:40%;">Product</td><td><strong>WealthPilot&trade;</strong></td></tr>
+                <tr><td class="text-muted">Website</td><td><a href="https://mywealthpilot.in" target="_blank" rel="noopener">mywealthpilot.in</a></td></tr>
+                <tr><td class="text-muted">Support Email</td><td><a href="mailto:support@mywealthpilot.in">support@mywealthpilot.in</a></td></tr>
+                <tr><td class="text-muted">Country</td><td>India</td></tr>
+                <tr><td class="text-muted">Currency</td><td>Indian Rupee (₹ INR)</td></tr>
+                <tr><td class="text-muted">Payment Partner</td><td>Razorpay</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

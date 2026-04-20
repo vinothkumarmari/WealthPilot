@@ -37,6 +37,25 @@ def service_worker():
     return send_from_directory(main.static_folder or 'static', 'sw.js', mimetype='application/javascript')
 
 
+# ======================== ROBOTS.TXT & SITEMAP ========================
+
+@main.route('/robots.txt')
+def robots_txt():
+    content = "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /billing\nDisallow: /export\nSitemap: https://mywealthpilot.in/sitemap.xml\n"
+    return content, 200, {'Content-Type': 'text/plain'}
+
+
+@main.route('/sitemap.xml')
+def sitemap_xml():
+    pages = ['index', 'privacy_policy', 'terms_of_service', 'contact', 'about', 'refund_policy']
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for page in pages:
+        xml += f'  <url><loc>https://mywealthpilot.in{url_for("main." + page)}</loc></url>\n'
+    xml += '</urlset>'
+    return xml, 200, {'Content-Type': 'application/xml'}
+
+
 # ======================== MAIL CONFIG HELPERS ========================
 
 MAIL_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'instance', 'mail_config.json')
@@ -104,7 +123,7 @@ def generate_otp():
 
 def _hash_otp(otp_code):
     """Hash OTP before storing it in DB."""
-    secret = (Config.SECRET_KEY or 'wealthpilot-otp-secret').encode('utf-8')
+    secret = Config.SECRET_KEY.encode('utf-8')
     return hmac.new(secret, str(otp_code).encode('utf-8'), hashlib.sha256).hexdigest()
 
 
@@ -839,6 +858,7 @@ PLAN_PRICING = {
 
 
 @main.route('/billing/create-order', methods=['POST'])
+@limiter.limit('5 per minute')
 @login_required
 def create_billing_order():
     if not Config.RAZORPAY_KEY_ID or not Config.RAZORPAY_KEY_SECRET:
@@ -937,6 +957,7 @@ def billing_callback():
 
 
 @main.route('/billing/verify', methods=['POST'])
+@limiter.limit('10 per minute')
 @login_required
 def verify_billing_payment():
     if not Config.RAZORPAY_KEY_SECRET:
@@ -4384,6 +4405,21 @@ def privacy_policy():
 @main.route('/terms-of-service')
 def terms_of_service():
     return render_template('terms_of_service.html')
+
+
+@main.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+
+@main.route('/about')
+def about():
+    return render_template('about.html')
+
+
+@main.route('/refund-policy')
+def refund_policy():
+    return render_template('refund_policy.html')
 
 
 # ======================== DUE REMINDERS ========================

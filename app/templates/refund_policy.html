@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Refund & Cancellation Policy - WealthPilot{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <div class="text-center mb-4">
+        <span class="material-icons-outlined" style="font-size:48px;color:var(--accent);">receipt_long</span>
+        <h3 class="fw-bold mt-2">Refund & Cancellation Policy</h3>
+        <p class="text-muted">Last updated: April 2026</p>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold">1. Refund Eligibility</h5>
+            <p>We offer a <strong>full refund within 7 days</strong> of your subscription purchase if you are not satisfied with our service. No questions asked.</p>
+            <ul>
+                <li>Refund requests must be made within 7 calendar days from the date of payment.</li>
+                <li>Refunds are processed to the original payment method used during purchase.</li>
+                <li>Refund processing takes 5-7 business days depending on your bank or payment provider.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold">2. How to Request a Refund</h5>
+            <p>To request a refund, send an email to <a href="mailto:support@mywealthpilot.in">support@mywealthpilot.in</a> with:</p>
+            <ul>
+                <li>Your registered email address</li>
+                <li>Razorpay payment/transaction ID (available in your billing history)</li>
+                <li>Reason for refund (optional, helps us improve)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold">3. Subscription Cancellation</h5>
+            <ul>
+                <li>You can cancel your subscription at any time. Your premium features will remain active until the end of your current billing period.</li>
+                <li>After the billing period ends, your account will automatically revert to the Free plan.</li>
+                <li>No data is deleted upon downgrade — all your financial records remain intact.</li>
+                <li>You can re-subscribe at any time to regain premium features.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold">4. Non-Refundable Cases</h5>
+            <ul>
+                <li>Requests made after 7 days of purchase.</li>
+                <li>Subscriptions purchased with promotional/coupon codes (unless otherwise stated).</li>
+                <li>Account suspension due to violation of Terms of Service.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="fw-bold">5. Contact</h5>
+            <p class="mb-0">For refund or cancellation requests, contact us at <a href="mailto:support@mywealthpilot.in">support@mywealthpilot.in</a>. We aim to respond within 24-48 business hours.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
