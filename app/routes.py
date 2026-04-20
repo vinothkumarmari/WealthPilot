@@ -440,8 +440,11 @@ def get_user_plan(user=None):
     if u.is_admin:
         return 'family_monthly'  # Admin gets full access
     from .models import PaymentTransaction
-    latest = PaymentTransaction.query.filter_by(
-        user_id=u.id, status='paid'
+    now = datetime.now(timezone.utc)
+    latest = PaymentTransaction.query.filter(
+        PaymentTransaction.user_id == u.id,
+        PaymentTransaction.status == 'paid',
+        db.or_(PaymentTransaction.expires_at.is_(None), PaymentTransaction.expires_at > now)
     ).order_by(
         PaymentTransaction.paid_at.desc(),
         PaymentTransaction.created_at.desc()
@@ -949,6 +952,7 @@ def billing_callback():
     txn.razorpay_signature = signature
     txn.status = 'paid'
     txn.paid_at = datetime.now(timezone.utc)
+    txn.expires_at = datetime.now(timezone.utc) + timedelta(days=30)
     db.session.commit()
     session.pop('_cached_plan', None)
 
@@ -1018,6 +1022,7 @@ def razorpay_webhook():
                 txn.razorpay_payment_id = payment_id
                 txn.status = 'paid'
                 txn.paid_at = datetime.now(timezone.utc)
+                txn.expires_at = datetime.now(timezone.utc) + timedelta(days=30)
                 db.session.commit()
 
     return jsonify({'success': True})
@@ -1381,13 +1386,108 @@ def export_csv(data_type):
     )
 
 
+# ======================== DOWNLOAD ALL DATA (GDPR) ========================
+
+@main.route('/download-all-data')
+@login_required
+def download_all_data():
+    import zipfile
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for data_type, config in EXPORT_CONFIG.items():
+            model_class = globals().get(config['model']) or locals().get(config['model'])
+            if not model_class:
+                import app.models as m
+                model_class = getattr(m, config['model'], None)
+            if not model_class:
+                continue
+            records = model_class.query.filter_by(user_id=current_user.id).all()
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(config['headers'])
+            for record in records:
+                row = []
+                for field in config['fields']:
+                    val = getattr(record, field, '')
+                    if isinstance(val, (date, datetime)):
+                        val = val.strftime('%Y-%m-%d')
+                    elif isinstance(val, bool):
+                        val = 'Yes' if val else 'No'
+                    elif val is None:
+                        val = ''
+                    row.append(val)
+                writer.writerow(row)
+            zf.writestr(f'{data_type}.csv', output.getvalue())
+
+        # Also include user profile info
+        profile_output = io.StringIO()
+        pw = csv.writer(profile_output)
+        pw.writerow(['Field', 'Value'])
+        for f in ['username', 'email', 'full_name', 'age', 'monthly_salary', 'risk_appetite',
+                   'profession', 'state', 'mobile', 'created_at']:
+            val = getattr(current_user, f, '')
+            if isinstance(val, (date, datetime)):
+                val = val.strftime('%Y-%m-%d %H:%M')
+            pw.writerow([f, val or ''])
+        zf.writestr('profile.csv', profile_output.getvalue())
+
+    zip_buffer.seek(0)
+    return send_file(
+        zip_buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name=f'wealthpilot_all_data_{date.today().isoformat()}.zip'
+    )
+
+
 # ======================== ACCOUNT DELETION ========================
 
 @main.route('/delete-account', methods=['GET', 'POST'])
 @login_required
 def delete_account():
-    flash('Delete account permission has been removed for users. Please contact support for account closure requests.', 'warning')
-    return redirect(url_for('main.profile'))
+    if current_user.is_admin:
+        flash('Admin accounts cannot be self-deleted.', 'warning')
+        return redirect(url_for('main.profile'))
+
+    if request.method == 'GET':
+        # Send OTP for confirmation
+        from flask import current_app
+        otp = _issue_user_otp(current_user)
+        queue_otp_email(current_app._get_current_object(), current_user.email, otp, purpose='account_deletion')
+        flash('A verification OTP has been sent to your email. Enter it below to confirm account deletion.', 'info')
+        return render_template('delete_account.html')
+
+    # POST — verify OTP and delete
+    entered_otp = request.form.get('otp', '').strip()
+    if not entered_otp:
+        flash('Please enter the OTP sent to your email.', 'danger')
+        return render_template('delete_account.html')
+
+    valid, err_msg = _is_valid_user_otp(current_user, entered_otp)
+    if not valid:
+        flash(err_msg or 'Invalid or expired OTP. Please try again.', 'danger')
+        return render_template('delete_account.html')
+
+    # Delete all user data
+    user_id = current_user.id
+    try:
+        from .models import PaymentTransaction
+        for model_class in [Income, Expense, Investment, Asset, FinancialGoal,
+                            InsurancePolicy, PremiumPayment, Scheme, SIP, Budget,
+                            Loan, BankAccount, ProvidentFund, Feedback, Notification,
+                            FamilyMember, PaymentTransaction]:
+            model_class.query.filter_by(user_id=user_id).delete()
+        user_obj = db.session.get(User, user_id)
+        if user_obj:
+            logout_user()
+            db.session.delete(user_obj)
+            db.session.commit()
+            flash('Your account and all associated data have been permanently deleted.', 'success')
+            return redirect(url_for('main.login'))
+    except Exception:
+        db.session.rollback()
+        flash('An error occurred while deleting your account. Please contact support.', 'danger')
+        return redirect(url_for('main.profile'))
 
 
 # ======================== DASHBOARD ========================
@@ -4395,6 +4495,16 @@ def feedback():
 @login_required
 def help_guide():
     return render_template('help_guide.html')
+
+
+@main.route('/billing-history')
+@login_required
+def billing_history():
+    from .models import PaymentTransaction
+    txns = PaymentTransaction.query.filter_by(user_id=current_user.id).order_by(
+        PaymentTransaction.created_at.desc()
+    ).all()
+    return render_template('billing_history.html', transactions=txns)
 
 
 @main.route('/privacy-policy')

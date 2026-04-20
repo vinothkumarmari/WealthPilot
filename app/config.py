@@ -66,6 +66,9 @@ class Config:
     RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
     RAZORPAY_CURRENCY = 'INR'
     
+    # App Version (for cache busting static assets)
+    APP_VERSION = os.environ.get('APP_VERSION', '2')
+
     # OTP Settings
     OTP_EXPIRY_MINUTES = 5
     OTP_LENGTH = 6

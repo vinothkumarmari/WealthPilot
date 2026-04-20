@@ -400,8 +400,8 @@
         <section class="login-card">
             <div class="login-head">
                 <span class="material-icons-outlined">account_balance_wallet</span>
-                <h3>Welcome Back</h3>
-                <p>Login to WealthPilot</p>
+                <h3>{{ t('Welcome Back') }}</h3>
+                <p>{{ t('Login to WealthPilot') }}</p>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -415,28 +415,28 @@
             <form method="POST" autocomplete="off">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
-                    <label class="form-label">Username</label>
+                    <label class="form-label">{{ t('Username') }}</label>
                     <div class="input-group">
                         <span class="input-group-text"><span class="material-icons-outlined">person</span></span>
-                        <input type="text" name="username" class="form-control" placeholder="Enter username" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <input type="text" name="username" class="form-control" placeholder="{{ t('Enter username') }}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
+                    <label class="form-label">{{ t('Password') }}</label>
                     <div class="input-group">
                         <span class="input-group-text"><span class="material-icons-outlined">lock</span></span>
-                        <input type="password" name="password" class="form-control" placeholder="Enter password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <input type="password" name="password" class="form-control" placeholder="{{ t('Enter password') }}" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                 </div>
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" name="remember" id="remember">
-                    <label class="form-check-label" for="remember">Remember me</label>
+                    <label class="form-check-label" for="remember">{{ t('Remember me') }}</label>
                 </div>
-                <button type="submit" class="btn btn-accent w-100 btn-lg d-flex align-items-center justify-content-center text-center">Login</button>
+                <button type="submit" class="btn btn-accent w-100 btn-lg d-flex align-items-center justify-content-center text-center">{{ t('Login') }}</button>
             </form>
 
-            <p class="link-row"><a id="forgotLink" href="{{ url_for('main.forgot_password') }}" style="font-size: 0.9rem;">Forgot Password?</a></p>
-            <p class="link-row">Don't have an account? <a href="{{ url_for('main.register') }}">Register</a></p>
+            <p class="link-row"><a id="forgotLink" href="{{ url_for('main.forgot_password') }}" style="font-size: 0.9rem;">{{ t('Forgot Password?') }}</a></p>
+            <p class="link-row">{{ t("Don't have an account?") }} <a href="{{ url_for('main.register') }}">{{ t('Register') }}</a></p>
         </section>
     </div>
 </div>

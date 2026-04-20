@@ -6,8 +6,8 @@
         <div class="auth-card auth-card-wide">
             <div class="auth-header">
                 <span class="material-icons-outlined brand-icon">account_balance_wallet</span>
-                <h3>Create Account</h3>
-                <p class="text-muted">Start managing your finances smartly</p>
+                <h3>{{ t('Create Account') }}</h3>
+                <p class="text-muted">{{ t('Start managing your finances smartly') }}</p>
             </div>
             {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -20,45 +20,45 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" name="full_name" class="form-control" placeholder="Your full name" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <label class="form-label">{{ t('Full Name') }}</label>
+                        <input type="text" name="full_name" class="form-control" placeholder="{{ t('Your full name') }}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" placeholder="Choose username" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <label class="form-label">{{ t('Username') }}</label>
+                        <input type="text" name="username" class="form-control" placeholder="{{ t('Choose username') }}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" placeholder="Your email" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+                        <label class="form-label">{{ t('Email') }}</label>
+                        <input type="email" name="email" class="form-control" placeholder="{{ t('Your email') }}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Mobile Number</label>
-                        <input type="tel" name="mobile" class="form-control" placeholder="10-digit mobile number" pattern="(\+?\d{1,3}[-.\s]?)?\d{10}" title="Enter a valid 10-digit mobile number" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                        <label class="form-label">{{ t('Mobile Number') }}</label>
+                        <input type="tel" name="mobile" class="form-control" placeholder="{{ t('10-digit mobile number') }}" pattern="(\+?\d{1,3}[-.\s]?)?\d{10}" title="Enter a valid 10-digit mobile number" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" placeholder="Choose password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required minlength="6">
+                        <label class="form-label">{{ t('Password') }}</label>
+                        <input type="password" name="password" class="form-control" placeholder="{{ t('Choose password') }}" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required minlength="6">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Age</label>
+                        <label class="form-label">{{ t('Age') }}</label>
                         <input type="number" name="age" class="form-control" placeholder="Age" min="18" max="100" autocomplete="off">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Monthly Salary (₹)</label>
+                        <label class="form-label">{{ t('Monthly Salary') }} (₹)</label>
                         <input type="number" name="monthly_salary" class="form-control" placeholder="e.g. 50000" min="0" autocomplete="off">
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label">Risk Appetite</label>
+                        <label class="form-label">{{ t('Risk Appetite') }}</label>
                         <select name="risk_appetite" class="form-select">
-                            <option value="low">Low - Safety First</option>
-                            <option value="moderate" selected>Moderate - Balanced</option>
-                            <option value="high">High - Growth Focused</option>
+                            <option value="low">{{ t('Low - Safety First') }}</option>
+                            <option value="moderate" selected>{{ t('Moderate - Balanced') }}</option>
+                            <option value="high">{{ t('High - Growth Focused') }}</option>
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-accent w-100 btn-lg d-flex align-items-center justify-content-center text-center">Create Account</button>
+                <button type="submit" class="btn btn-accent w-100 btn-lg d-flex align-items-center justify-content-center text-center">{{ t('Create Account') }}</button>
             </form>
-            <p class="text-center mt-3">Already have an account? <a href="{{ url_for('main.login') }}">Login</a></p>
+            <p class="text-center mt-3">{{ t('Already have an account?') }} <a href="{{ url_for('main.login') }}">{{ t('Login') }}</a></p>
         </div>
     </div>
 </div>

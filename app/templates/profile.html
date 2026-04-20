@@ -197,6 +197,13 @@
                     <a href="{{ url_for('main.export_csv', data_type='sips') }}" class="btn btn-sm btn-outline-primary">SIPs</a>
                     <a href="{{ url_for('main.export_csv', data_type='goals') }}" class="btn btn-sm btn-outline-primary">Goals</a>
                 </div>
+                <a href="{{ url_for('main.download_all_data') }}" class="btn btn-sm btn-accent w-100 mb-3">
+                    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">download</span> {{ t('Download All My Data') }}
+                </a>
+                <hr>
+                <a href="{{ url_for('main.delete_account') }}" class="btn btn-sm btn-outline-danger w-100">
+                    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">delete_forever</span> {{ t('Delete My Account') }}
+                </a>
             </div>
         </div>
     </div>

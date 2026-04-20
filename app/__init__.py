@@ -137,7 +137,12 @@ def create_app():
                     current_plan = cached['plan_name']
                 else:
                     from .models import PaymentTransaction
-                    latest_paid = PaymentTransaction.query.filter_by(user_id=_cu.id, status='paid').order_by(PaymentTransaction.paid_at.desc()).first()
+                    now_utc = datetime.now(timezone.utc)
+                    latest_paid = PaymentTransaction.query.filter(
+                        PaymentTransaction.user_id == _cu.id,
+                        PaymentTransaction.status == 'paid',
+                        db.or_(PaymentTransaction.expires_at.is_(None), PaymentTransaction.expires_at > now_utc)
+                    ).order_by(PaymentTransaction.paid_at.desc()).first()
 
                     current_plan = 'Free'
                     if _cu.is_admin:
@@ -419,6 +424,10 @@ def _ensure_user_columns(app):
                 if 'member' not in goal_cols:
                     conn.execute(text("ALTER TABLE financial_goal ADD COLUMN member VARCHAR(100) DEFAULT 'Self'"))
                     app.logger.info('Added column: financial_goal.member')
+                pt_cols = {r[1] for r in conn.execute(text("PRAGMA table_info(payment_transaction)")).fetchall()}
+                if 'expires_at' not in pt_cols:
+                    conn.execute(text("ALTER TABLE payment_transaction ADD COLUMN expires_at TIMESTAMP"))
+                    app.logger.info('Added column: payment_transaction.expires_at')
                 conn.commit()
             else:
                 rows = conn.execute(text(
@@ -478,6 +487,10 @@ def _ensure_user_columns(app):
                 if 'member' not in goal_cols:
                     conn.execute(text("ALTER TABLE financial_goal ADD COLUMN member VARCHAR(100) DEFAULT 'Self'"))
                     app.logger.info('Added column: financial_goal.member')
+                pt_cols = {r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='payment_transaction'")).fetchall()}
+                if 'expires_at' not in pt_cols:
+                    conn.execute(text("ALTER TABLE payment_transaction ADD COLUMN expires_at TIMESTAMP"))
+                    app.logger.info('Added column: payment_transaction.expires_at')
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')

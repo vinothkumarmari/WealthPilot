@@ -314,6 +314,7 @@ class PaymentTransaction(db.Model):
     razorpay_signature = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     paid_at = db.Column(db.DateTime)
+    expires_at = db.Column(db.DateTime)  # subscription end date
 
 
 class FamilyMember(db.Model):

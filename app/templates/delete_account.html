@@ -1,43 +1,44 @@
 {% extends "base.html" %}
-{% block title %}Delete Account - WealthPilot{% endblock %}
+{% block title %}{{ t('Delete Account') }} - WealthPilot{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-5">
-            <div class="card shadow-sm border-warning">
-                <div class="card-body p-4">
-                    <div class="text-center mb-4">
-                        <span class="material-icons-outlined text-warning" style="font-size: 48px;">lock</span>
-                        <h4 class="mt-2 fw-bold text-warning">Account Deletion Disabled</h4>
-                        <p class="text-muted small">This action is no longer available for users.</p>
-                    </div>
+<div class="page-header">
+    <h4><span class="material-icons-outlined text-danger">warning</span> {{ t('Delete Account') }}</h4>
+    <p class="text-muted">{{ t('This action is permanent and cannot be undone') }}</p>
+</div>
 
-                    <div class="alert alert-warning">
-                        <strong>Notice:</strong> For security and compliance reasons, account deletion permission has been removed from self-service.
-                    </div>
-
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endfor %}
-                    {% endif %}
-                    {% endwith %}
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('main.help_guide') }}" class="btn btn-outline-warning">
-                            <span class="material-icons-outlined" style="vertical-align: middle; font-size: 18px;">support_agent</span>
-                            Contact Support for Account Closure
-                        </a>
-                        <a href="{{ url_for('main.profile') }}" class="btn btn-outline-secondary">
-                            <span class="material-icons-outlined" style="vertical-align: middle; font-size: 18px;">arrow_back</span>
-                            Back to Profile
-                        </a>
-                    </div>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <div class="alert alert-danger">
+                    <strong>{{ t('Warning:') }}</strong> {{ t('Deleting your account will permanently remove all your data including income, expenses, investments, insurance policies, goals, loans, and payment history.') }}
+                </div>
+
+                <p class="text-muted mb-3">{{ t('An OTP has been sent to your registered email. Enter it below to confirm deletion.') }}</p>
+
+                <form method="POST" action="{{ url_for('main.delete_account') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ t('Enter OTP') }}</label>
+                        <input type="text" name="otp" class="form-control" placeholder="Enter 6-digit OTP" maxlength="6" pattern="\d{6}" required autofocus>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('main.profile') }}" class="btn btn-secondary flex-fill">{{ t('Cancel') }}</a>
+                        <button type="submit" class="btn btn-danger flex-fill">{{ t('Permanently Delete My Account') }}</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
