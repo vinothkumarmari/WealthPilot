@@ -39,6 +39,15 @@
             <a href="#goals" class="btn btn-sm btn-outline-primary">Goals</a>
             <a href="#notifications" class="btn btn-sm btn-outline-primary">Notifications</a>
             <a href="#reports" class="btn btn-sm btn-outline-primary">Reports</a>
+            <a href="#familymembers" class="btn btn-sm btn-outline-warning">Family Members</a>
+            <a href="#familydashboard" class="btn btn-sm btn-outline-warning">Family Dashboard</a>
+            <a href="#jointgoals" class="btn btn-sm btn-outline-warning">Joint Goals</a>
+            <a href="#sharedexpenses" class="btn btn-sm btn-outline-warning">Shared Expenses</a>
+            <a href="#memberinvestments" class="btn btn-sm btn-outline-warning">Member Investments</a>
+            <a href="#retirementplanner" class="btn btn-sm btn-outline-warning">Retirement Planner</a>
+            <a href="#insuranceanalyzer" class="btn btn-sm btn-outline-warning">Insurance Analyzer</a>
+            <a href="#customreports" class="btn btn-sm btn-outline-warning">Custom Reports</a>
+            <a href="#prioritysupport" class="btn btn-sm btn-outline-warning">Priority Support</a>
             <a href="#profile" class="btn btn-sm btn-outline-primary">Profile</a>
             <a href="#feedback" class="btn btn-sm btn-outline-primary">Feedback</a>
             <a href="#forgotpassword" class="btn btn-sm btn-outline-primary">Forgot Password</a>
@@ -603,6 +612,125 @@
             <li><strong>Category Analysis:</strong> Spending patterns by category.</li>
             <li><strong>Investment Performance:</strong> Returns analysis across all investment types.</li>
             <li><strong>Turnover Analysis:</strong> Track overall financial throughput over time.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- ============ FAMILY MODULES (Family Plan) ============ -->
+<div class="card mb-4" id="familymembers">
+    <div class="card-header" style="background: linear-gradient(135deg, #fdcb6e, #e17055); color: #333;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">family_restroom</span>Family Members <span class="badge bg-dark ms-2">Family Plan</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Add and manage up to 5 family members. Each member's financial data is tracked separately for investments, expenses, goals, and insurance.</p>
+        <ul class="small">
+            <li><strong>Add Members:</strong> Enter name, relationship (Spouse, Son, Daughter, Father, Mother, etc.), age, occupation, and monthly income.</li>
+            <li><strong>Limit:</strong> Maximum 5 family members per account. Self is always included automatically.</li>
+            <li><strong>Member Tag:</strong> Once added, family members appear as options when adding investments, expenses, goals, and policies.</li>
+            <li><strong>Remove:</strong> Delete a family member and their tag from the system.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="familydashboard">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">dashboard_customize</span>Family Financial Dashboard <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>A consolidated view of your entire family's finances in one place.</p>
+        <ul class="small">
+            <li><strong>Summary Cards:</strong> Total income, expenses, investments, loans, insurance cover, and net worth across all members.</li>
+            <li><strong>Member Breakdown:</strong> Table showing each member's financial position — income, expenses, investments, loans, insurance.</li>
+            <li><strong>Net Worth:</strong> Family-level net worth = Total Investments − Total Loans.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="jointgoals">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">flag_circle</span>Joint Goal Tracking <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>Set and track financial goals for the entire family with member assignment.</p>
+        <ul class="small">
+            <li><strong>Assign to Member:</strong> Each goal can be tagged to a specific family member (Self, Spouse, Son, etc.).</li>
+            <li><strong>Progress Tracking:</strong> Visual progress bar showing saved amount vs target.</li>
+            <li><strong>Priority:</strong> Mark goals as Low, Medium, or High priority.</li>
+            <li><strong>Categories:</strong> Use categories like house, car, education, retirement, wedding, etc.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="sharedexpenses">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">group_work</span>Shared Expense Tracking <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>View and filter expenses by family member to understand spending patterns.</p>
+        <ul class="small">
+            <li><strong>Member Filter:</strong> Click on a member name to see only their expenses.</li>
+            <li><strong>Summary Cards:</strong> Per-member total spending at a glance.</li>
+            <li><strong>Tag Expenses:</strong> When adding expenses, select which family member it belongs to.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="memberinvestments">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">diversity_3</span>Member-wise Investment View <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>Track investments separately for each family member.</p>
+        <ul class="small">
+            <li><strong>Member Filter:</strong> View investments for All members or a specific member.</li>
+            <li><strong>Per-Member Summary:</strong> Cards showing invested amount, current value, and gain/loss for each member.</li>
+            <li><strong>Detailed Table:</strong> Investment name, type, platform, invested vs current value, and returns.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="retirementplanner">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">elderly</span>Retirement Planning for Family <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>Calculate retirement corpus needed for each family member and identify gaps.</p>
+        <ul class="small">
+            <li><strong>Per-Member Plan:</strong> Each member gets their own retirement calculation based on age and expenses.</li>
+            <li><strong>Corpus Calculation:</strong> Uses 6% inflation and 10% expected returns to project future needs.</li>
+            <li><strong>Gap Analysis:</strong> Shows the shortfall between existing investments and required corpus.</li>
+            <li><strong>Monthly SIP Needed:</strong> Calculates exactly how much monthly SIP is needed to fill the gap.</li>
+            <li><strong>Family Total:</strong> Combined retirement gap and total SIP needed across all members.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="insuranceanalyzer">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">health_and_safety</span>Insurance Coverage Analyzer <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>Analyze insurance coverage gaps for every family member with a health score.</p>
+        <ul class="small">
+            <li><strong>Family Coverage Score:</strong> Overall percentage score (0-100%) showing how well your family is covered.</li>
+            <li><strong>Per-Member Analysis:</strong> Number of policies, total cover, annual premium for each member.</li>
+            <li><strong>Gap Detection:</strong> Identifies gaps in Term Insurance (10-15x income), Health Insurance (₹10L minimum), and Life Insurance.</li>
+            <li><strong>Recommendations:</strong> Specific suggestions based on age, income, and existing coverage.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="customreports">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">summarize</span>Custom Financial Reports <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>Generate comprehensive reports filtered by family member and time period.</p>
+        <ul class="small">
+            <li><strong>Filters:</strong> Filter by member (All/Self/specific member) and period (1 month, 3 months, 6 months, 1 year, all time).</li>
+            <li><strong>Income & Savings:</strong> Total income, expenses, savings amount and savings rate percentage.</li>
+            <li><strong>Category Breakdown:</strong> Visual breakdown of expenses by category with percentages.</li>
+            <li><strong>Investment Summary:</strong> Total invested vs current value with gain/loss.</li>
+            <li><strong>Loan & Insurance:</strong> Outstanding loans, monthly EMI, insurance cover, and annual premiums.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="card mb-3" id="prioritysupport">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">support_agent</span>Priority Email Support <span class="badge bg-warning text-dark ms-1">Family</span></h6></div>
+    <div class="card-body">
+        <p>Family plan members get priority support with faster response times.</p>
+        <ul class="small">
+            <li><strong>Priority Queue:</strong> Your support requests are prioritized over free and pro users.</li>
+            <li><strong>Response Time:</strong> Within 24 hours guaranteed.</li>
+            <li><strong>Direct Email:</strong> Your message is sent directly to the WealthPilot team.</li>
+            <li><strong>Include Details:</strong> Provide your username and screenshots for faster resolution.</li>
         </ul>
     </div>
 </div>

@@ -4691,9 +4691,9 @@ def family_members():
             user_id=current_user.id,
             name=name,
             relationship=relationship,
-            age=int(request.form.get('age') or 0) or None,
+            age=max(1, min(120, int(request.form.get('age') or 0))) or None,
             occupation=(request.form.get('occupation') or '').strip() or None,
-            monthly_income=float(request.form.get('monthly_income') or 0),
+            monthly_income=max(0, float(request.form.get('monthly_income') or 0)),
         )
         db.session.add(member)
         db.session.commit()
@@ -4862,8 +4862,8 @@ def priority_support():
             from . import mail as app_mail
             msg = MailMessage(
                 subject=f'[Priority Support] {subject} - {current_user.username}',
-                sender=current_user.email,
                 recipients=[Config.ADMIN_EMAIL],
+                reply_to=current_user.email,
                 body=f"From: {current_user.full_name or current_user.username} ({current_user.email})\n"
                      f"Plan: Family\n\n{message}",
             )
