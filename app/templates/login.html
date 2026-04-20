@@ -211,38 +211,68 @@
                 <span class="material-icons-outlined">auto_awesome</span>
                 <span>WealthPilot Daily Pulse</span>
             </div>
-            <h2 class="story-title">Come back for today’s money wins, fresh insights, and what your plan needs next.</h2>
-            <p class="story-sub">Like checking reactions on a new reel, your finance feed has movement too: habits completed, goals trending, and reminders waiting for action.</p>
 
-            <div class="story-pill-row">
-                <span class="story-pill">New this week: AI Playbooks refresh</span>
-                <span class="story-pill">1 unread goal reminder</span>
-                <span class="story-pill">Your streak can continue today</span>
-            </div>
+            <div id="pulse-content"></div>
 
-            <div class="pulse-card">
-                <div class="pulse-head">
-                    <strong>Goal Spotlight</strong>
-                    <span class="pulse-time">2m ago</span>
-                </div>
-                <div>Retirement Goal is now closer than last week. Keep your momentum with today’s check-in.</div>
-                <div class="pulse-meta">
-                    <span><span class="material-icons-outlined">favorite</span>142 likes</span>
-                    <span><span class="material-icons-outlined">chat_bubble</span>31 comments</span>
-                    <span><span class="material-icons-outlined">share</span>18 shares</span>
-                </div>
-            </div>
+            <script>
+            (function() {
+                var pulseData = [
+                    {
+                        headline: "Come back for today\u2019s money wins, fresh insights, and what your plan needs next.",
+                        sub: "Track your income, review spending patterns, and watch your investments grow \u2014 all in one place.",
+                        pills: ["Gold prices updated today", "SIP due dates this week", "Tax-saving season is open"],
+                        card1: { title: "Goal Spotlight", text: "Retirement Goal is now closer than last week. Keep your momentum with today\u2019s check-in.", icon: "trending_up", meta: "On track" },
+                        card2: { title: "Weekly Signal", text: "Your spending trend changed in Food & Groceries. Review once and avoid month-end surprises.", icon: "notifications_active", meta: "Action recommended" }
+                    },
+                    {
+                        headline: "Your finances moved while you were away. Log in to stay ahead.",
+                        sub: "Your AI advisor has fresh suggestions. Goals are updating. Spending patterns have shifted.",
+                        pills: ["New AI budget suggestions", "Investment returns recalculated", "Insurance review pending"],
+                        card1: { title: "Investment Alert", text: "Mutual fund portfolios gained 2.3% this month on average. Review allocation to maximize returns.", icon: "show_chart", meta: "Market up" },
+                        card2: { title: "EMI Reminder", text: "Loan EMI cycles are resetting this month. Ensure sufficient balance in linked accounts.", icon: "account_balance", meta: "Payment upcoming" }
+                    },
+                    {
+                        headline: "New week, new targets. Your financial dashboard has fresh updates.",
+                        sub: "From SIP tracking to tax savings, your personal finance command center is always ready.",
+                        pills: ["Budget month reset", "3 new AI suggestions", "Profile review suggested"],
+                        card1: { title: "Savings Milestone", text: "Users who track expenses weekly save 23% more on average. Your weekly review is waiting.", icon: "savings", meta: "Insight" },
+                        card2: { title: "Insurance Check", text: "Annual policy review time. Verify nominee details and sum assured match your current needs.", icon: "health_and_safety", meta: "Review pending" }
+                    },
+                    {
+                        headline: "Smart money moves start with a check-in. See what changed today.",
+                        sub: "Review your budget health, investment returns, and upcoming EMI due dates \u2014 before the month surprises you.",
+                        pills: ["Market trends updated", "EMI payment due soon", "New govt scheme available"],
+                        card1: { title: "Tax Insight", text: "Section 80C deadline is approaching. Check your tax-saving investments before the financial year ends.", icon: "receipt_long", meta: "Tax season" },
+                        card2: { title: "SIP Tracker", text: "Monthly SIP execution dates are approaching. Check if all fund mandates are active.", icon: "autorenew", meta: "Auto-debit active" }
+                    },
+                    {
+                        headline: "Your wealth journey has new milestones. Come see the progress.",
+                        sub: "Track goals, analyze spending, manage insurance, and plan retirement \u2014 all from one dashboard.",
+                        pills: ["Spending report ready", "New goal milestone reached", "Family plan features available"],
+                        card1: { title: "Budget Win", text: "Users who set monthly budgets reduce overspending by 35%. Start or review your budget today.", icon: "emoji_events", meta: "Pro tip" },
+                        card2: { title: "Market Update", text: "Gold prices moved 1.2% this week. A good time to review your gold investment strategy.", icon: "diamond", meta: "Review suggested" }
+                    }
+                ];
 
-            <div class="pulse-card">
-                <div class="pulse-head">
-                    <strong>Weekly Signal</strong>
-                    <span class="pulse-time">Today</span>
-                </div>
-                <div>Your spending trend changed in Food & Groceries. Review once and avoid month-end surprises.</div>
-                <div class="pulse-meta">
-                    <span><span class="material-icons-outlined">notifications_active</span>Action recommended</span>
-                </div>
-            </div>
+                var d = pulseData[Math.floor(Math.random() * pulseData.length)];
+                var pills = d.pills.map(function(p) { return '<span class="story-pill">' + p + '</span>'; }).join('');
+
+                document.getElementById('pulse-content').innerHTML =
+                    '<h2 class="story-title">' + d.headline + '</h2>' +
+                    '<p class="story-sub">' + d.sub + '</p>' +
+                    '<div class="story-pill-row">' + pills + '</div>' +
+                    '<div class="pulse-card">' +
+                        '<div class="pulse-head"><strong>' + d.card1.title + '</strong><span class="pulse-time">Just now</span></div>' +
+                        '<div>' + d.card1.text + '</div>' +
+                        '<div class="pulse-meta"><span><span class="material-icons-outlined">' + d.card1.icon + '</span>' + d.card1.meta + '</span></div>' +
+                    '</div>' +
+                    '<div class="pulse-card">' +
+                        '<div class="pulse-head"><strong>' + d.card2.title + '</strong><span class="pulse-time">Today</span></div>' +
+                        '<div>' + d.card2.text + '</div>' +
+                        '<div class="pulse-meta"><span><span class="material-icons-outlined">' + d.card2.icon + '</span>' + d.card2.meta + '</span></div>' +
+                    '</div>';
+            })();
+            </script>
         </section>
 
         <section class="login-card">
