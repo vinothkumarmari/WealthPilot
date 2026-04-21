@@ -201,9 +201,15 @@
                     <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">download</span> {{ t('Download All My Data') }}
                 </a>
                 <hr>
+                {% if current_user.is_admin %}
+                <span class="btn btn-sm btn-outline-danger w-100 disabled" style="opacity:0.5;pointer-events:none;" title="{{ t('Admin account cannot be deleted') }}">
+                    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">delete_forever</span> {{ t('Delete My Account') }}
+                </span>
+                {% else %}
                 <a href="{{ url_for('main.delete_account') }}" class="btn btn-sm btn-outline-danger w-100">
                     <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">delete_forever</span> {{ t('Delete My Account') }}
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
