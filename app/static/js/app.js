@@ -50,6 +50,26 @@ function toggleSidebarExpand() {
     // Update icon
     const icon = document.getElementById('sidebarExpandIcon');
     if (icon) icon.textContent = isExpanded ? 'menu_open' : 'menu';
+    // Update tooltips
+    updateSidebarTooltips();
+}
+
+// Set/remove tooltips on sidebar links based on collapsed/expanded state
+function updateSidebarTooltips() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    const isExpanded = sidebar.classList.contains('expanded');
+    sidebar.querySelectorAll('.sidebar-nav .nav-link, .sidebar-footer .nav-link').forEach(function(link) {
+        if (isExpanded) {
+            link.removeAttribute('title');
+        } else {
+            var textSpan = link.querySelectorAll('span');
+            // Second span is the label text
+            if (textSpan.length >= 2) {
+                link.setAttribute('title', textSpan[1].textContent.trim());
+            }
+        }
+    });
 }
 
 // Restore sidebar state from localStorage
@@ -62,6 +82,12 @@ function toggleSidebarExpand() {
         if (main) main.style.marginLeft = 'var(--sidebar-width)';
         const icon = document.getElementById('sidebarExpandIcon');
         if (icon) icon.textContent = 'menu_open';
+    }
+    // Set initial tooltips after DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateSidebarTooltips);
+    } else {
+        updateSidebarTooltips();
     }
 })();
 
