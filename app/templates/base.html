@@ -30,12 +30,9 @@
     {% if current_user.is_authenticated %}
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-brand" style="position:relative;">
+        <div class="sidebar-brand">
             <span class="material-icons-outlined brand-icon">account_balance_wallet</span>
             <span class="brand-text">Wealth<span class="text-accent">Pilot</span></span>
-            <button class="sidebar-toggle-btn d-none d-lg-flex" onclick="toggleSidebarExpand()" title="Toggle sidebar">
-                <span class="material-icons-outlined">chevron_right</span>
-            </button>
         </div>
         <nav class="sidebar-nav">
             <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
@@ -232,9 +229,14 @@
     <div class="main-content">
         <!-- Top Bar -->
         <div class="topbar">
-            <button class="btn btn-link sidebar-toggle d-lg-none" onclick="toggleSidebar()">
-                <span class="material-icons-outlined">menu</span>
-            </button>
+            <div class="d-flex align-items-center gap-1">
+                <button class="btn btn-link sidebar-toggle d-lg-none" onclick="toggleSidebar()">
+                    <span class="material-icons-outlined">menu</span>
+                </button>
+                <button class="btn btn-link sidebar-toggle d-none d-lg-inline-flex" onclick="toggleSidebarExpand()" title="Toggle sidebar" id="sidebarExpandBtn">
+                    <span class="material-icons-outlined" id="sidebarExpandIcon">menu</span>
+                </button>
+            </div>
             <div class="topbar-right">
                 <a href="{{ url_for('main.notifications') }}" class="btn btn-link position-relative" title="Notifications" id="notifBell">
                     <span class="material-icons-outlined">notifications</span>

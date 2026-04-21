@@ -42,11 +42,14 @@ function toggleSidebarExpand() {
     const sidebar = document.getElementById('sidebar');
     const isExpanded = sidebar.classList.toggle('expanded');
     localStorage.setItem('sidebar_expanded', isExpanded ? '1' : '0');
-    // Also update main-content margin for browsers that don't support ~
+    // Update main-content margin
     const main = document.querySelector('.main-content');
     if (main) {
         main.style.marginLeft = isExpanded ? 'var(--sidebar-width)' : 'var(--sidebar-collapsed-width)';
     }
+    // Update icon
+    const icon = document.getElementById('sidebarExpandIcon');
+    if (icon) icon.textContent = isExpanded ? 'menu_open' : 'menu';
 }
 
 // Restore sidebar state from localStorage
@@ -57,6 +60,8 @@ function toggleSidebarExpand() {
         if (sidebar) sidebar.classList.add('expanded');
         const main = document.querySelector('.main-content');
         if (main) main.style.marginLeft = 'var(--sidebar-width)';
+        const icon = document.getElementById('sidebarExpandIcon');
+        if (icon) icon.textContent = 'menu_open';
     }
 })();
 
