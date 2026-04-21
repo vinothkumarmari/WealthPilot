@@ -227,14 +227,14 @@
                         <span class="material-icons-outlined">notifications</span>
                         <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none" id="notifBadge" style="font-size:10px"></span>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end notif-dropdown" id="notifDropdown" style="width:360px;max-height:440px;overflow-y:auto;padding:0;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);margin-top:8px;border:1px solid var(--border-color);">
+                    <div class="dropdown-menu dropdown-menu-end notif-dropdown" id="notifDropdown" style="width:360px;max-height:440px;overflow:visible;padding:0;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);margin-top:12px;border:1px solid var(--border-color);">
                         <!-- Arrow pointing to bell -->
-                        <div style="position:absolute;top:-8px;right:16px;width:16px;height:16px;background:var(--card-bg);border-top:1px solid var(--border-color);border-left:1px solid var(--border-color);transform:rotate(45deg);z-index:1;"></div>
+                        <div style="position:absolute;top:-7px;right:18px;width:14px;height:14px;background:var(--card-bg);border-top:1px solid var(--border-color);border-left:1px solid var(--border-color);transform:rotate(45deg);z-index:10;"></div>
                         <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="background:var(--card-bg);border-radius:12px 12px 0 0;position:relative;z-index:2;">
                             <strong style="font-size:14px;">{{ t('Notifications') }}</strong>
                             <a href="{{ url_for('main.notifications') }}" class="text-decoration-none small">{{ t('View All') }}</a>
                         </div>
-                        <div id="notifDropdownBody" style="min-height:60px;">
+                        <div id="notifDropdownBody" style="min-height:60px;max-height:360px;overflow-y:auto;">
                             <div class="text-center text-muted py-4"><small>Loading...</small></div>
                         </div>
                     </div>

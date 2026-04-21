@@ -132,7 +132,6 @@ body {
     transition: all 0.2s ease;
     border-left: 3px solid transparent;
     white-space: nowrap;
-    overflow: hidden;
     position: relative;
 }
 
