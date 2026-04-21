@@ -206,22 +206,6 @@
             {% endif %}
         </nav>
         <div class="sidebar-footer">
-            <a href="{{ url_for('main.feedback') }}" class="nav-link {% if request.endpoint == 'main.feedback' %}active{% endif %}">
-                <span class="material-icons-outlined">rate_review</span>
-                <span>{{ t('Feedback') }}</span>
-            </a>
-            <a href="{{ url_for('main.help_guide') }}" class="nav-link {% if request.endpoint == 'main.help_guide' %}active{% endif %}">
-                <span class="material-icons-outlined">help_outline</span>
-                <span>{{ t('Help & Guide') }}</span>
-            </a>
-            <a href="{{ url_for('main.profile') }}" class="nav-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
-                <span class="material-icons-outlined">person</span>
-                <span>{{ t('Profile') }}</span>
-            </a>
-            <a href="{{ url_for('main.logout') }}" class="nav-link text-danger">
-                <span class="material-icons-outlined">logout</span>
-                <span>{{ t('Logout') }}</span>
-            </a>
         </div>
     </div>
 
@@ -245,16 +229,30 @@
                 <button class="btn btn-link" onclick="toggleTheme()" title="Toggle theme">
                     <span class="material-icons-outlined" id="themeIcon">dark_mode</span>
                 </button>
-                <div class="user-info">
-                    {% set has_profile_photo = current_user.profile_photo_data or current_user.profile_photo %}
-                    {% set profile_photo_ver = (current_user.profile_photo_updated_at.timestamp()|int) if current_user.profile_photo_updated_at else 0 %}
-                    {% if has_profile_photo %}
-                    <img src="{{ url_for('main.current_user_profile_photo', v=profile_photo_ver) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
-                    <span class="material-icons-outlined" style="display:none;">account_circle</span>
-                    {% else %}
-                    <span class="material-icons-outlined">account_circle</span>
-                    {% endif %}
-                    <span>{{ current_user.full_name or current_user.username }}</span>
+                <div class="dropdown">
+                    <button class="user-dropdown-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% set has_profile_photo = current_user.profile_photo_data or current_user.profile_photo %}
+                        {% set profile_photo_ver = (current_user.profile_photo_updated_at.timestamp()|int) if current_user.profile_photo_updated_at else 0 %}
+                        {% if has_profile_photo %}
+                        <img src="{{ url_for('main.current_user_profile_photo', v=profile_photo_ver) }}" alt="Profile" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                        <span class="material-icons-outlined" style="display:none;font-size:28px;color:var(--accent);">account_circle</span>
+                        {% else %}
+                        <span class="material-icons-outlined" style="font-size:28px;color:var(--accent);">account_circle</span>
+                        {% endif %}
+                        <span>{{ current_user.full_name or current_user.username }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><span class="material-icons-outlined">person</span> {{ t('Profile') }}</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.billing_history') }}"><span class="material-icons-outlined">receipt_long</span> {{ t('Billing History') }}</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.feedback') }}"><span class="material-icons-outlined">rate_review</span> {{ t('Feedback') }}</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.help_guide') }}"><span class="material-icons-outlined">help_outline</span> {{ t('Help & Guide') }}</a></li>
+                        {% if current_user.is_admin %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.admin_panel') }}" style="color:#ff6b35;"><span class="material-icons-outlined" style="color:#ff6b35;">admin_panel_settings</span> {{ t('Admin Panel') }}</a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('main.logout') }}"><span class="material-icons-outlined">logout</span> {{ t('Logout') }}</a></li>
+                    </ul>
                 </div>
             </div>
         </div>

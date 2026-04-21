@@ -236,7 +236,89 @@ body {
 .sidebar-toggle {
     color: var(--text-primary);
     font-size: 24px;
-    padding: 0;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(108, 92, 231, 0.1);
+    color: var(--accent);
+}
+
+/* User dropdown in topbar */
+.user-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.user-dropdown-toggle:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.15);
+}
+
+.user-dropdown-toggle::after {
+    display: none;
+}
+
+.user-dropdown-menu {
+    min-width: 220px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 8px;
+    background: var(--card-bg);
+}
+
+.user-dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+}
+
+.user-dropdown-menu .dropdown-item:hover {
+    background: rgba(108, 92, 231, 0.08);
+    color: var(--accent);
+}
+
+.user-dropdown-menu .dropdown-item .material-icons-outlined {
+    font-size: 20px;
+    color: var(--text-secondary);
+}
+
+.user-dropdown-menu .dropdown-item:hover .material-icons-outlined {
+    color: var(--accent);
+}
+
+.user-dropdown-menu .dropdown-divider {
+    margin: 4px 0;
+    border-color: var(--border-color);
+}
+
+.user-dropdown-menu .dropdown-item.text-danger:hover {
+    background: rgba(214, 48, 49, 0.08);
+    color: #D63031;
+}
+
+.user-dropdown-menu .dropdown-item.text-danger .material-icons-outlined {
+    color: #D63031;
 }
 
 /* ============ PAGE HEADER ============ */
