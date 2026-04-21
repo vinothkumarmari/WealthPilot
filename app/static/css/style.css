@@ -81,7 +81,7 @@ body {
     overflow-x: hidden;
 }
 
-.sidebar:hover {
+.sidebar.expanded {
     width: var(--sidebar-width);
 }
 
@@ -108,7 +108,7 @@ body {
     transition: opacity 0.2s ease;
 }
 
-.sidebar:hover .brand-text {
+.sidebar.expanded .brand-text {
     opacity: 1;
 }
 
@@ -141,8 +141,8 @@ body {
     transition: opacity 0.2s ease;
 }
 
-.sidebar:hover .sidebar-nav .nav-link > span:last-child,
-.sidebar:hover .sidebar-footer .nav-link > span:last-child {
+.sidebar.expanded .sidebar-nav .nav-link > span:last-child,
+.sidebar.expanded .sidebar-footer .nav-link > span:last-child {
     opacity: 1;
 }
 
@@ -191,8 +191,39 @@ body {
     transition: opacity 0.2s ease;
 }
 
-.sidebar:hover .sidebar-divider small {
+.sidebar.expanded .sidebar-divider small {
     opacity: 1;
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: -14px;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    border: 2px solid var(--body-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001;
+    transition: transform 0.3s ease;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.sidebar-toggle-btn .material-icons-outlined {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.expanded .sidebar-toggle-btn .material-icons-outlined {
+    transform: rotate(180deg);
 }
 
 /* ============ MAIN CONTENT ============ */
@@ -200,6 +231,10 @@ body {
     margin-left: var(--sidebar-collapsed-width);
     min-height: 100vh;
     transition: margin-left 0.3s ease;
+}
+
+.sidebar.expanded ~ .main-content {
+    margin-left: var(--sidebar-width);
 }
 
 .topbar {
@@ -720,7 +755,7 @@ body {
         width: var(--sidebar-width);
         transform: translateX(-100%);
     }
-    .sidebar:hover {
+    .sidebar.expanded {
         width: var(--sidebar-width);
     }
     .sidebar.show {
@@ -732,7 +767,13 @@ body {
     .sidebar .sidebar-divider small {
         opacity: 1;
     }
+    .sidebar-toggle-btn {
+        display: none;
+    }
     .main-content {
+        margin-left: 0;
+    }
+    .sidebar.expanded ~ .main-content {
         margin-left: 0;
     }
     .hero-title {

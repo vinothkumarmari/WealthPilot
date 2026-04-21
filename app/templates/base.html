@@ -30,9 +30,12 @@
     {% if current_user.is_authenticated %}
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
+        <div class="sidebar-brand" style="position:relative;">
             <span class="material-icons-outlined brand-icon">account_balance_wallet</span>
             <span class="brand-text">Wealth<span class="text-accent">Pilot</span></span>
+            <button class="sidebar-toggle-btn d-none d-lg-flex" onclick="toggleSidebarExpand()" title="Toggle sidebar">
+                <span class="material-icons-outlined">chevron_right</span>
+            </button>
         </div>
         <nav class="sidebar-nav">
             <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">

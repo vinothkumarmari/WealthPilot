@@ -37,6 +37,29 @@ function toggleSidebar() {
     sidebar.classList.toggle('show');
 }
 
+// Sidebar expand/collapse for desktop (button click)
+function toggleSidebarExpand() {
+    const sidebar = document.getElementById('sidebar');
+    const isExpanded = sidebar.classList.toggle('expanded');
+    localStorage.setItem('sidebar_expanded', isExpanded ? '1' : '0');
+    // Also update main-content margin for browsers that don't support ~
+    const main = document.querySelector('.main-content');
+    if (main) {
+        main.style.marginLeft = isExpanded ? 'var(--sidebar-width)' : 'var(--sidebar-collapsed-width)';
+    }
+}
+
+// Restore sidebar state from localStorage
+(function() {
+    const saved = localStorage.getItem('sidebar_expanded');
+    if (saved === '1') {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.add('expanded');
+        const main = document.querySelector('.main-content');
+        if (main) main.style.marginLeft = 'var(--sidebar-width)';
+    }
+})();
+
 // Close sidebar on outside click (mobile)
 document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');
