@@ -61,12 +61,15 @@ function updateSidebarTooltips() {
     const isExpanded = sidebar.classList.contains('expanded');
     sidebar.querySelectorAll('.sidebar-nav .nav-link, .sidebar-footer .nav-link').forEach(function(link) {
         if (isExpanded) {
+            link.removeAttribute('data-tip');
             link.removeAttribute('title');
         } else {
-            var textSpan = link.querySelectorAll('span');
+            var spans = link.querySelectorAll('span');
             // Second span is the label text
-            if (textSpan.length >= 2) {
-                link.setAttribute('title', textSpan[1].textContent.trim());
+            if (spans.length >= 2) {
+                var text = spans[1].textContent.trim();
+                link.setAttribute('data-tip', text);
+                link.removeAttribute('title');
             }
         }
     });

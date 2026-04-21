@@ -227,8 +227,10 @@
                         <span class="material-icons-outlined">notifications</span>
                         <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle d-none" id="notifBadge" style="font-size:10px"></span>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end notif-dropdown" id="notifDropdown" style="width:360px;max-height:440px;overflow-y:auto;padding:0;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);">
-                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="background:var(--card-bg);">
+                    <div class="dropdown-menu dropdown-menu-end notif-dropdown" id="notifDropdown" style="width:360px;max-height:440px;overflow-y:auto;padding:0;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);margin-top:8px;border:1px solid var(--border-color);">
+                        <!-- Arrow pointing to bell -->
+                        <div style="position:absolute;top:-8px;right:16px;width:16px;height:16px;background:var(--card-bg);border-top:1px solid var(--border-color);border-left:1px solid var(--border-color);transform:rotate(45deg);z-index:1;"></div>
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="background:var(--card-bg);border-radius:12px 12px 0 0;position:relative;z-index:2;">
                             <strong style="font-size:14px;">{{ t('Notifications') }}</strong>
                             <a href="{{ url_for('main.notifications') }}" class="text-decoration-none small">{{ t('View All') }}</a>
                         </div>

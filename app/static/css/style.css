@@ -133,6 +133,60 @@ body {
     border-left: 3px solid transparent;
     white-space: nowrap;
     overflow: hidden;
+    position: relative;
+}
+
+/* Custom tooltip for collapsed sidebar */
+.sidebar-nav .nav-link[data-tip]::after,
+.sidebar-footer .nav-link[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: calc(var(--sidebar-collapsed-width) - 4px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    letter-spacing: 0.2px;
+}
+
+.sidebar-nav .nav-link[data-tip]::before,
+.sidebar-footer .nav-link[data-tip]::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--sidebar-collapsed-width) - 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    border: 5px solid transparent;
+    border-right-color: #1a1a2e;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1100;
+}
+
+.sidebar-nav .nav-link[data-tip]:hover::after,
+.sidebar-footer .nav-link[data-tip]:hover::after,
+.sidebar-nav .nav-link[data-tip]:hover::before,
+.sidebar-footer .nav-link[data-tip]:hover::before {
+    opacity: 1;
+}
+
+/* Hide custom tooltip when sidebar expanded */
+.sidebar.expanded .sidebar-nav .nav-link[data-tip]::after,
+.sidebar.expanded .sidebar-footer .nav-link[data-tip]::after,
+.sidebar.expanded .sidebar-nav .nav-link[data-tip]::before,
+.sidebar.expanded .sidebar-footer .nav-link[data-tip]::before {
+    display: none;
 }
 
 .sidebar-nav .nav-link > span:last-child,
@@ -822,6 +876,13 @@ body {
     .sidebar .sidebar-footer .nav-link > span:last-child,
     .sidebar .sidebar-divider small {
         opacity: 1;
+    }
+    /* Hide custom tooltips on mobile */
+    .sidebar-nav .nav-link[data-tip]::after,
+    .sidebar-footer .nav-link[data-tip]::after,
+    .sidebar-nav .nav-link[data-tip]::before,
+    .sidebar-footer .nav-link[data-tip]::before {
+        display: none;
     }
     .main-content {
         margin-left: 0;
