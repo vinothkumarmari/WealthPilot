@@ -4814,6 +4814,30 @@ def notification_count():
         return jsonify(count=0)
 
 
+@main.route('/notifications/recent')
+@login_required
+def notifications_recent():
+    try:
+        _generate_notifications(current_user)
+        notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(8).all()
+        unread = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
+        items = []
+        for n in notifs:
+            items.append({
+                'id': n.id,
+                'title': n.title,
+                'message': n.message[:100] if n.message else '',
+                'icon': n.icon or 'notifications',
+                'is_read': n.is_read,
+                'link': n.link or '',
+                'time': n.created_at.strftime('%d %b, %I:%M %p') if n.created_at else '',
+            })
+        return jsonify(notifications=items, unread=unread)
+    except OperationalError:
+        db.session.rollback()
+        return jsonify(notifications=[], unread=0)
+
+
 # ======================== FAMILY MODULES ========================
 
 def _get_family_members():

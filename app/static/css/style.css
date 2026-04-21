@@ -322,6 +322,11 @@ body {
 }
 
 /* ============ PAGE HEADER ============ */
+/* Offset anchors for sticky topbar */
+[id] {
+    scroll-margin-top: 70px;
+}
+
 .page-header {
     margin-bottom: 24px;
 }
