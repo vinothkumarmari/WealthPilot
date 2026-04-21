@@ -198,12 +198,6 @@
                 {% if not has_access('main.priority_support') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
             </a>
 
-            {% if current_user.is_admin %}
-            <a href="{{ url_for('main.admin_panel') }}" class="nav-link {% if request.endpoint == 'main.admin_panel' %}active{% endif %}" style="color: #ff6b35;">
-                <span class="material-icons-outlined">admin_panel_settings</span>
-                <span>{{ t('Admin Panel') }}</span>
-            </a>
-            {% endif %}
         </nav>
         <div class="sidebar-footer">
         </div>
