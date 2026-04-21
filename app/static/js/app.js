@@ -60,18 +60,41 @@ function updateSidebarTooltips() {
     if (!sidebar) return;
     const isExpanded = sidebar.classList.contains('expanded');
     sidebar.querySelectorAll('.sidebar-nav .nav-link, .sidebar-footer .nav-link').forEach(function(link) {
-        if (isExpanded) {
-            link.removeAttribute('data-tip');
-            link.removeAttribute('title');
-        } else {
-            var spans = link.querySelectorAll('span');
-            // Second span is the label text
-            if (spans.length >= 2) {
-                var text = spans[1].textContent.trim();
-                link.setAttribute('data-tip', text);
-                link.removeAttribute('title');
-            }
+        // Clean up old listeners
+        if (link._tipEnter) {
+            link.removeEventListener('mouseenter', link._tipEnter);
+            link.removeEventListener('mouseleave', link._tipLeave);
+            link._tipEnter = null;
+            link._tipLeave = null;
         }
+        if (link._tipEl) { link._tipEl.remove(); link._tipEl = null; }
+        link.removeAttribute('data-tip');
+        link.removeAttribute('title');
+
+        if (isExpanded) return;
+
+        var spans = link.querySelectorAll('span');
+        if (spans.length < 2) return;
+        var text = spans[1].textContent.trim();
+        if (!text) return;
+
+        link._tipEnter = function() {
+            var tip = document.createElement('div');
+            tip.className = 'sidebar-tooltip';
+            tip.textContent = text;
+            document.body.appendChild(tip);
+            var rect = link.getBoundingClientRect();
+            tip.style.top = (rect.top + rect.height / 2) + 'px';
+            tip.style.left = (rect.right + 10) + 'px';
+            link._tipEl = tip;
+            // Fade in
+            requestAnimationFrame(function() { tip.classList.add('show'); });
+        };
+        link._tipLeave = function() {
+            if (link._tipEl) { link._tipEl.remove(); link._tipEl = null; }
+        };
+        link.addEventListener('mouseenter', link._tipEnter);
+        link.addEventListener('mouseleave', link._tipLeave);
     });
 }
 
