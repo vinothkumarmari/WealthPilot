@@ -37,7 +37,12 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">{{ t('Password') }}</label>
-                        <input type="password" name="password" class="form-control" placeholder="{{ t('Choose password') }}" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required minlength="6">
+                        <div class="input-group">
+                            <input type="password" name="password" id="regPassword" class="form-control" placeholder="{{ t('Choose password') }}" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" required minlength="6">
+                            <button type="button" class="input-group-text" onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')" style="cursor:pointer;">
+                                <span class="material-icons-outlined" id="regEyeIcon" style="font-size:20px;">visibility_off</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">{{ t('Age') }}</label>
@@ -62,4 +67,12 @@
         </div>
     </div>
 </div>
+<script>
+function togglePasswordVisibility(inputId, iconId) {
+    var input = document.getElementById(inputId);
+    var icon = document.getElementById(iconId);
+    if (input.type === 'password') { input.type = 'text'; icon.textContent = 'visibility'; }
+    else { input.type = 'password'; icon.textContent = 'visibility_off'; }
+}
+</script>
 {% endblock %}

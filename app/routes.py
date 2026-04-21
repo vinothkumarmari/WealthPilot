@@ -3847,8 +3847,11 @@ def budget():
             'pct': min(pct, 100), 'over': actual > planned
         })
 
+    # Format month for display (e.g., "Apr 2026")
+    month_display = datetime.strptime(month_param, '%Y-%m').strftime('%b %Y')
+
     return render_template('budget.html',
-        month=month_param, budget_data=budget_data,
+        month=month_param, month_display=month_display, budget_data=budget_data,
         total_planned=total_planned, total_actual=total_actual,
         categories=categories, salary=current_user.monthly_salary
     )

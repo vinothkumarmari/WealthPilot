@@ -87,7 +87,7 @@
 
 <!-- Edit Budget -->
 <div class="card mt-3">
-    <div class="card-header"><h6><span class="material-icons-outlined">edit</span> Set Budget for {{ month }}</h6></div>
+    <div class="card-header"><h6><span class="material-icons-outlined">edit</span> Set Budget for {{ month_display }}</h6></div>
     <div class="card-body">
         <form action="{{ url_for('main.save_budget') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

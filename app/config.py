@@ -67,10 +67,10 @@ class Config:
     RAZORPAY_CURRENCY = 'INR'
     
     # App Version (for cache busting static assets)
-    APP_VERSION = os.environ.get('APP_VERSION', '2')
+    APP_VERSION = os.environ.get('APP_VERSION', '3')
 
     # OTP Settings
-    OTP_EXPIRY_MINUTES = 5
+    OTP_EXPIRY_MINUTES = 3
     OTP_LENGTH = 6
     
     # Investment rates (default Indian market rates - configurable)
