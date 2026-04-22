@@ -488,7 +488,10 @@ def _ensure_user_columns(app):
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_price_tracker BOOLEAN DEFAULT TRUE"))
                     app.logger.info('Added column: user.enable_price_tracker')
                 # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
-                conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN otp_code TYPE VARCHAR(64)"))
+                try:
+                    conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN otp_code TYPE VARCHAR(64)"))
+                except Exception:
+                    pass
                 # Add member column to expense and financial_goal tables
                 exp_cols = {r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='expense'")).fetchall()}
                 if 'member' not in exp_cols:
@@ -502,6 +505,46 @@ def _ensure_user_columns(app):
                 if 'expires_at' not in pt_cols:
                     conn.execute(text("ALTER TABLE payment_transaction ADD COLUMN expires_at TIMESTAMP"))
                     app.logger.info('Added column: payment_transaction.expires_at')
+                # Ensure tracked_product and price_history tables exist
+                tp_exists = conn.execute(text(
+                    "SELECT 1 FROM information_schema.tables WHERE table_name='tracked_product'"
+                )).fetchone()
+                if not tp_exists:
+                    conn.execute(text("""
+                        CREATE TABLE tracked_product (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL REFERENCES "user"(id),
+                            url VARCHAR(2048) NOT NULL,
+                            platform VARCHAR(50),
+                            name VARCHAR(500),
+                            image_url VARCHAR(2048),
+                            current_price FLOAT,
+                            mrp FLOAT,
+                            discount_pct FLOAT,
+                            min_price FLOAT,
+                            max_price FLOAT,
+                            target_price FLOAT,
+                            is_active BOOLEAN DEFAULT TRUE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            last_checked TIMESTAMP
+                        )
+                    """))
+                    conn.execute(text("CREATE INDEX ix_tracked_user ON tracked_product(user_id)"))
+                    app.logger.info('Created table: tracked_product')
+                ph_exists = conn.execute(text(
+                    "SELECT 1 FROM information_schema.tables WHERE table_name='price_history'"
+                )).fetchone()
+                if not ph_exists:
+                    conn.execute(text("""
+                        CREATE TABLE price_history (
+                            id SERIAL PRIMARY KEY,
+                            product_id INTEGER NOT NULL REFERENCES tracked_product(id) ON DELETE CASCADE,
+                            price FLOAT NOT NULL,
+                            recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """))
+                    conn.execute(text("CREATE INDEX ix_pricehist_product ON price_history(product_id)"))
+                    app.logger.info('Created table: price_history')
                 conn.commit()
     except Exception as e:
         app.logger.warning(f'Could not auto-patch user reminder columns: {e}')
