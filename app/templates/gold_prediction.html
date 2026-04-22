@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block title %}Gold Price Prediction - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h4><span class="material-icons-outlined">trending_up</span> {{ t('Gold Price Prediction — 12 Hour Forecast') }}</h4>
+        {% if prediction.success %}
+        <small class="text-muted">
+            Predicted at: {{ prediction.prediction_time }} &nbsp;|&nbsp;
+            Target: {{ prediction.target_time }} &nbsp;|&nbsp;
+            Data points: {{ prediction.data_points }}
+        </small>
+        {% endif %}
+    </div>
+    <a href="{{ url_for('main.gold_silver') }}" class="btn btn-outline-primary btn-sm">
+        <span class="material-icons-outlined" style="font-size:16px">diamond</span> Live Rates
+    </a>
+</div>
+
+{% if not prediction.success %}
+<div class="alert alert-warning">
+    <span class="material-icons-outlined" style="vertical-align:middle;">warning</span>
+    {{ prediction.get('error', 'Prediction unavailable. Please try again later.') }}
+</div>
+{% else %}
+
+<!-- ============ GOLD PREDICTION CARDS ============ -->
+<h5 class="mb-3"><span class="material-icons-outlined" style="color:#FFD700; vertical-align:middle">insights</span> {{ t('Gold Forecast (per gram)') }}</h5>
+<div class="row mb-4">
+{% for karat in ['24K', '22K', '18K'] %}
+{% if prediction.predictions.get(karat) %}
+{% set p = prediction.predictions[karat] %}
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="text-muted mb-1">Gold {{ karat }}</h6>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="text-muted" style="font-size:14px;">Now:</span>
+                        <h5 class="mb-0" style="color:{{ '#FFD700' if karat == '24K' else ('#DAA520' if karat == '22K' else '#B8860B') }};">₹{{ "{:,.2f}".format(p.current) }}</h5>
+                    </div>
+                </div>
+                <span class="badge {{ 'bg-success' if 'Up' in p.direction else ('bg-danger' if 'Down' in p.direction else 'bg-secondary') }}" style="font-size:13px;">
+                    {{ '▲' if 'Up' in p.direction else ('▼' if 'Down' in p.direction else '▬') }} {{ p.direction }}
+                </span>
+            </div>
+
+            <div class="p-3 rounded mb-3" style="background:var(--body-bg);">
+                <div class="text-center">
+                    <small class="text-muted d-block">Predicted (12 hrs)</small>
+                    <h3 class="mb-0 {{ 'text-success' if p.change >= 0 else 'text-danger' }}">₹{{ "{:,.2f}".format(p.predicted) }}</h3>
+                    <span class="badge {{ 'bg-success' if p.change >= 0 else 'bg-danger' }}">
+                        {{ '+' if p.change >= 0 else '' }}₹{{ "{:,.2f}".format(p.change) }} ({{ '+' if p.change_pct >= 0 else '' }}{{ p.change_pct }}%)
+                    </span>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mb-2">
+                <span>Range Low: <strong>₹{{ "{:,.2f}".format(p.range_low) }}</strong></span>
+                <span>Range High: <strong>₹{{ "{:,.2f}".format(p.range_high) }}</strong></span>
+            </div>
+
+            <!-- Progress bar showing predicted in range -->
+            {% set range_width = p.range_high - p.range_low %}
+            {% set pred_pos = ((p.predicted - p.range_low) / range_width * 100) if range_width > 0 else 50 %}
+            <div class="position-relative mb-3" style="height:8px;background:var(--border-color);border-radius:4px;">
+                <div class="position-absolute" style="left:{{ pred_pos }}%;top:-3px;width:14px;height:14px;background:var(--accent);border-radius:50%;transform:translateX(-50%);"></div>
+            </div>
+
+            <div class="row text-center small">
+                <div class="col-4">
+                    <div class="text-muted">RSI</div>
+                    <strong class="{{ 'text-danger' if p.rsi > 70 else ('text-success' if p.rsi < 30 else '') }}">{{ p.rsi }}</strong>
+                    <div class="text-muted" style="font-size:10px;">{{ 'Overbought' if p.rsi > 70 else ('Oversold' if p.rsi < 30 else 'Neutral') }}</div>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted">EMA Signal</div>
+                    <strong class="{{ 'text-success' if p.ema_signal == 'bullish' else 'text-danger' }}">
+                        {{ '▲' if p.ema_signal == 'bullish' else '▼' }} {{ p.ema_signal|capitalize }}
+                    </strong>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted">Volatility</div>
+                    <strong>{{ p.volatility_pct }}%</strong>
+                    <div class="text-muted" style="font-size:10px;">{{ 'High' if p.volatility_pct > 1.5 else ('Low' if p.volatility_pct < 0.5 else 'Normal') }}</div>
+                </div>
+            </div>
+
+            <hr>
+            <div class="d-flex justify-content-between small">
+                <span class="text-success">Support: ₹{{ "{:,.2f}".format(p.support) }}</span>
+                <span class="text-danger">Resistance: ₹{{ "{:,.2f}".format(p.resistance) }}</span>
+            </div>
+
+            <div class="mt-2 text-center">
+                <span class="badge bg-{{ 'success' if p.confidence == 'High' else ('warning' if p.confidence == 'Moderate' else 'secondary') }}">
+                    Confidence: {{ p.confidence }}
+                </span>
+                <small class="text-muted ms-1">({{ p.bullish_count }} bullish / {{ p.bearish_count }} bearish signals)</small>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endfor %}
+</div>
+
+<!-- ============ SILVER PREDICTION ============ -->
+{% if prediction.predictions.get('Silver') %}
+{% set s = prediction.predictions['Silver'] %}
+<h5 class="mb-3"><span class="material-icons-outlined" style="color:#C0C0C0; vertical-align:middle">insights</span> {{ t('Silver Forecast (per gram)') }}</h5>
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="text-muted mb-1">Silver 999</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted" style="font-size:14px;">Now:</span>
+                        <h5 class="mb-0" style="color:#C0C0C0;">₹{{ "{:,.2f}".format(s.current) }}</h5>
+                    </div>
+                </div>
+                <span class="badge {{ 'bg-success' if 'Up' in s.direction else ('bg-danger' if 'Down' in s.direction else 'bg-secondary') }}">
+                    {{ '▲' if 'Up' in s.direction else ('▼' if 'Down' in s.direction else '▬') }} {{ s.direction }}
+                </span>
+            </div>
+            <div class="p-3 rounded" style="background:var(--body-bg);">
+                <div class="text-center">
+                    <small class="text-muted d-block">Predicted (12 hrs)</small>
+                    <h3 class="mb-0 {{ 'text-success' if s.change >= 0 else 'text-danger' }}">₹{{ "{:,.2f}".format(s.predicted) }}</h3>
+                    <span class="badge {{ 'bg-success' if s.change >= 0 else 'bg-danger' }}">
+                        {{ '+' if s.change >= 0 else '' }}₹{{ "{:,.2f}".format(s.change) }} ({{ '+' if s.change_pct >= 0 else '' }}{{ s.change_pct }}%)
+                    </span>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between small text-muted mt-2">
+                <span>Range: ₹{{ "{:,.2f}".format(s.range_low) }} – ₹{{ "{:,.2f}".format(s.range_high) }}</span>
+                <span>RSI: <strong>{{ s.rsi }}</strong></span>
+                <span>Volatility: <strong>{{ s.volatility_pct }}%</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ SIGNAL BREAKDOWN ============ -->
+{% if prediction.predictions.get('24K') %}
+{% set g24 = prediction.predictions['24K'] %}
+<h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle">analytics</span> {{ t('Signal Breakdown (24K Gold)') }}</h5>
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card p-3">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Direction</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Short-term Trend</strong></td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if g24.signals.trend > 0 else 'bg-danger' }}">
+                                {{ '▲ Bullish' if g24.signals.trend > 0 else '▼ Bearish' }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">14-day linear regression slope ({{ g24.trend_slope }}/day, R²={{ g24.r_squared }})</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Momentum (WMA)</strong></td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if g24.signals.momentum > 0 else 'bg-danger' }}">
+                                {{ '▲ Bullish' if g24.signals.momentum > 0 else '▼ Bearish' }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">3-day vs 7-day weighted moving average</td>
+                    </tr>
+                    <tr>
+                        <td><strong>EMA Crossover</strong></td>
+                        <td>
+                            <span class="badge {{ 'bg-success' if g24.signals.ema > 0 else 'bg-danger' }}">
+                                {{ '▲ Bullish' if g24.signals.ema > 0 else '▼ Bearish' }}
+                            </span>
+                        </td>
+                        <td class="text-muted small">5-day EMA vs 20-day EMA crossover signal</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RSI ({{ g24.rsi }})</strong></td>
+                        <td>
+                            {% if g24.signals.rsi > 0 %}
+                            <span class="badge bg-success">▲ Bullish (Oversold)</span>
+                            {% elif g24.signals.rsi < 0 %}
+                            <span class="badge bg-danger">▼ Bearish (Overbought)</span>
+                            {% else %}
+                            <span class="badge bg-secondary">▬ Neutral</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">Relative Strength Index (below 30 = oversold, above 70 = overbought)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 text-center h-100 d-flex justify-content-center">
+            <div>
+                <h6 class="text-muted">Overall Verdict</h6>
+                <h2 class="{{ 'text-success' if 'Up' in g24.direction else ('text-danger' if 'Down' in g24.direction else 'text-secondary') }}">
+                    {{ g24.direction }}
+                </h2>
+                <div class="mb-2">
+                    <span class="badge bg-{{ 'success' if g24.confidence == 'High' else ('warning' if g24.confidence == 'Moderate' else 'secondary') }}" style="font-size:14px;">
+                        {{ g24.confidence }} Confidence
+                    </span>
+                </div>
+                <small class="text-muted">{{ g24.bullish_count }} of 4 signals bullish</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ DISCLAIMER ============ -->
+<div class="alert alert-info small">
+    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">info</span>
+    <strong>Disclaimer:</strong> {{ prediction.disclaimer }}
+</div>
+
+{% endif %}
+{% endblock %}

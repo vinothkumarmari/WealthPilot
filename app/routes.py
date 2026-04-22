@@ -4460,6 +4460,19 @@ def rate_monitor():
     return render_template('rate_monitor.html', rates=rates)
 
 
+# ======================== GOLD PRICE PREDICTION ========================
+
+@main.route('/gold-prediction')
+@login_required
+@subscription_required('pro_monthly')
+def gold_prediction():
+    from .ibja_rates import fetch_ibja_rates
+    from .gold_predictor import predict_gold_price
+    ibja_data = fetch_ibja_rates()
+    prediction = predict_gold_price(ibja_data)
+    return render_template('gold_prediction.html', prediction=prediction)
+
+
 # ======================== HELP & USER GUIDE ========================
 
 # ======================== FEEDBACK & RATING ========================

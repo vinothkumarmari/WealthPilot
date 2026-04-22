@@ -86,6 +86,11 @@
                 <span class="material-icons-outlined">public</span>
                 <span>{{ t('Global Gold') }}</span>
             </a>
+            <a href="{{ url_for('main.gold_prediction') }}" class="nav-link {% if request.endpoint == 'main.gold_prediction' %}active{% endif %}">
+                <span class="material-icons-outlined">trending_up</span>
+                <span>{{ t('Gold Prediction') }}</span>
+                {% if not has_access('main.gold_prediction') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+            </a>
             <a href="{{ url_for('main.assets') }}" class="nav-link {% if request.endpoint == 'main.assets' %}active{% endif %}">
                 <span class="material-icons-outlined">real_estate_agent</span>
                 <span>{{ t('Assets') }}</span>
