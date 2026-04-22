@@ -2733,7 +2733,7 @@ def price_tracker_add():
 @main.route('/price-tracker/refresh/<int:product_id>', methods=['POST'])
 @login_required
 def price_tracker_refresh(product_id):
-    from .price_tracker import fetch_product_info
+    from .price_tracker import fetch_product_info, _extract_name_from_url
 
     product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
 
@@ -2746,6 +2746,19 @@ def price_tracker_refresh(product_id):
             return redirect(url_for('main.price_tracker'))
 
     info = fetch_product_info(product.url)
+
+    # Fix generic/missing product name from URL slug
+    generic_names = {'Unknown Product', 'Amazon.in', 'Flipkart', 'Flipkart.com', product.platform}
+    if product.name in generic_names or not product.name or len(product.name) < 5:
+        better_name = info.get('name')
+        if better_name and better_name not in generic_names:
+            product.name = better_name
+        else:
+            url_name = _extract_name_from_url(product.url)
+            if url_name:
+                product.name = url_name
+        db.session.commit()
+
     if info.get('price'):
         old_price = product.current_price
         product.current_price = info['price']
@@ -2812,10 +2825,18 @@ def price_tracker_history(product_id):
 @main.route('/price-tracker/compare/<int:product_id>')
 @login_required
 def price_tracker_compare(product_id):
-    from .price_tracker import compare_prices, PLATFORM_COLORS, PLATFORM_ICONS
+    from .price_tracker import compare_prices, PLATFORM_COLORS, PLATFORM_ICONS, _extract_name_from_url
     product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
 
-    comparison = compare_prices(product.name, exclude_platform=product.platform)
+    # Use a meaningful name for search — fallback to URL extraction
+    search_name = product.name
+    generic_names = {'Unknown Product', 'Amazon.in', 'Flipkart', 'Flipkart.com', product.platform}
+    if search_name in generic_names or not search_name or len(search_name) < 5:
+        url_name = _extract_name_from_url(product.url)
+        if url_name:
+            search_name = url_name
+
+    comparison = compare_prices(search_name, exclude_platform=product.platform)
 
     # Build response
     platforms = []

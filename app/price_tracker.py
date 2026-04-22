@@ -154,6 +154,33 @@ def _extract_asin(url):
     return m.group(1) if m else None
 
 
+def _extract_name_from_url(url):
+    """Extract a readable product name from the URL slug (last resort fallback).
+    
+    E.g. https://www.amazon.in/Sony-HT-S20R-Soundbar-SA-RS3S/dp/B07T1... 
+    -> 'Sony HT S20R Soundbar SA RS3S'
+    """
+    try:
+        path = urlparse(url).path
+        # Remove /dp/ASIN, /p/... tails
+        path = re.sub(r'/(?:dp|gp/product|p)/[A-Za-z0-9]+.*$', '', path)
+        # Take the last meaningful path segment
+        segments = [s for s in path.strip('/').split('/') if s and len(s) > 3]
+        if not segments:
+            return None
+        slug = segments[-1]
+        # Convert slug to readable text
+        name = re.sub(r'[-_]+', ' ', slug)
+        name = re.sub(r'%[0-9A-Fa-f]{2}', ' ', name)  # URL encoded chars
+        name = re.sub(r'\s+', ' ', name).strip()
+        # Skip if it's just a product ID or too short
+        if len(name) < 5 or name.replace(' ', '').isdigit():
+            return None
+        return name[:200]
+    except Exception:
+        return None
+
+
 def _parse_amazon(soup, raw_html='', url=''):
     """Parse product info from Amazon.in page with multiple strategies."""
     name = None
@@ -441,6 +468,12 @@ def fetch_product_info(url):
         # Calculate discount if we have both price and MRP
         if price and mrp and mrp > price and not discount:
             discount = round(((mrp - price) / mrp) * 100)
+
+        # Fallback: extract name from URL slug if scraping got nothing useful
+        if not name or name in ('Unknown Product', platform):
+            url_name = _extract_name_from_url(url)
+            if url_name:
+                name = url_name
 
         # Truncate long names
         if name and len(name) > 200:
