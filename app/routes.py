@@ -2739,11 +2739,19 @@ def price_tracker_refresh(product_id):
 
     # Rate limit: min 1 hour between refreshes
     if product.last_checked:
-        since = (datetime.now(timezone.utc) - product.last_checked).total_seconds()
-        if since < 3600:
-            mins_left = int((3600 - since) / 60)
-            flash(f'Price was checked recently. Try again in {mins_left} min.', 'info')
-            return redirect(url_for('main.price_tracker'))
+        try:
+            last = product.last_checked
+            now = datetime.now(timezone.utc)
+            # Handle naive datetimes from DB
+            if last.tzinfo is None:
+                last = last.replace(tzinfo=timezone.utc)
+            since = (now - last).total_seconds()
+            if since < 3600:
+                mins_left = int((3600 - since) / 60)
+                flash(f'Price was checked recently. Try again in {mins_left} min.', 'info')
+                return redirect(url_for('main.price_tracker'))
+        except Exception:
+            pass  # Skip rate limit on datetime errors
 
     info = fetch_product_info(product.url)
 
@@ -2757,12 +2765,13 @@ def price_tracker_refresh(product_id):
             url_name = _extract_name_from_url(product.url)
             if url_name:
                 product.name = url_name
-        db.session.commit()
+
+    # Always update last_checked
+    product.last_checked = datetime.now(timezone.utc)
 
     if info.get('price'):
         old_price = product.current_price
         product.current_price = info['price']
-        product.last_checked = datetime.now(timezone.utc)
         if info.get('mrp'):
             product.mrp = info['mrp']
         if info.get('discount'):
@@ -2790,7 +2799,12 @@ def price_tracker_refresh(product_id):
 
         flash(f'Price updated: ₹{info["price"]:,.0f}{change}', 'success')
     else:
-        flash('Could not fetch current price. The site may be blocking requests.', 'warning')
+        # Even if price failed, save name/timestamp updates
+        db.session.commit()
+        if product.name not in generic_names:
+            flash(f'Could not fetch price for "{product.name}". Amazon often blocks server requests — try Compare instead.', 'warning')
+        else:
+            flash('Could not fetch current price. The site may be blocking requests.', 'warning')
 
     return redirect(url_for('main.price_tracker'))
 
