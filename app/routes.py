@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -1976,7 +1976,7 @@ def profile():
         current_year = datetime.now().year
         requested_target_year = request.form.get('future_target_year', type=int)
         current_user.future_target_year = min(2100, max(current_year + 1, requested_target_year or (current_user.future_target_year or 2040)))
-        current_user.enable_grocery_offers = request.form.get('enable_grocery_offers') == 'on'
+        current_user.enable_price_tracker = request.form.get('enable_price_tracker') == 'on'
         current_user.enable_future_monthly_reminders = request.form.get('enable_future_monthly_reminders') == 'on'
         current_user.enable_future_quarterly_reminders = request.form.get('enable_future_quarterly_reminders') == 'on'
         current_user.enable_only_critical_notifications = request.form.get('enable_only_critical_notifications') == 'on'
@@ -2640,9 +2640,6 @@ def suggestions():
         timing = advisor.get_buy_timing_suggestion('bike', 150000)
         buy_timing.append({'goal_name': 'Buy a Bike', 'target_amount': 150000, 'suggestions': timing})
 
-    # Grocery offers (only if user enabled it in profile)
-    grocery_offers = advisor.get_grocery_offers(salary) if current_user.enable_grocery_offers else None
-
     return render_template('suggestions.html',
         investment_suggestions=investment_suggestions,
         commodity_suggestions=commodity_suggestions,
@@ -2651,8 +2648,151 @@ def suggestions():
         retirement=retirement,
         bank_balance=float(total_bank_balance),
         buy_timing=buy_timing,
-        grocery_offers=grocery_offers
     )
+
+
+# ── Price Tracker ──────────────────────────────────────────────
+@main.route('/price-tracker')
+@login_required
+def price_tracker():
+    products = TrackedProduct.query.filter_by(user_id=current_user.id, is_active=True)\
+        .order_by(TrackedProduct.created_at.desc()).all()
+    return render_template('price_tracker.html', products=products)
+
+
+@main.route('/price-tracker/add', methods=['POST'])
+@login_required
+def price_tracker_add():
+    from .price_tracker import fetch_product_info, detect_platform, is_allowed_url
+
+    url = request.form.get('product_url', '').strip()
+    target_price = request.form.get('target_price', type=float)
+
+    if not url:
+        flash('Please enter a product URL.', 'warning')
+        return redirect(url_for('main.price_tracker'))
+
+    if not is_allowed_url(url):
+        flash('Only supported e-commerce sites are allowed (Amazon, Flipkart, Myntra, etc.).', 'danger')
+        return redirect(url_for('main.price_tracker'))
+
+    # Limit: 10 active products per user
+    active_count = TrackedProduct.query.filter_by(user_id=current_user.id, is_active=True).count()
+    if active_count >= 10:
+        flash('You can track up to 10 products. Remove one to add more.', 'warning')
+        return redirect(url_for('main.price_tracker'))
+
+    # Check for duplicate URL
+    existing = TrackedProduct.query.filter_by(user_id=current_user.id, url=url, is_active=True).first()
+    if existing:
+        flash('You are already tracking this product.', 'info')
+        return redirect(url_for('main.price_tracker'))
+
+    info = fetch_product_info(url)
+    platform = detect_platform(url)
+
+    product = TrackedProduct(
+        user_id=current_user.id,
+        url=url,
+        platform=platform,
+        name=info.get('name') or 'Unknown Product',
+        image_url=info.get('image'),
+        current_price=info.get('price'),
+        min_price=info.get('price'),
+        max_price=info.get('price'),
+        target_price=target_price,
+        last_checked=datetime.now(timezone.utc),
+    )
+    db.session.add(product)
+    db.session.flush()
+
+    if info.get('price'):
+        snapshot = PriceHistory(product_id=product.id, price=info['price'])
+        db.session.add(snapshot)
+
+    db.session.commit()
+
+    if info.get('success'):
+        flash(f'Now tracking: {product.name} — ₹{product.current_price:,.0f}', 'success')
+    else:
+        flash(f'Product added but price could not be fetched. We\'ll retry later.', 'warning')
+
+    return redirect(url_for('main.price_tracker'))
+
+
+@main.route('/price-tracker/refresh/<int:product_id>', methods=['POST'])
+@login_required
+def price_tracker_refresh(product_id):
+    from .price_tracker import fetch_product_info
+
+    product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
+
+    # Rate limit: min 1 hour between refreshes
+    if product.last_checked:
+        since = (datetime.now(timezone.utc) - product.last_checked).total_seconds()
+        if since < 3600:
+            mins_left = int((3600 - since) / 60)
+            flash(f'Price was checked recently. Try again in {mins_left} min.', 'info')
+            return redirect(url_for('main.price_tracker'))
+
+    info = fetch_product_info(product.url)
+    if info.get('price'):
+        old_price = product.current_price
+        product.current_price = info['price']
+        product.last_checked = datetime.now(timezone.utc)
+        if product.min_price is None or info['price'] < product.min_price:
+            product.min_price = info['price']
+        if product.max_price is None or info['price'] > product.max_price:
+            product.max_price = info['price']
+        if info.get('name') and info['name'] != 'Unknown Product':
+            product.name = info['name']
+        if info.get('image'):
+            product.image_url = info['image']
+
+        snapshot = PriceHistory(product_id=product.id, price=info['price'])
+        db.session.add(snapshot)
+        db.session.commit()
+
+        change = ''
+        if old_price and old_price > 0:
+            diff = info['price'] - old_price
+            pct = (diff / old_price) * 100
+            if abs(diff) > 1:
+                arrow = '↑' if diff > 0 else '↓'
+                change = f' ({arrow} ₹{abs(diff):,.0f}, {abs(pct):.1f}%)'
+
+        flash(f'Price updated: ₹{info["price"]:,.0f}{change}', 'success')
+    else:
+        flash('Could not fetch current price. The site may be blocking requests.', 'warning')
+
+    return redirect(url_for('main.price_tracker'))
+
+
+@main.route('/price-tracker/delete/<int:product_id>', methods=['POST'])
+@login_required
+def price_tracker_delete(product_id):
+    product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
+    db.session.delete(product)
+    db.session.commit()
+    flash('Product removed from tracking.', 'success')
+    return redirect(url_for('main.price_tracker'))
+
+
+@main.route('/price-tracker/history/<int:product_id>')
+@login_required
+def price_tracker_history(product_id):
+    product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
+    snapshots = PriceHistory.query.filter_by(product_id=product.id)\
+        .order_by(PriceHistory.recorded_at).all()
+    data = [{'date': s.recorded_at.strftime('%d %b %Y %H:%M'), 'price': s.price} for s in snapshots]
+    return jsonify({
+        'name': product.name,
+        'platform': product.platform,
+        'min_price': product.min_price,
+        'max_price': product.max_price,
+        'current_price': product.current_price,
+        'history': data,
+    })
 
 
 @main.route('/ai-playbooks')

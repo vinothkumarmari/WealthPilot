@@ -93,6 +93,11 @@ def create_app():
     # Register Jinja2 globals
     app.jinja_env.globals.update(min=min, max=max)
 
+    # Price tracker platform helpers for templates
+    from .price_tracker import PLATFORM_COLORS, PLATFORM_ICONS
+    app.jinja_env.globals['platform_color'] = lambda p: PLATFORM_COLORS.get(p, '#6c757d')
+    app.jinja_env.globals['platform_icon'] = lambda p: PLATFORM_ICONS.get(p, 'link')
+
     # Indian currency format filter: 462924 → 4,62,924
     def indian_format(value):
         try:

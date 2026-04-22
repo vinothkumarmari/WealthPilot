@@ -19,7 +19,8 @@ class User(UserMixin, db.Model):
     budget_needs_pct = db.Column(db.Float, default=50)
     budget_wants_pct = db.Column(db.Float, default=30)
     budget_savings_pct = db.Column(db.Float, default=20)
-    enable_grocery_offers = db.Column(db.Boolean, default=False)
+    enable_grocery_offers = db.Column(db.Boolean, default=False)  # legacy, unused
+    enable_price_tracker = db.Column(db.Boolean, default=True)
     future_target_year = db.Column(db.Integer, default=2040)
     enable_future_monthly_reminders = db.Column(db.Boolean, default=True)
     enable_future_quarterly_reminders = db.Column(db.Boolean, default=True)
@@ -347,3 +348,36 @@ class FamilyMember(db.Model):
     monthly_income = db.Column(db.Float, default=0)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     owner = db.relationship('User', backref=db.backref('family_members', lazy=True, cascade='all, delete-orphan'))
+
+
+class TrackedProduct(db.Model):
+    """User-tracked e-commerce products for price monitoring."""
+    __table_args__ = (
+        db.Index('ix_tracked_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    url = db.Column(db.String(2048), nullable=False)
+    platform = db.Column(db.String(50))
+    name = db.Column(db.String(500))
+    image_url = db.Column(db.String(2048))
+    current_price = db.Column(db.Float)
+    min_price = db.Column(db.Float)
+    max_price = db.Column(db.Float)
+    target_price = db.Column(db.Float)  # alert when price drops below
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    last_checked = db.Column(db.DateTime)
+    price_history = db.relationship('PriceHistory', backref='product', lazy=True, cascade='all, delete-orphan')
+    owner = db.relationship('User', backref=db.backref('tracked_products', lazy=True, cascade='all, delete-orphan'))
+
+
+class PriceHistory(db.Model):
+    """Price snapshots for tracked products."""
+    __table_args__ = (
+        db.Index('ix_pricehist_product', 'product_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('tracked_product.id', ondelete='CASCADE'), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    recorded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))

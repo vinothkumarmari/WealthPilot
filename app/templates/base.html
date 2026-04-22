@@ -116,6 +116,10 @@
                 <span class="material-icons-outlined">calculate</span>
                 <span>{{ t('Calculators') }}</span>
             </a>
+            <a href="{{ url_for('main.price_tracker') }}" class="nav-link {% if request.endpoint == 'main.price_tracker' %}active{% endif %}">
+                <span class="material-icons-outlined">price_check</span>
+                <span>{{ t('Price Tracker') }}</span>
+            </a>
             <a href="{{ url_for('main.suggestions') }}" class="nav-link {% if request.endpoint == 'main.suggestions' %}active{% endif %}">
                 <span class="material-icons-outlined">psychology</span>
                 <span>{{ t('AI Suggestions') }}</span>

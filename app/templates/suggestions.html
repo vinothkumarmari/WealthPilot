@@ -213,46 +213,6 @@
 </div>
 {% endif %}
 
-<!-- Online Grocery Offers -->
-{% if grocery_offers %}
-<div class="row mb-4">
-    <div class="col-12">
-        <h5 class="section-title"><span class="material-icons-outlined">local_grocery_store</span> Best Online Grocery Offers</h5>
-        <div class="alert alert-success mb-3">
-            <span class="material-icons-outlined me-1" style="font-size:16px">tips_and_updates</span>
-            {{ grocery_offers.smart_tip }}
-            <small class="text-muted d-block mt-1">Last refreshed: {{ grocery_offers.last_updated }}</small>
-        </div>
-    </div>
-    {% for store in grocery_offers.stores %}
-    <div class="col-md-6 col-lg-4 mb-3">
-        <div class="card h-100" style="border-top: 3px solid {{ store.color }}">
-            <div class="card-header d-flex align-items-center py-2">
-                <span class="material-icons-outlined me-2" style="color: {{ store.color }}; font-size:28px">{{ store.icon }}</span>
-                <h6 class="mb-0 fw-bold">{{ store.name }}</h6>
-            </div>
-            <div class="card-body p-2">
-                {% for offer in store.offers %}
-                <div class="d-flex align-items-start p-2 mb-2 rounded bg-light">
-                    <span class="material-icons-outlined text-success me-2" style="font-size:18px">local_offer</span>
-                    <div class="flex-grow-1">
-                        <strong class="small">{{ offer.title }}</strong>
-                        <span class="badge bg-danger-subtle text-danger ms-1 small">{{ offer.discount }}</span>
-                        <br>
-                        <small class="text-muted">{{ offer.category }} &bull; Min ₹{{ offer.min_order }} &bull; Valid till {{ offer.valid_till }}</small>
-                        {% if offer.code %}
-                        <br><small class="fw-bold text-primary">Code: {{ offer.code }}</small>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
-
 <!-- Retirement Plan -->
 <div class="row mb-4">
     <div class="col-12">

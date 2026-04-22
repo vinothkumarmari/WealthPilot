@@ -84,13 +84,13 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="enable_grocery_offers" id="groceryToggle"
-                                       {% if current_user.enable_grocery_offers %}checked{% endif %}>
-                                <label class="form-check-label" for="groceryToggle">
-                                    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">local_grocery_store</span>
-                                    {{ t('Enable Online Grocery Offers') }}
+                                <input class="form-check-input" type="checkbox" name="enable_price_tracker" id="priceTrackerToggle"
+                                       {% if current_user.enable_price_tracker is not defined or current_user.enable_price_tracker %}checked{% endif %}>
+                                <label class="form-check-label" for="priceTrackerToggle">
+                                    <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">price_check</span>
+                                    {{ t('Enable Price Tracker') }}
                                 </label>
-                                <small class="d-block text-muted">Get notified about grocery deals from BigBasket, Blinkit, Zepto etc.</small>
+                                <small class="d-block text-muted">{{ t('Track product prices across Amazon, Flipkart & other e-commerce sites.') }}</small>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
