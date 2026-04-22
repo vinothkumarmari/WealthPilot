@@ -29,6 +29,8 @@ def upgrade():
         sa.Column('name', sa.String(length=500), nullable=True),
         sa.Column('image_url', sa.String(length=2048), nullable=True),
         sa.Column('current_price', sa.Float(), nullable=True),
+        sa.Column('mrp', sa.Float(), nullable=True),
+        sa.Column('discount_pct', sa.Integer(), nullable=True),
         sa.Column('min_price', sa.Float(), nullable=True),
         sa.Column('max_price', sa.Float(), nullable=True),
         sa.Column('target_price', sa.Float(), nullable=True),

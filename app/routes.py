@@ -2698,6 +2698,8 @@ def price_tracker_add():
         name=info.get('name') or 'Unknown Product',
         image_url=info.get('image'),
         current_price=info.get('price'),
+        mrp=info.get('mrp'),
+        discount_pct=info.get('discount'),
         min_price=info.get('price'),
         max_price=info.get('price'),
         target_price=target_price,
@@ -2740,6 +2742,10 @@ def price_tracker_refresh(product_id):
         old_price = product.current_price
         product.current_price = info['price']
         product.last_checked = datetime.now(timezone.utc)
+        if info.get('mrp'):
+            product.mrp = info['mrp']
+        if info.get('discount'):
+            product.discount_pct = info['discount']
         if product.min_price is None or info['price'] < product.min_price:
             product.min_price = info['price']
         if product.max_price is None or info['price'] > product.max_price:

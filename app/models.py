@@ -362,6 +362,8 @@ class TrackedProduct(db.Model):
     name = db.Column(db.String(500))
     image_url = db.Column(db.String(2048))
     current_price = db.Column(db.Float)
+    mrp = db.Column(db.Float)
+    discount_pct = db.Column(db.Integer)
     min_price = db.Column(db.Float)
     max_price = db.Column(db.Float)
     target_price = db.Column(db.Float)  # alert when price drops below
