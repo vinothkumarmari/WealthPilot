@@ -420,6 +420,9 @@ def _ensure_user_columns(app):
                 if 'is_active_user' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN is_active_user BOOLEAN DEFAULT 1"))
                     app.logger.info('Added column: user.is_active_user')
+                if 'enable_price_tracker' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN enable_price_tracker BOOLEAN DEFAULT 1"))
+                    app.logger.info('Added column: user.enable_price_tracker')
                 # Add member column to expense and financial_goal tables
                 exp_cols = {r[1] for r in conn.execute(text("PRAGMA table_info(expense)")).fetchall()}
                 if 'member' not in exp_cols:
@@ -481,6 +484,9 @@ def _ensure_user_columns(app):
                 if 'is_active_user' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN is_active_user BOOLEAN DEFAULT TRUE"))
                     app.logger.info('Added column: user.is_active_user')
+                if 'enable_price_tracker' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_price_tracker BOOLEAN DEFAULT TRUE"))
+                    app.logger.info('Added column: user.enable_price_tracker')
                 # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
                 conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN otp_code TYPE VARCHAR(64)"))
                 # Add member column to expense and financial_goal tables
