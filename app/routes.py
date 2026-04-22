@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -4472,7 +4472,55 @@ def gold_prediction():
     ibja_data = fetch_ibja_rates()
     market_data = fetch_market_data()
     prediction = predict_gold_price(ibja_data, market_data)
-    return render_template('gold_prediction.html', prediction=prediction)
+    # Get user's active gold price alerts
+    alerts = GoldPriceAlert.query.filter_by(user_id=current_user.id).order_by(GoldPriceAlert.created_at.desc()).limit(10).all()
+    return render_template('gold_prediction.html', prediction=prediction, alerts=alerts)
+
+
+@main.route('/gold-prediction/alert', methods=['POST'])
+@login_required
+@subscription_required('pro_monthly')
+def gold_price_alert_create():
+    karat = request.form.get('karat', '24K').strip()
+    direction = request.form.get('direction', 'below').strip()
+    target_price = request.form.get('target_price', type=float)
+
+    if karat not in ('24K', '22K', '18K', 'Silver'):
+        flash('Invalid karat selection.', 'danger')
+        return redirect(url_for('main.gold_prediction'))
+    if direction not in ('above', 'below'):
+        flash('Invalid direction.', 'danger')
+        return redirect(url_for('main.gold_prediction'))
+    if not target_price or target_price <= 0:
+        flash('Please enter a valid target price.', 'danger')
+        return redirect(url_for('main.gold_prediction'))
+
+    # Limit: max 5 active alerts per user
+    active_count = GoldPriceAlert.query.filter_by(user_id=current_user.id, is_active=True).count()
+    if active_count >= 5:
+        flash('Maximum 5 active alerts allowed. Delete an existing alert first.', 'warning')
+        return redirect(url_for('main.gold_prediction'))
+
+    alert = GoldPriceAlert(
+        user_id=current_user.id,
+        karat=karat,
+        direction=direction,
+        target_price=target_price,
+    )
+    db.session.add(alert)
+    db.session.commit()
+    flash(f'Alert set: Notify when {karat} goes {direction} \u20b9{target_price:,.0f}/gram', 'success')
+    return redirect(url_for('main.gold_prediction'))
+
+
+@main.route('/gold-prediction/alert/<int:alert_id>/delete', methods=['POST'])
+@login_required
+def gold_price_alert_delete(alert_id):
+    alert = GoldPriceAlert.query.filter_by(id=alert_id, user_id=current_user.id).first_or_404()
+    db.session.delete(alert)
+    db.session.commit()
+    flash('Alert deleted.', 'info')
+    return redirect(url_for('main.gold_prediction'))
 
 
 # ======================== HELP & USER GUIDE ========================
@@ -4784,6 +4832,9 @@ def _generate_notifications(user):
         db.session.add_all(new_notifs)
         db.session.commit()
 
+    # --- Gold Price Alerts (checked separately, needs IBJA live data) ---
+    _check_gold_price_alerts(user)
+
 
 @main.route('/notifications')
 @login_required
@@ -4793,6 +4844,63 @@ def notifications():
     notifs = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.created_at.desc()).limit(50).all()
     unread = sum(1 for n in notifs if not n.is_read)
     return render_template('notifications.html', notifications=notifs, unread_count=unread)
+
+
+def _check_gold_price_alerts(user):
+    """Check active gold price alerts against current IBJA rates."""
+    alerts = GoldPriceAlert.query.filter_by(user_id=user.id, is_active=True, triggered=False).all()
+    if not alerts:
+        return
+
+    try:
+        from .ibja_rates import fetch_ibja_rates
+        ibja = fetch_ibja_rates()
+        if not ibja or not ibja.get('success'):
+            return
+
+        prices = ibja.get('prices', {})
+        price_map = {
+            '24K': prices.get('gold_999', 0),
+            '22K': prices.get('gold_916', 0),
+            '18K': prices.get('gold_750', 0),
+            'Silver': prices.get('silver_999', 0),
+        }
+
+        now = datetime.now(timezone.utc)
+        new_notifs = []
+
+        for alert in alerts:
+            current_price = price_map.get(alert.karat, 0)
+            if not current_price:
+                continue
+
+            triggered = False
+            if alert.direction == 'above' and current_price >= alert.target_price:
+                triggered = True
+            elif alert.direction == 'below' and current_price <= alert.target_price:
+                triggered = True
+
+            if triggered:
+                alert.triggered = True
+                alert.triggered_at = now
+                alert.triggered_price = current_price
+                alert.is_active = False
+
+                direction_text = 'crossed above' if alert.direction == 'above' else 'dropped below'
+                new_notifs.append(Notification(
+                    user_id=user.id,
+                    title=f'Gold Alert: {alert.karat} {direction_text} \u20b9{alert.target_price:,.0f}',
+                    message=f'{alert.karat} gold is now \u20b9{current_price:,.2f}/gram — {direction_text} your target of \u20b9{alert.target_price:,.0f}. Good time to {"sell/wait" if alert.direction == "above" else "buy/pay chit"}!',
+                    category='success' if alert.direction == 'below' else 'warning',
+                    icon='notifications_active',
+                    link='/gold-prediction',
+                ))
+
+        if new_notifs:
+            db.session.add_all(new_notifs)
+        db.session.commit()
+    except Exception as e:
+        logger.debug(f'Gold price alert check: {e}')
 
 
 @main.route('/notifications/read/<int:id>', methods=['POST'])

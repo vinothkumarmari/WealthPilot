@@ -85,6 +85,85 @@
 </div>
 {% endif %}
 
+<!-- ============ GOLD PRICE ALERTS ============ -->
+<div class="card mb-4">
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0"><span class="material-icons-outlined" style="vertical-align:middle;color:#FFD700;">notifications_active</span> {{ t('Gold Price Alerts') }}</h6>
+            <small class="text-muted">Max 5 active alerts</small>
+        </div>
+
+        <!-- Existing alerts -->
+        {% if alerts %}
+        <div class="table-responsive mb-3">
+            <table class="table table-sm mb-0">
+                <thead><tr><th>Karat</th><th>Condition</th><th>Target</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                {% for a in alerts %}
+                <tr class="{{ 'opacity-50' if a.triggered else '' }}">
+                    <td><strong>{{ a.karat }}</strong></td>
+                    <td>{{ 'Rises above' if a.direction == 'above' else 'Drops below' }}</td>
+                    <td>₹{{ "{:,.0f}".format(a.target_price) }}/g</td>
+                    <td>
+                        {% if a.triggered %}
+                        <span class="badge bg-success">Triggered at ₹{{ "{:,.0f}".format(a.triggered_price) }}</span>
+                        {% elif a.is_active %}
+                        <span class="badge bg-primary">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('main.gold_price_alert_delete', alert_id=a.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger p-0 px-1" title="Delete"><span class="material-icons-outlined" style="font-size:16px;">close</span></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Create new alert -->
+        <form method="POST" action="{{ url_for('main.gold_price_alert_create') }}" class="row g-2 align-items-end">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="col-auto">
+                <label class="form-label small mb-1">Karat</label>
+                <select name="karat" class="form-select form-select-sm" style="width:90px;">
+                    <option value="24K" selected>24K</option>
+                    <option value="22K">22K</option>
+                    <option value="18K">18K</option>
+                    <option value="Silver">Silver</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-1">When price</label>
+                <select name="direction" class="form-select form-select-sm" style="width:130px;">
+                    <option value="below">Drops below</option>
+                    <option value="above">Rises above</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-1">Target (₹/gram)</label>
+                <input type="number" name="target_price" class="form-control form-control-sm" step="1" min="100"
+                       placeholder="{{ "{:,.0f}".format(prediction.predictions['24K'].current) if prediction.predictions.get('24K') else '15000' }}"
+                       style="width:130px;" required>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">add_alert</span> Set Alert
+                </button>
+            </div>
+        </form>
+        <p class="small text-muted mt-2 mb-0">
+            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">info</span>
+            You'll get a notification in the bell icon when gold crosses your target price. Alerts are checked each time you visit Notifications.
+        </p>
+    </div>
+</div>
+
 <!-- ============ PRICE FORECAST CARDS ============ -->
 <h5 class="mb-3"><span class="material-icons-outlined" style="color:#FFD700; vertical-align:middle">insights</span> {{ t('Price Forecast (per gram)') }}</h5>
 <div class="row mb-4">

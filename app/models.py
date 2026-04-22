@@ -299,6 +299,23 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class GoldPriceAlert(db.Model):
+    """User-defined gold price boundary alerts. Triggers notification when gold crosses threshold."""
+    __table_args__ = (
+        db.Index('ix_goldalert_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    karat = db.Column(db.String(10), default='24K')  # 24K, 22K, 18K, Silver
+    direction = db.Column(db.String(10), nullable=False)  # 'above' or 'below'
+    target_price = db.Column(db.Float, nullable=False)  # INR per gram
+    is_active = db.Column(db.Boolean, default=True)
+    triggered = db.Column(db.Boolean, default=False)
+    triggered_at = db.Column(db.DateTime)
+    triggered_price = db.Column(db.Float)  # price when triggered
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class PaymentTransaction(db.Model):
     __table_args__ = (
         db.Index('ix_payment_user_status', 'user_id', 'status'),

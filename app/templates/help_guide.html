@@ -23,6 +23,7 @@
             <a href="#loans" class="btn btn-sm btn-outline-primary">Loans</a>
             <a href="#goldsilver" class="btn btn-sm btn-outline-primary">Gold, Silver & Platinum</a>
             <a href="#globalgold" class="btn btn-sm btn-outline-primary">Global Gold Prices</a>
+            <a href="#goldprediction" class="btn btn-sm btn-outline-primary">Gold Prediction</a>
             <a href="#ratemonitor" class="btn btn-sm btn-outline-primary">Rate Monitor</a>
             <a href="#tax" class="btn btn-sm btn-outline-primary">Tax Planning</a>
             <a href="#itrguide" class="btn btn-sm btn-outline-primary">ITR Guide</a>
@@ -342,6 +343,45 @@
     </div>
 </div>
 
+<!-- Gold Prediction -->
+<div class="card mb-3" id="goldprediction">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--accent, #6C5CE7), #1a1a2e); color: #fff;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">trending_up</span>Gold Price Prediction — 12 Hour Forecast <span class="badge bg-warning text-dark ms-2" style="font-size:10px;">Pro</span></h6>
+    </div>
+    <div class="card-body">
+        <p>AI-powered gold price prediction with MCX & COMEX analysis, buy timing advice, and crisis awareness.</p>
+        <ul class="small">
+            <li><strong>12-Hour Price Forecast:</strong> Predicts 24K, 22K, 18K gold and silver prices using weighted linear regression, EMA, RSI, and momentum analysis on IBJA historical data.</li>
+            <li><strong>Buy Timing Advice:</strong> Actionable recommendations for gold chit payment and investment timing — tells you whether to pay now or wait, with specific time windows (e.g., "Before 11:59 PM" or "Tomorrow before 9 AM").</li>
+            <li><strong>Gold Chit vs Investment:</strong> Separate advice for chit payments (timing-sensitive) and investment purchases (RSI-based entry signals).</li>
+            <li><strong>Savings Calculator:</strong> Shows exact ₹ savings per 10 grams if you buy now vs later based on predicted price movement.</li>
+            <li><strong>MCX & COMEX Analysis:</strong>
+                <ul>
+                    <li><strong>COMEX (New York):</strong> Live gold futures price in USD/troy oz from Yahoo Finance, with daily change and conversion to ₹/gram.</li>
+                    <li><strong>MCX (Mumbai):</strong> Indian gold price via GOLDBEES ETF (NSE) as a real-time proxy for MCX futures.</li>
+                    <li><strong>India Premium:</strong> Difference between IBJA and international COMEX price — helps decide between physical gold vs Gold ETF/SGB.</li>
+                    <li><strong>USD/INR Rate:</strong> Live exchange rate used for conversion, sourced from exchangerate API.</li>
+                </ul>
+            </li>
+            <li><strong>AM vs PM Pattern:</strong> Historical analysis of IBJA morning vs afternoon rates — shows which time of day is typically cheaper for buying.</li>
+            <li><strong>Technical Indicators:</strong> RSI (overbought/oversold), volatility %, trend slope, support & resistance levels for each karat.</li>
+            <li><strong>Crisis Awareness:</strong>
+                <ul>
+                    <li>Automatic HIGH/ELEVATED volatility alerts when abnormal market swings are detected.</li>
+                    <li>10 historical crisis samples (COVID-19, Russia-Ukraine War, Israel-Hamas, SVB Bank Collapse, Demonetization, etc.) showing how gold reacted.</li>
+                    <li>Crisis-specific buying advice — when to hold, when to buy the dip, and how to protect your chit/SIP.</li>
+                </ul>
+            </li>
+            <li><strong>Gold Price Alerts:</strong> Set a target price boundary. When gold crosses your threshold (above or below), you get a notification in the bell icon — perfect for chit payment timing or investment entry points.</li>
+            <li><strong>Educational Content:</strong> Detailed explanation of how COMEX and MCX work, the price flow chain (COMEX → USD/INR → per gram → import duty → GST → IBJA → jeweller), key terms glossary, and smart buying tips.</li>
+        </ul>
+        <div class="alert alert-info small mb-0">
+            <span class="material-icons-outlined me-1" style="font-size:16px">info</span>
+            <strong>Note:</strong> Predictions are statistical estimates based on IBJA + MCX + COMEX trends. Not financial advice. During crises (wars, pandemics), gold can swing 3-8% in a day. Available for Pro & Family plan subscribers.
+        </div>
+    </div>
+</div>
+
 <!-- Rate Monitor -->
 <div class="card mb-3" id="ratemonitor">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">monitoring</span>Rate Monitor</h6></div>
@@ -564,6 +604,7 @@
                     <li>Loan EMIs due within 7 days</li>
                     <li>Financial goal deadlines within 30 days</li>
                     <li>SIP due dates within 3 days</li>
+                    <li>Gold price alerts — when gold crosses your set boundary (Pro feature)</li>
                 </ul>
             </li>
             <li><strong>Notification Bell:</strong> The bell icon in the top navigation shows unread count, updated every 60 seconds.</li>
