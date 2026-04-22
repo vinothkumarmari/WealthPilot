@@ -131,8 +131,17 @@
                 </div>
                 {% endif %}
 
+                <!-- Price Summary -->
+                {% if p.current_price %}
+                <div class="d-flex justify-content-between small mb-1 px-1">
+                    <span class="text-success"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_downward</span> Low: ₹{{ "{:,.0f}".format(p.min_price or p.current_price) }}</span>
+                    <span class="text-muted">Current: <strong>₹{{ "{:,.0f}".format(p.current_price) }}</strong></span>
+                    <span class="text-danger"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_upward</span> High: ₹{{ "{:,.0f}".format(p.max_price or p.current_price) }}</span>
+                </div>
+                {% endif %}
+
                 <!-- Price History Chart -->
-                <div style="height:60px;position:relative">
+                <div style="height:80px;position:relative;margin-bottom:8px">
                     <canvas id="chart-{{ p.id }}"></canvas>
                 </div>
 
@@ -318,18 +327,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 const prices = data.history.map(h => h.price);
                 const minP = Math.min(...prices);
                 const maxP = Math.max(...prices);
+                // For single data points, duplicate so line shows
+                const labels = data.history.map(h => h.date);
+                const chartPrices = prices.length === 1 ? [prices[0], prices[0]] : prices;
+                const chartLabels = labels.length === 1 ? [labels[0], 'Now'] : labels;
                 new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: data.history.map(h => h.date),
+                        labels: chartLabels,
                         datasets: [{
-                            data: prices,
+                            data: chartPrices,
                             borderColor: '{{ platform_color(p.platform) }}',
-                            backgroundColor: '{{ platform_color(p.platform) }}15',
+                            backgroundColor: '{{ platform_color(p.platform) }}20',
                             fill: true,
                             tension: 0.3,
-                            pointRadius: prices.length > 20 ? 0 : 3,
-                            pointHoverRadius: 5,
+                            pointRadius: chartPrices.length <= 5 ? 4 : (chartPrices.length > 20 ? 0 : 3),
+                            pointBackgroundColor: '{{ platform_color(p.platform) }}',
+                            pointHoverRadius: 6,
                             borderWidth: 2,
                         }]
                     },

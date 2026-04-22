@@ -402,27 +402,18 @@ def _parse_generic(soup, raw_html=''):
 
     # Fallback: find price patterns in page (look for ₹ symbol first)
     if not price:
-        for el in soup.find_all(['span', 'div', 'p', 'strong']):
-            text = el.get_text(strip=True)
-            if re.match(r'^[₹Rs.\s]*[\d,]+(\.\d{1,2})?$', text) and len(text) < 20:
-                p = _clean_price(text)
-                if p and 10 < p < 10_000_000:
-                    price = p
-                    break
-
-    # JSON-LD structured data (many sites use this)
-    if raw_html:
-        for script in soup.find_all('script', type='application/ld+json'):
-            try:
-                data = json.loads(script.string or '')
-                if isinstance(data, list):
-                    data = data[0]
-                if isinstance(data, dict):
-                    offers = data.get('offers', data)
-                    if isinstance(offers, list):
-                        offers = offers[0]
-                    if isinstance(offers, dict):
-                        if not price:
+        # Try JSON-LD structured data first (more reliable)
+        if raw_html:
+            for script in soup.find_all('script', type='application/ld+json'):
+                try:
+                    data = json.loads(script.string or '')
+                    if isinstance(data, list):
+                        data = data[0]
+                    if isinstance(data, dict):
+                        offers = data.get('offers', data)
+                        if isinstance(offers, list):
+                            offers = offers[0]
+                        if isinstance(offers, dict):
                             p = _clean_price(str(offers.get('price', '')))
                             if p:
                                 price = p
@@ -431,6 +422,31 @@ def _parse_generic(soup, raw_html=''):
                         if not image and data.get('image'):
                             img = data['image']
                             image = img[0] if isinstance(img, list) else img
+                except (json.JSONDecodeError, TypeError, IndexError):
+                    pass
+
+    if not price:
+        for el in soup.find_all(['span', 'div', 'p', 'strong']):
+            text = el.get_text(strip=True)
+            if re.match(r'^[₹Rs.\s]*[\d,]+(\.\d{1,2})?$', text) and len(text) < 20:
+                p = _clean_price(text)
+                if p and 10 < p < 10_000_000:
+                    price = p
+                    break
+
+    # JSON-LD structured data — name/image fallback
+    if raw_html and (not name or not image):
+        for script in soup.find_all('script', type='application/ld+json'):
+            try:
+                data = json.loads(script.string or '')
+                if isinstance(data, list):
+                    data = data[0]
+                if isinstance(data, dict):
+                    if not name and data.get('name'):
+                        name = data['name']
+                    if not image and data.get('image'):
+                        img = data['image']
+                        image = img[0] if isinstance(img, list) else img
             except (json.JSONDecodeError, TypeError, IndexError):
                 pass
 
@@ -520,6 +536,98 @@ _SEARCH_URLS = {
     'Tata CLiQ': 'https://www.tatacliq.com/search/?searchCategory=all&text={q}',
 }
 
+# Map domain fragments to platform names for Google Shopping results
+_DOMAIN_TO_PLATFORM = {
+    'amazon': 'Amazon', 'flipkart': 'Flipkart', 'myntra': 'Myntra',
+    'ajio': 'Ajio', 'meesho': 'Meesho', 'croma': 'Croma',
+    'tatacliq': 'Tata CLiQ', 'snapdeal': 'Snapdeal', 'jiomart': 'JioMart',
+    'nykaa': 'Nykaa', 'reliancedigital': 'Reliance Digital',
+    'vijaysales': 'Vijay Sales',
+}
+
+
+def _google_shopping_search(query):
+    """Search DuckDuckGo for product prices across all e-commerce platforms.
+    
+    DuckDuckGo HTML search works reliably from server IPs (unlike Google Shopping).
+    Returns list of: [{name, price, url, platform}]
+    """
+    from urllib.parse import quote_plus, unquote
+    search_url = f'https://html.duckduckgo.com/html/?q={quote_plus(query)}+price+buy+India'
+    
+    results = []
+    try:
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        })
+        resp = session.get(search_url, timeout=10)
+        if resp.status_code != 200:
+            return results
+        
+        soup = BeautifulSoup(resp.text, 'html.parser')
+        
+        for item in soup.select('.result')[:12]:
+            title_el = item.select_one('.result__a')
+            snippet_el = item.select_one('.result__snippet')
+            if not title_el:
+                continue
+            
+            title = title_el.get_text(strip=True)
+            snippet = snippet_el.get_text(strip=True) if snippet_el else ''
+            
+            # Extract actual URL from DDG redirect
+            href = title_el.get('href', '')
+            um = re.search(r'uddg=([^&]+)', href)
+            actual_url = unquote(um.group(1)) if um else href
+            
+            # Skip ads and non-product pages
+            if not actual_url or 'duckduckgo.com/y.js' in actual_url:
+                continue
+            
+            # Detect platform from URL
+            platform = 'Other'
+            url_lower = actual_url.lower()
+            for domain_frag, plat_name in _DOMAIN_TO_PLATFORM.items():
+                if domain_frag in url_lower:
+                    platform = plat_name
+                    break
+            
+            # Skip non-commerce sites
+            if platform == 'Other':
+                continue
+            
+            # Extract price from snippet — multiple patterns
+            price = None
+            combined = title + ' ' + snippet
+            # Match: ₹17,990 or Rs. 23990 or Rs 15,989 or Price₹15,990.00
+            for pm in re.finditer(r'(?:₹|Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)', combined):
+                p = _clean_price(pm.group(1))
+                if p and 100 < p < 10_000_000:
+                    price = p
+                    break
+            
+            if title and price:
+                results.append({
+                    'name': title[:120],
+                    'price': price,
+                    'url': actual_url,
+                    'platform': platform,
+                })
+            elif title and platform != 'Other':
+                # No price in snippet but valid e-commerce URL — mark for page fetch
+                results.append({
+                    'name': title[:120],
+                    'price': None,
+                    'url': actual_url,
+                    'platform': platform,
+                })
+        
+    except Exception as e:
+        log.debug('DuckDuckGo search failed: %s', e)
+    
+    return results[:15]
 
 
 def _shorten_query(product_name):
@@ -632,10 +740,13 @@ def _parse_generic_search(soup, base_url):
 
 
 def compare_prices(product_name, exclude_platform=None):
-    """Generate search URLs across multiple e-commerce platforms.
+    """Search for a product across multiple e-commerce platforms.
 
-    Attempts server-side scraping but gracefully falls back to search links
-    when sites block requests (403/captcha — common from server IPs).
+    Strategy:
+    1. DuckDuckGo search (finds product links + prices from snippets)
+    2. Fetch individual product pages found by DDG (product pages are less blocked than search pages)
+    3. Direct search on each platform (often blocked by 403)
+    4. Generate search URLs for user to click manually
 
     Returns dict: {platform: {results: [{name, price, url}], search_url, error}}
     """
@@ -646,9 +757,53 @@ def compare_prices(product_name, exclude_platform=None):
     from urllib.parse import quote_plus
     encoded_q = quote_plus(query)
 
-    comparison = {}
+    # Step 1: DuckDuckGo search for product links and prices
+    ddg_results = _google_shopping_search(query)
+    
+    # Group DDG results by platform
+    ddg_by_platform = {}
+    ddg_urls_by_platform = {}  # URLs found by DDG (product pages, not search pages)
+    for r in ddg_results:
+        plat = r['platform']
+        if plat not in ddg_urls_by_platform:
+            ddg_urls_by_platform[plat] = r['url']
+        if r.get('price'):
+            if plat not in ddg_by_platform:
+                ddg_by_platform[plat] = []
+            ddg_by_platform[plat].append({
+                'name': r['name'],
+                'price': r['price'],
+                'url': r['url'],
+            })
+    
+    # Step 2: For platforms where DDG found URLs but no prices,
+    # try fetching the actual product page
     session = requests.Session()
     session.headers.update(_HEADERS_BROWSER)
+    
+    for plat, url in ddg_urls_by_platform.items():
+        if plat in ddg_by_platform:
+            continue  # Already have price from snippet
+        try:
+            resp = session.get(url, timeout=8, allow_redirects=True)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, 'html.parser')
+                if plat == 'Amazon':
+                    name, price, mrp, disc, img = _parse_amazon(soup, resp.text, url)
+                elif plat == 'Flipkart':
+                    name, price, mrp, disc, img = _parse_flipkart(soup, resp.text)
+                else:
+                    name, price, mrp, disc, img = _parse_generic(soup, resp.text)
+                if price and price > 500:
+                    ddg_by_platform[plat] = [{
+                        'name': (name or product_name)[:120],
+                        'price': price,
+                        'url': url,
+                    }]
+        except Exception as e:
+            log.debug('Product page fetch failed for %s: %s', plat, e)
+
+    comparison = {}
 
     for platform, url_tpl in _SEARCH_URLS.items():
         if platform == exclude_platform:
@@ -657,23 +812,32 @@ def compare_prices(product_name, exclude_platform=None):
         search_url = url_tpl.format(q=encoded_q)
         entry = {'search_url': search_url, 'results': [], 'error': None}
 
-        try:
-            resp = session.get(search_url, timeout=8, allow_redirects=True)
-            if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, 'html.parser')
-                if platform == 'Amazon':
-                    entry['results'] = _parse_amazon_search(soup)
-                elif platform == 'Flipkart':
-                    entry['results'] = _parse_flipkart_search(soup)
+        # Use DDG results for this platform if available
+        if platform in ddg_by_platform:
+            entry['results'] = ddg_by_platform[platform][:3]
+            # Use the actual product URL as the search_url if DDG found one
+            if platform in ddg_urls_by_platform:
+                entry['search_url'] = ddg_urls_by_platform[platform]
+        
+        # If no DDG results, try direct search
+        if not entry['results']:
+            try:
+                resp = session.get(search_url, timeout=8, allow_redirects=True)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, 'html.parser')
+                    if platform == 'Amazon':
+                        entry['results'] = _parse_amazon_search(soup)
+                    elif platform == 'Flipkart':
+                        entry['results'] = _parse_flipkart_search(soup)
+                    else:
+                        parsed = urlparse(search_url)
+                        base = f'{parsed.scheme}://{parsed.netloc}'
+                        entry['results'] = _parse_generic_search(soup, base)
                 else:
-                    parsed = urlparse(search_url)
-                    base = f'{parsed.scheme}://{parsed.netloc}'
-                    entry['results'] = _parse_generic_search(soup, base)
-            else:
-                entry['error'] = 'blocked'
-        except Exception as e:
-            entry['error'] = 'timeout' if 'timeout' in str(e).lower() else 'blocked'
-            log.debug('Compare search failed for %s: %s', platform, e)
+                    entry['error'] = 'blocked'
+            except Exception as e:
+                entry['error'] = 'timeout' if 'timeout' in str(e).lower() else 'blocked'
+                log.debug('Compare search failed for %s: %s', platform, e)
 
         comparison[platform] = entry
 
