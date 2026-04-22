@@ -167,14 +167,14 @@ body {
     border-left: 0;
 }
 
-.sidebar-nav .nav-link > span:last-child,
-.sidebar-footer .nav-link > span:last-child {
+.sidebar-nav .nav-link > span:nth-child(2),
+.sidebar-footer .nav-link > span:nth-child(2) {
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
-.sidebar.expanded .sidebar-nav .nav-link > span:last-child,
-.sidebar.expanded .sidebar-footer .nav-link > span:last-child {
+.sidebar.expanded .sidebar-nav .nav-link > span:nth-child(2),
+.sidebar.expanded .sidebar-footer .nav-link > span:nth-child(2) {
     opacity: 1;
 }
 
