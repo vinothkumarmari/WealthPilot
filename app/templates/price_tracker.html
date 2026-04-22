@@ -62,8 +62,8 @@
                         {% endif %}
                     </a>
                     <!-- Product Details -->
-                    <div class="flex-grow-1 min-width-0">
-                        <a href="{{ p.url }}" target="_blank" rel="noopener" class="text-decoration-none">
+                    <div class="flex-grow-1" style="min-width:0;overflow:hidden">
+                        <a href="{{ p.url }}" target="_blank" rel="noopener" class="text-decoration-none d-block">
                             <h6 class="fw-bold mb-1 product-name">{{ p.name }}</h6>
                         </a>
                         <div class="mb-2">
@@ -106,8 +106,8 @@
                     </div>
                 </div>
 
-                <!-- Price Range Bar -->
-                {% if p.min_price and p.max_price and p.current_price %}
+                <!-- Price Range Bar (only show when we have a meaningful range) -->
+                {% if p.min_price and p.max_price and p.current_price and p.min_price != p.max_price %}
                 <div class="price-range-section mb-3">
                     <div class="d-flex justify-content-between small mb-1">
                         <span class="text-success fw-bold">
@@ -121,20 +121,13 @@
                         </span>
                     </div>
                     {% set range_val = p.max_price - p.min_price %}
-                    {% if range_val > 0 %}
                     {% set pos = ((p.current_price - p.min_price) / range_val * 100) | int %}
                     <div class="price-range-bar">
-                        <div class="price-range-marker" style="left: {{ [5, [95, pos] | min] | max }}%">
-                            <span class="price-range-label">₹{{ "{:,.0f}".format(p.current_price) }}</span>
-                        </div>
+                        <div class="price-range-marker" style="left: {{ [5, [95, pos] | min] | max }}%"></div>
                     </div>
-                    {% else %}
-                    <div class="price-range-bar">
-                        <div class="price-range-marker" style="left: 50%">
-                            <span class="price-range-label">₹{{ "{:,.0f}".format(p.current_price) }}</span>
-                        </div>
+                    <div class="text-center mt-1">
+                        <small class="fw-bold" style="font-size:11px">Now: ₹{{ "{:,.0f}".format(p.current_price) }}</small>
                     </div>
-                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -277,23 +270,13 @@
 .price-range-marker {
     position: absolute;
     top: -5px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background: var(--text-primary, #333);
     border: 2px solid #fff;
     border-radius: 50%;
     transform: translateX(-50%);
     box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-}
-.price-range-label {
-    position: absolute;
-    top: -22px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 10px;
-    font-weight: 700;
-    white-space: nowrap;
-    color: var(--text-primary, #333);
 }
 
 /* Pulse animation for price drop badge */
