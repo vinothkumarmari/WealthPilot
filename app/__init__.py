@@ -533,6 +533,17 @@ def _ensure_user_columns(app):
                     """))
                     conn.execute(text("CREATE INDEX ix_tracked_user ON tracked_product(user_id)"))
                     app.logger.info('Created table: tracked_product')
+                else:
+                    # Table exists — ensure newer columns are present
+                    tp_cols = {r[0] for r in conn.execute(text(
+                        "SELECT column_name FROM information_schema.columns WHERE table_name='tracked_product'"
+                    )).fetchall()}
+                    if 'mrp' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN mrp FLOAT"))
+                        app.logger.info('Added column: tracked_product.mrp')
+                    if 'discount_pct' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN discount_pct FLOAT"))
+                        app.logger.info('Added column: tracked_product.discount_pct')
                 ph_exists = conn.execute(text(
                     "SELECT 1 FROM information_schema.tables WHERE table_name='price_history'"
                 )).fetchone()
