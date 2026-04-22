@@ -489,9 +489,11 @@ def _ensure_user_columns(app):
                     app.logger.info('Added column: user.enable_price_tracker')
                 # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
                 try:
+                    conn.execute(text("SAVEPOINT sp_otp"))
                     conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN otp_code TYPE VARCHAR(64)"))
+                    conn.execute(text("RELEASE SAVEPOINT sp_otp"))
                 except Exception:
-                    pass
+                    conn.execute(text("ROLLBACK TO SAVEPOINT sp_otp"))
                 # Add member column to expense and financial_goal tables
                 exp_cols = {r[0] for r in conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='expense'")).fetchall()}
                 if 'member' not in exp_cols:
