@@ -6,9 +6,9 @@
         <h4><span class="material-icons-outlined">trending_up</span> {{ t('Gold Price Prediction — 12 Hour Forecast') }}</h4>
         {% if prediction.success %}
         <small class="text-muted">
-            Predicted at: {{ prediction.prediction_time }} &nbsp;|&nbsp;
-            Target: {{ prediction.target_time }} &nbsp;|&nbsp;
-            Data points: {{ prediction.data_points }}
+            Analyzed: {{ prediction.prediction_time }} &nbsp;|&nbsp;
+            Forecast till: {{ prediction.target_time }} &nbsp;|&nbsp;
+            {{ prediction.data_points }} data points (IBJA + MCX + COMEX)
         </small>
         {% endif %}
     </div>
@@ -24,79 +24,118 @@
 </div>
 {% else %}
 
-<!-- ============ GOLD PREDICTION CARDS ============ -->
-<h5 class="mb-3"><span class="material-icons-outlined" style="color:#FFD700; vertical-align:middle">insights</span> {{ t('Gold Forecast (per gram)') }}</h5>
+<!-- ============ BUY TIMING ADVICE (Hero Section) ============ -->
+{% if prediction.buy_advice %}
+{% set adv = prediction.buy_advice %}
+<div class="card mb-4 border-0" style="background: linear-gradient(135deg, var(--accent) 0%, #1a1a2e 100%); color:#fff;">
+    <div class="card-body p-4">
+        <div class="row">
+            <div class="col-lg-6 mb-3 mb-lg-0">
+                <h5 class="mb-1"><span class="material-icons-outlined" style="vertical-align:middle;">schedule</span> {{ t('Best Time to Buy') }}</h5>
+                <h2 class="mb-2" style="color:#FFD700;">{{ adv.best_time }}</h2>
+                <p class="mb-2 opacity-75">{{ adv.best_time_reason }}</p>
+                <p class="mb-0"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">{{ 'trending_up' if prediction.predictions.get('24K', {}).get('change', 0) >= 0 else 'trending_down' }}</span> {{ adv.price_direction }}</p>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="p-3 rounded mb-2" style="background:rgba(255,255,255,0.1);">
+                    <small class="d-block opacity-75"><span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">savings</span> Gold Chit</small>
+                    <strong>{{ adv.chit_action }}</strong>
+                    <p class="small mb-0 mt-1 opacity-75">{{ adv.chit_reason }}</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6">
+                <div class="p-3 rounded mb-2" style="background:rgba(255,255,255,0.1);">
+                    <small class="d-block opacity-75"><span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">account_balance</span> Investment</small>
+                    <strong>{{ adv.invest_action }}</strong>
+                    <p class="small mb-0 mt-1 opacity-75">{{ adv.invest_reason }}</p>
+                </div>
+            </div>
+        </div>
+        {% if adv.savings_tip %}
+        <div class="mt-3 p-2 rounded d-flex align-items-center gap-2" style="background:rgba(255,215,0,0.15);">
+            <span class="material-icons-outlined" style="color:#FFD700;">lightbulb</span>
+            <span>{{ adv.savings_tip }}</span>
+        </div>
+        {% endif %}
+        <div class="mt-2 d-flex gap-3 small opacity-75">
+            <span>Risk: <strong>{{ adv.risk_level }}</strong></span>
+            {% if adv.premium_note %}<span>{{ adv.premium_note }}</span>{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ CRISIS ALERT (if volatile) ============ -->
+{% if prediction.crisis_alert %}
+{% set ca = prediction.crisis_alert %}
+<div class="alert {{ 'alert-danger' if ca.level == 'HIGH' else 'alert-warning' }} mb-4">
+    <div class="d-flex align-items-start gap-2">
+        <span class="material-icons-outlined" style="font-size:24px;">{{ 'crisis_alert' if ca.level == 'HIGH' else 'warning' }}</span>
+        <div>
+            <strong>{{ ca.level }} Volatility Alert</strong>
+            <p class="mb-1">{{ ca.message }}</p>
+            <p class="mb-0 small"><strong>Advice:</strong> {{ ca.advice }}</p>
+            <div class="mt-1 small text-muted">
+                Volatility: {{ ca.volatility }}% &nbsp;|&nbsp;
+                Daily swing: {{ ca.daily_swing }}% &nbsp;|&nbsp;
+                COMEX swing: {{ ca.comex_swing }}%
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ PRICE FORECAST CARDS ============ -->
+<h5 class="mb-3"><span class="material-icons-outlined" style="color:#FFD700; vertical-align:middle">insights</span> {{ t('Price Forecast (per gram)') }}</h5>
 <div class="row mb-4">
 {% for karat in ['24K', '22K', '18K'] %}
 {% if prediction.predictions.get(karat) %}
 {% set p = prediction.predictions[karat] %}
     <div class="col-md-4 mb-3">
         <div class="card p-3 h-100">
-            <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="text-muted mb-2">Gold {{ karat }}</h6>
+            <div class="d-flex justify-content-between align-items-end mb-3">
                 <div>
-                    <h6 class="text-muted mb-1">Gold {{ karat }}</h6>
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <span class="text-muted" style="font-size:14px;">Now:</span>
-                        <h5 class="mb-0" style="color:{{ '#FFD700' if karat == '24K' else ('#DAA520' if karat == '22K' else '#B8860B') }};">₹{{ "{:,.2f}".format(p.current) }}</h5>
-                    </div>
+                    <small class="text-muted">Now</small>
+                    <h4 class="mb-0" style="color:{{ '#FFD700' if karat == '24K' else ('#DAA520' if karat == '22K' else '#B8860B') }};">₹{{ "{:,.2f}".format(p.current) }}</h4>
                 </div>
-                <span class="badge {{ 'bg-success' if 'Up' in p.direction else ('bg-danger' if 'Down' in p.direction else 'bg-secondary') }}" style="font-size:13px;">
-                    {{ '▲' if 'Up' in p.direction else ('▼' if 'Down' in p.direction else '▬') }} {{ p.direction }}
+                <div class="text-end">
+                    <small class="text-muted">12hr Forecast</small>
+                    <h4 class="mb-0 {{ 'text-success' if p.change >= 0 else 'text-danger' }}">₹{{ "{:,.2f}".format(p.predicted) }}</h4>
+                </div>
+            </div>
+            <div class="text-center mb-3">
+                <span class="badge {{ 'bg-success' if p.change >= 0 else 'bg-danger' }}" style="font-size:13px;">
+                    {{ '+' if p.change >= 0 else '' }}₹{{ "{:,.2f}".format(p.change) }} ({{ '+' if p.change_pct >= 0 else '' }}{{ p.change_pct }}%)
                 </span>
             </div>
-
-            <div class="p-3 rounded mb-3" style="background:var(--body-bg);">
-                <div class="text-center">
-                    <small class="text-muted d-block">Predicted (12 hrs)</small>
-                    <h3 class="mb-0 {{ 'text-success' if p.change >= 0 else 'text-danger' }}">₹{{ "{:,.2f}".format(p.predicted) }}</h3>
-                    <span class="badge {{ 'bg-success' if p.change >= 0 else 'bg-danger' }}">
-                        {{ '+' if p.change >= 0 else '' }}₹{{ "{:,.2f}".format(p.change) }} ({{ '+' if p.change_pct >= 0 else '' }}{{ p.change_pct }}%)
-                    </span>
-                </div>
+            <div class="small text-muted mb-2 d-flex justify-content-between">
+                <span>Low: ₹{{ "{:,.2f}".format(p.range_low) }}</span>
+                <span>High: ₹{{ "{:,.2f}".format(p.range_high) }}</span>
             </div>
-
-            <div class="d-flex justify-content-between small text-muted mb-2">
-                <span>Range Low: <strong>₹{{ "{:,.2f}".format(p.range_low) }}</strong></span>
-                <span>Range High: <strong>₹{{ "{:,.2f}".format(p.range_high) }}</strong></span>
-            </div>
-
-            <!-- Progress bar showing predicted in range -->
             {% set range_width = p.range_high - p.range_low %}
             {% set pred_pos = ((p.predicted - p.range_low) / range_width * 100) if range_width > 0 else 50 %}
-            <div class="position-relative mb-3" style="height:8px;background:var(--border-color);border-radius:4px;">
-                <div class="position-absolute" style="left:{{ pred_pos }}%;top:-3px;width:14px;height:14px;background:var(--accent);border-radius:50%;transform:translateX(-50%);"></div>
+            <div class="position-relative mb-3" style="height:6px;background:var(--border-color);border-radius:3px;">
+                <div class="position-absolute" style="left:{{ pred_pos }}%;top:-4px;width:14px;height:14px;background:var(--accent);border-radius:50%;transform:translateX(-50%);border:2px solid var(--card-bg);"></div>
             </div>
-
             <div class="row text-center small">
                 <div class="col-4">
                     <div class="text-muted">RSI</div>
                     <strong class="{{ 'text-danger' if p.rsi > 70 else ('text-success' if p.rsi < 30 else '') }}">{{ p.rsi }}</strong>
-                    <div class="text-muted" style="font-size:10px;">{{ 'Overbought' if p.rsi > 70 else ('Oversold' if p.rsi < 30 else 'Neutral') }}</div>
                 </div>
                 <div class="col-4">
-                    <div class="text-muted">EMA Signal</div>
-                    <strong class="{{ 'text-success' if p.ema_signal == 'bullish' else 'text-danger' }}">
-                        {{ '▲' if p.ema_signal == 'bullish' else '▼' }} {{ p.ema_signal|capitalize }}
-                    </strong>
-                </div>
-                <div class="col-4">
-                    <div class="text-muted">Volatility</div>
+                    <div class="text-muted">Vol</div>
                     <strong>{{ p.volatility_pct }}%</strong>
-                    <div class="text-muted" style="font-size:10px;">{{ 'High' if p.volatility_pct > 1.5 else ('Low' if p.volatility_pct < 0.5 else 'Normal') }}</div>
+                </div>
+                <div class="col-4">
+                    <div class="text-muted">Slope</div>
+                    <strong class="{{ 'text-success' if p.trend_slope > 0 else 'text-danger' }}">{{ p.trend_slope }}</strong>
                 </div>
             </div>
-
-            <hr>
+            <hr class="my-2">
             <div class="d-flex justify-content-between small">
-                <span class="text-success">Support: ₹{{ "{:,.2f}".format(p.support) }}</span>
-                <span class="text-danger">Resistance: ₹{{ "{:,.2f}".format(p.resistance) }}</span>
-            </div>
-
-            <div class="mt-2 text-center">
-                <span class="badge bg-{{ 'success' if p.confidence == 'High' else ('warning' if p.confidence == 'Moderate' else 'secondary') }}">
-                    Confidence: {{ p.confidence }}
-                </span>
-                <small class="text-muted ms-1">({{ p.bullish_count }} bullish / {{ p.bearish_count }} bearish signals)</small>
+                <span class="text-success">Support: ₹{{ "{:,.0f}".format(p.support) }}</span>
+                <span class="text-danger">Resist: ₹{{ "{:,.0f}".format(p.resistance) }}</span>
             </div>
         </div>
     </div>
@@ -104,125 +143,326 @@
 {% endfor %}
 </div>
 
-<!-- ============ SILVER PREDICTION ============ -->
+<!-- ============ SILVER FORECAST ============ -->
 {% if prediction.predictions.get('Silver') %}
 {% set s = prediction.predictions['Silver'] %}
-<h5 class="mb-3"><span class="material-icons-outlined" style="color:#C0C0C0; vertical-align:middle">insights</span> {{ t('Silver Forecast (per gram)') }}</h5>
 <div class="row mb-4">
-    <div class="col-md-6 mb-3">
+    <div class="col-md-6">
         <div class="card p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-                <div>
-                    <h6 class="text-muted mb-1">Silver 999</h6>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-muted" style="font-size:14px;">Now:</span>
-                        <h5 class="mb-0" style="color:#C0C0C0;">₹{{ "{:,.2f}".format(s.current) }}</h5>
-                    </div>
-                </div>
-                <span class="badge {{ 'bg-success' if 'Up' in s.direction else ('bg-danger' if 'Down' in s.direction else 'bg-secondary') }}">
-                    {{ '▲' if 'Up' in s.direction else ('▼' if 'Down' in s.direction else '▬') }} {{ s.direction }}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="text-muted mb-0"><span class="material-icons-outlined" style="color:#C0C0C0;vertical-align:middle;font-size:18px;">insights</span> Silver 999</h6>
+                <span class="badge {{ 'bg-success' if s.change >= 0 else 'bg-danger' }}">
+                    {{ '+' if s.change >= 0 else '' }}₹{{ "{:,.2f}".format(s.change) }} ({{ s.change_pct }}%)
                 </span>
             </div>
-            <div class="p-3 rounded" style="background:var(--body-bg);">
-                <div class="text-center">
-                    <small class="text-muted d-block">Predicted (12 hrs)</small>
-                    <h3 class="mb-0 {{ 'text-success' if s.change >= 0 else 'text-danger' }}">₹{{ "{:,.2f}".format(s.predicted) }}</h3>
-                    <span class="badge {{ 'bg-success' if s.change >= 0 else 'bg-danger' }}">
-                        {{ '+' if s.change >= 0 else '' }}₹{{ "{:,.2f}".format(s.change) }} ({{ '+' if s.change_pct >= 0 else '' }}{{ s.change_pct }}%)
-                    </span>
-                </div>
-            </div>
-            <div class="d-flex justify-content-between small text-muted mt-2">
-                <span>Range: ₹{{ "{:,.2f}".format(s.range_low) }} – ₹{{ "{:,.2f}".format(s.range_high) }}</span>
-                <span>RSI: <strong>{{ s.rsi }}</strong></span>
-                <span>Volatility: <strong>{{ s.volatility_pct }}%</strong></span>
+            <div class="d-flex justify-content-between">
+                <div><small class="text-muted">Now</small><br><strong style="color:#C0C0C0;">₹{{ "{:,.2f}".format(s.current) }}</strong></div>
+                <div class="text-end"><small class="text-muted">12hr</small><br><strong class="{{ 'text-success' if s.change >= 0 else 'text-danger' }}">₹{{ "{:,.2f}".format(s.predicted) }}</strong></div>
+                <div class="text-end"><small class="text-muted">Range</small><br><small>₹{{ "{:,.2f}".format(s.range_low) }} – {{ "{:,.2f}".format(s.range_high) }}</small></div>
             </div>
         </div>
     </div>
 </div>
 {% endif %}
 
-<!-- ============ SIGNAL BREAKDOWN ============ -->
-{% if prediction.predictions.get('24K') %}
-{% set g24 = prediction.predictions['24K'] %}
-<h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle">analytics</span> {{ t('Signal Breakdown (24K Gold)') }}</h5>
+<!-- ============ MCX / COMEX DATA ============ -->
+{% if prediction.mcx_comex %}
+{% set mc = prediction.mcx_comex %}
+<h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;">language</span> {{ t('MCX & COMEX Analysis') }}</h5>
+<div class="row mb-4">
+    {% if mc.comex_oz_usd %}
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 h-100">
+            <h6 class="text-muted mb-2">COMEX Gold (International)</h6>
+            <h4 class="mb-1">${{ "{:,.2f}".format(mc.comex_oz_usd) }} <small class="text-muted">/troy oz</small></h4>
+            {% if mc.comex_change_usd %}
+            <span class="badge {{ 'bg-success' if mc.comex_change_usd >= 0 else 'bg-danger' }} mb-1">
+                {{ '+' if mc.comex_change_usd >= 0 else '' }}${{ "{:,.2f}".format(mc.comex_change_usd) }} ({{ mc.comex_change_pct }}%)
+            </span>
+            {% endif %}
+            <p class="mb-1 small">= ₹{{ "{:,.2f}".format(mc.comex_inr_gram) }}/gram <small class="text-muted">(@ USD/INR {{ mc.usd_inr }})</small></p>
+            {% if mc.silver_oz_usd %}
+            <p class="mb-0 small text-muted">Silver: ${{ "{:,.2f}".format(mc.silver_oz_usd) }}/oz</p>
+            {% endif %}
+            <small class="text-muted">Source: {{ mc.comex_source }}</small>
+        </div>
+    </div>
+    {% endif %}
+    {% if mc.mcx_price %}
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 h-100">
+            <h6 class="text-muted mb-2">MCX Gold (India ETF Proxy)</h6>
+            <h4 class="mb-1">₹{{ "{:,.2f}".format(mc.mcx_price) }} <small class="text-muted">/gram</small></h4>
+            <small class="text-muted">Source: {{ mc.mcx_source }}</small>
+        </div>
+    </div>
+    {% endif %}
+    {% if mc.india_premium is defined %}
+    <div class="col-md-4 mb-3">
+        <div class="card p-3 h-100">
+            <h6 class="text-muted mb-2">India Premium</h6>
+            <h4 class="mb-1 {{ 'text-danger' if mc.india_premium > 200 else ('text-success' if mc.india_premium < 50 else '') }}">₹{{ "{:,.2f}".format(mc.india_premium) }}/gram</h4>
+            <p class="small mb-0 text-muted">({{ mc.india_premium_pct }}% above international price)</p>
+            <small class="text-muted">IBJA vs COMEX converted</small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- ============ AM/PM PATTERN ============ -->
+{% if prediction.am_pm_pattern %}
+<h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;">schedule</span> {{ t('AM vs PM Price Pattern (24K)') }}</h5>
 <div class="row mb-4">
     <div class="col-md-8">
         <div class="card p-3">
-            <table class="table table-sm mb-0">
-                <thead>
-                    <tr>
-                        <th>Signal</th>
-                        <th>Direction</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>Short-term Trend</strong></td>
-                        <td>
-                            <span class="badge {{ 'bg-success' if g24.signals.trend > 0 else 'bg-danger' }}">
-                                {{ '▲ Bullish' if g24.signals.trend > 0 else '▼ Bearish' }}
-                            </span>
-                        </td>
-                        <td class="text-muted small">14-day linear regression slope ({{ g24.trend_slope }}/day, R²={{ g24.r_squared }})</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Momentum (WMA)</strong></td>
-                        <td>
-                            <span class="badge {{ 'bg-success' if g24.signals.momentum > 0 else 'bg-danger' }}">
-                                {{ '▲ Bullish' if g24.signals.momentum > 0 else '▼ Bearish' }}
-                            </span>
-                        </td>
-                        <td class="text-muted small">3-day vs 7-day weighted moving average</td>
-                    </tr>
-                    <tr>
-                        <td><strong>EMA Crossover</strong></td>
-                        <td>
-                            <span class="badge {{ 'bg-success' if g24.signals.ema > 0 else 'bg-danger' }}">
-                                {{ '▲ Bullish' if g24.signals.ema > 0 else '▼ Bearish' }}
-                            </span>
-                        </td>
-                        <td class="text-muted small">5-day EMA vs 20-day EMA crossover signal</td>
-                    </tr>
-                    <tr>
-                        <td><strong>RSI ({{ g24.rsi }})</strong></td>
-                        <td>
-                            {% if g24.signals.rsi > 0 %}
-                            <span class="badge bg-success">▲ Bullish (Oversold)</span>
-                            {% elif g24.signals.rsi < 0 %}
-                            <span class="badge bg-danger">▼ Bearish (Overbought)</span>
-                            {% else %}
-                            <span class="badge bg-secondary">▬ Neutral</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-muted small">Relative Strength Index (below 30 = oversold, above 70 = overbought)</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>AM Price</th>
+                            <th>PM Price</th>
+                            <th>Intraday Change</th>
+                            <th>Insight</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in prediction.am_pm_pattern %}
+                        <tr>
+                            <td>{{ row.date }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.am_price) }}</td>
+                            <td>₹{{ "{:,.2f}".format(row.pm_price) }}</td>
+                            <td class="{{ 'text-success' if row.intraday_change >= 0 else 'text-danger' }}">
+                                {{ '+' if row.intraday_change >= 0 else '' }}₹{{ "{:,.2f}".format(row.intraday_change) }}
+                            </td>
+                            <td class="small text-muted">
+                                {{ 'AM was cheaper' if row.intraday_change > 0 else 'PM was cheaper' }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-2 small text-muted d-flex gap-3">
+                <span>Avg AM→PM change: <strong class="{{ 'text-success' if prediction.am_avg_change >= 0 else 'text-danger' }}">{{ '+' if prediction.am_avg_change >= 0 else '' }}₹{{ prediction.am_avg_change }}/gram</strong></span>
+                <span>Avg overnight (PM→AM): <strong class="{{ 'text-success' if prediction.pm_to_next_am >= 0 else 'text-danger' }}">{{ '+' if prediction.pm_to_next_am >= 0 else '' }}₹{{ prediction.pm_to_next_am }}/gram</strong></span>
+            </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card p-3 text-center h-100 d-flex justify-content-center">
-            <div>
-                <h6 class="text-muted">Overall Verdict</h6>
-                <h2 class="{{ 'text-success' if 'Up' in g24.direction else ('text-danger' if 'Down' in g24.direction else 'text-secondary') }}">
-                    {{ g24.direction }}
-                </h2>
-                <div class="mb-2">
-                    <span class="badge bg-{{ 'success' if g24.confidence == 'High' else ('warning' if g24.confidence == 'Moderate' else 'secondary') }}" style="font-size:14px;">
-                        {{ g24.confidence }} Confidence
-                    </span>
+        <div class="card p-3 h-100" style="background: linear-gradient(135deg, rgba(108,92,231,0.1), rgba(255,215,0,0.05));">
+            <h6 class="text-muted mb-2"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">lightbulb</span> Pattern Insight</h6>
+            {% if prediction.am_avg_change > 0 %}
+            <p class="mb-2"><strong>AM prices are usually cheaper</strong> — gold tends to rise ₹{{ prediction.am_avg_change }}/gram by evening.</p>
+            <p class="mb-0 small text-muted">For gold chit or SIP, paying in the <strong>morning before 10 AM</strong> typically gets a better rate.</p>
+            {% else %}
+            <p class="mb-2"><strong>PM prices are usually cheaper</strong> — gold tends to drop by evening.</p>
+            <p class="mb-0 small text-muted">For gold chit or SIP, paying in the <strong>evening</strong> typically gets a better rate.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============ CRISIS HISTORY: How Gold Reacts ============ -->
+{% if prediction.crisis_samples %}
+<h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;color:#e74c3c;">crisis_alert</span> {{ t('How Gold Reacts During Crises') }}</h5>
+<div class="card mb-4">
+    <div class="card-body p-3">
+        <p class="text-muted small mb-3">
+            Gold is a "safe haven" — during wars, pandemics, and financial crises, investors flock to gold, pushing prices up sharply.
+            Understanding these patterns helps you make better chit payment and investment timing decisions.
+        </p>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Gold (USD/oz)</th>
+                        <th>Gold (INR/g)</th>
+                        <th>1-Week Change</th>
+                        <th>What Happened</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for cs in prediction.crisis_samples %}
+                    <tr>
+                        <td><strong>{{ cs.event }}</strong></td>
+                        <td class="text-nowrap">{{ cs.date }}</td>
+                        <td>${{ "{:,}".format(cs.gold_usd) }}</td>
+                        <td>₹{{ "{:,}".format(cs.gold_inr_gram) }}</td>
+                        <td class="{{ 'text-success' if '+' in cs.change_1w else 'text-danger' }}">
+                            <strong>{{ cs.change_1w }}</strong>
+                        </td>
+                        <td class="small text-muted">{{ cs.context }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 p-2 rounded" style="background:rgba(231,76,60,0.08);">
+            <div class="row small">
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <strong class="text-danger">During Crisis:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li>Gold rises 3-8% in days</li>
+                        <li>Physical gold premium spikes</li>
+                        <li>Stocks & crypto crash</li>
+                    </ul>
                 </div>
-                <small class="text-muted">{{ g24.bullish_count }} of 4 signals bullish</small>
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <strong class="text-success">After Crisis:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li>Gold corrects 5-15% post-peak</li>
+                        <li>Prices stabilize in 2-4 weeks</li>
+                        <li>Good entry point for buyers</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <strong style="color:var(--accent);">Chit/SIP Advice:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li>Pay chit on schedule (don't time crisis)</li>
+                        <li>Avoid lump-sum during peak fear</li>
+                        <li>Buy the dip after crisis settles</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endif %}
 
+<!-- ============ HOW MCX & COMEX WORK ============ -->
+<h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;color:#DAA520;">school</span> {{ t('How MCX & COMEX Work — Gold Price Explained') }}</h5>
+<div class="card mb-4">
+    <div class="card-body p-3">
+        <div class="row">
+            <!-- COMEX -->
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="p-3 rounded h-100" style="background:rgba(255,215,0,0.06);">
+                    <h6><span class="material-icons-outlined" style="font-size:18px;vertical-align:middle;color:#FFD700;">language</span> COMEX (New York)</h6>
+                    <p class="small mb-2"><strong>What:</strong> The world's largest gold futures exchange, part of CME Group (Chicago Mercantile Exchange). Located in New York, USA.</p>
+                    <p class="small mb-2"><strong>How it works:</strong> Traders buy/sell contracts for gold delivery at a future date. One contract = 100 troy ounces (~3.1 kg). Prices are in <strong>USD per troy ounce</strong>.</p>
+                    <p class="small mb-2"><strong>Trading hours:</strong> Sun–Fri, 6:00 PM – 5:00 PM ET (next day). Almost 23 hours/day.</p>
+                    <p class="small mb-2"><strong>Why it matters for India:</strong></p>
+                    <ul class="small mb-2 ps-3">
+                        <li>COMEX sets the <strong>global benchmark price</strong> for gold</li>
+                        <li>Indian gold prices follow COMEX + USD/INR exchange rate + import duty + GST</li>
+                        <li>When COMEX rises at night (US time), Indian gold opens higher next morning</li>
+                        <li>Formula: <code>Indian gold ≈ (COMEX price ÷ 31.1g) × USD/INR × (1 + import duty + GST)</code></li>
+                    </ul>
+                    <p class="small mb-0 text-muted"><strong>Example:</strong> If COMEX gold = $4,750/oz and USD/INR = 93.5, then: $4,750 ÷ 31.1 × 93.5 = ₹14,280/gram (before duties). IBJA adds ~₹900 premium = ₹15,180/gram.</p>
+                </div>
+            </div>
+            <!-- MCX -->
+            <div class="col-md-6">
+                <div class="p-3 rounded h-100" style="background:rgba(108,92,231,0.06);">
+                    <h6><span class="material-icons-outlined" style="font-size:18px;vertical-align:middle;color:var(--accent);">account_balance</span> MCX (Mumbai)</h6>
+                    <p class="small mb-2"><strong>What:</strong> Multi Commodity Exchange of India. India's largest commodity exchange, regulated by SEBI. Located in Mumbai.</p>
+                    <p class="small mb-2"><strong>How it works:</strong> Traders buy/sell gold futures contracts. MCX Gold = 1 kg, MCX Gold Mini = 100g, MCX Gold Petal = 1g. Prices are in <strong>₹ per 10 grams</strong>.</p>
+                    <p class="small mb-2"><strong>Trading hours:</strong> Mon–Fri, 9:00 AM – 11:30 PM IST (extended session till 11:55 PM).</p>
+                    <p class="small mb-2"><strong>Why it matters for you:</strong></p>
+                    <ul class="small mb-2 ps-3">
+                        <li>MCX price = COMEX price converted to INR + India premium</li>
+                        <li>Jewellers and bullion dealers use MCX to hedge their gold inventory</li>
+                        <li>Your gold chit company likely bases rates on IBJA, which tracks MCX</li>
+                        <li>MCX night session (after 5 PM) mirrors COMEX live — prices can change overnight</li>
+                    </ul>
+                    <p class="small mb-0 text-muted"><strong>GOLDBEES ETF:</strong> Nippon India Gold ETF on NSE. 1 unit ≈ price of ~0.01g gold. We use this as a real-time MCX proxy since MCX direct data requires paid access.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Chain -->
+        <div class="mt-3 p-3 rounded" style="background:var(--body-bg);">
+            <h6 class="mb-2"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">swap_horiz</span> How Gold Price Flows (COMEX → Your Jeweller)</h6>
+            <div class="d-flex flex-wrap align-items-center justify-content-center gap-2 small">
+                <span class="badge bg-warning text-dark p-2">COMEX (USD/oz)</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge bg-info text-dark p-2">× USD/INR rate</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge bg-primary p-2">÷ 31.1g (per gram)</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge bg-secondary p-2">+ Import Duty (6%)</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge bg-secondary p-2">+ GST (3%)</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge p-2" style="background:var(--accent);color:#fff;">MCX / IBJA Price</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge bg-success p-2">+ Making charges</span>
+                <span class="material-icons-outlined" style="font-size:16px;">arrow_forward</span>
+                <span class="badge bg-dark p-2">Your Jeweller's Price</span>
+            </div>
+        </div>
+
+        <!-- Key Terms -->
+        <div class="mt-3">
+            <h6 class="mb-2"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">menu_book</span> Key Terms</h6>
+            <div class="row small">
+                <div class="col-md-6">
+                    <dl class="mb-0">
+                        <dt>Troy Ounce</dt>
+                        <dd class="text-muted">31.1035 grams. COMEX uses this, not regular ounces (28.35g).</dd>
+                        <dt>Spot Price</dt>
+                        <dd class="text-muted">Current price for immediate delivery. Changes every second during trading.</dd>
+                        <dt>Futures Price</dt>
+                        <dd class="text-muted">Price agreed today for delivery in a future month. Usually slightly higher than spot.</dd>
+                        <dt>India Premium</dt>
+                        <dd class="text-muted">Extra cost of gold in India vs international price. Includes import duty, GST, demand-supply. Typically ₹200-1,500/gram.</dd>
+                    </dl>
+                </div>
+                <div class="col-md-6">
+                    <dl class="mb-0">
+                        <dt>IBJA Rate</dt>
+                        <dd class="text-muted">India Bullion and Jewellers Association sets daily gold rates at 10:30 AM and 3:00 PM. Most jewellers follow this.</dd>
+                        <dt>GOLDBEES / Gold ETF</dt>
+                        <dd class="text-muted">Exchange-traded fund backed by physical gold. Tracks gold price without making charges. 1 unit ≈ 0.01g gold.</dd>
+                        <dt>999 / 995 / 916 Purity</dt>
+                        <dd class="text-muted">999 = 24K (99.9% pure). 916 = 22K (jewellery grade). 750 = 18K.</dd>
+                        <dt>Making Charges</dt>
+                        <dd class="text-muted">Jeweller's fee for crafting. 8-25% for ornaments. 0% for gold coins/bars.</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- When to Buy Tips -->
+        <div class="mt-3 p-2 rounded" style="background:rgba(255,215,0,0.08);">
+            <h6 class="mb-2"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;color:#FFD700;">tips_and_updates</span> Smart Buying Tips</h6>
+            <div class="row small">
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <strong>Best time of day:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li>AM rates (10:30 AM) are usually cheaper than PM (3:00 PM)</li>
+                        <li>Sunday night COMEX opening can cause Monday AM gaps</li>
+                        <li>Avoid buying when US markets just opened (8:30 PM IST)</li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <strong>Best day of week:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li>Monday/Tuesday often see dips after weekend consolidation</li>
+                        <li>Friday prices can be volatile (US jobs data)</li>
+                        <li>Avoid Akshaya Tritiya / Dhanteras (premium spikes)</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <strong>Gold chit strategy:</strong>
+                    <ul class="mb-0 ps-3">
+                        <li>Pay early in the month if prices are rising</li>
+                        <li>Use our AM/PM pattern to pick the cheaper session</li>
+                        <li>If India premium is high (>₹1,000), consider Gold ETF instead</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ============ DISCLAIMER ============ -->
-<div class="alert alert-info small">
+<div class="alert alert-info small mb-0">
     <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">info</span>
     <strong>Disclaimer:</strong> {{ prediction.disclaimer }}
 </div>

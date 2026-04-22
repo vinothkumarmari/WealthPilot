@@ -4468,8 +4468,10 @@ def rate_monitor():
 def gold_prediction():
     from .ibja_rates import fetch_ibja_rates
     from .gold_predictor import predict_gold_price
+    from .mcx_comex import fetch_market_data
     ibja_data = fetch_ibja_rates()
-    prediction = predict_gold_price(ibja_data)
+    market_data = fetch_market_data()
+    prediction = predict_gold_price(ibja_data, market_data)
     return render_template('gold_prediction.html', prediction=prediction)
 
 

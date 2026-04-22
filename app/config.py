@@ -67,7 +67,7 @@ class Config:
     RAZORPAY_CURRENCY = 'INR'
     
     # App Version (for cache busting static assets)
-    APP_VERSION = os.environ.get('APP_VERSION', '9')
+    APP_VERSION = os.environ.get('APP_VERSION', '10')
 
     # OTP Settings
     OTP_EXPIRY_MINUTES = 3
