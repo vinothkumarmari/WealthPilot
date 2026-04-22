@@ -2849,6 +2849,9 @@ def price_tracker_compare(product_id):
         url_name = _extract_name_from_url(product.url)
         if url_name:
             search_name = url_name
+            # Also persist the better name
+            product.name = url_name
+            db.session.commit()
 
     comparison = compare_prices(search_name, exclude_platform=product.platform)
 
@@ -2860,12 +2863,13 @@ def price_tracker_compare(product_id):
         'color': PLATFORM_COLORS.get(product.platform, '#6c757d'),
         'icon': PLATFORM_ICONS.get(product.platform, 'link'),
         'results': [{
-            'name': product.name,
+            'name': search_name,
             'price': product.current_price,
             'url': product.url,
         }] if product.current_price else [],
         'search_url': product.url,
         'is_source': True,
+        'error': None,
     })
 
     for plat, data in comparison.items():
@@ -2876,6 +2880,7 @@ def price_tracker_compare(product_id):
             'results': data['results'][:2],
             'search_url': data['search_url'],
             'is_source': False,
+            'error': data.get('error'),
         })
 
     # Find lowest price across all platforms
@@ -2887,7 +2892,7 @@ def price_tracker_compare(product_id):
     lowest = min(all_prices) if all_prices else None
 
     return jsonify({
-        'product_name': product.name,
+        'product_name': search_name,
         'platforms': platforms,
         'lowest_price': lowest,
     })

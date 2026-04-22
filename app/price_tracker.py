@@ -627,10 +627,12 @@ def _parse_generic_search(soup, base_url):
 
 
 def compare_prices(product_name, exclude_platform=None):
-    """Search for a product across multiple e-commerce platforms.
+    """Generate search URLs across multiple e-commerce platforms.
+
+    Attempts server-side scraping but gracefully falls back to search links
+    when sites block requests (403/captcha — common from server IPs).
 
     Returns dict: {platform: {results: [{name, price, url}], search_url, error}}
-    Results sorted by lowest price.
     """
     query = _shorten_query(product_name)
     if not query:
@@ -651,22 +653,22 @@ def compare_prices(product_name, exclude_platform=None):
         entry = {'search_url': search_url, 'results': [], 'error': None}
 
         try:
-            resp = session.get(search_url, timeout=12, allow_redirects=True)
-            resp.raise_for_status()
-            soup = BeautifulSoup(resp.text, 'html.parser')
-
-            if platform == 'Amazon':
-                entry['results'] = _parse_amazon_search(soup)
-            elif platform == 'Flipkart':
-                entry['results'] = _parse_flipkart_search(soup)
+            resp = session.get(search_url, timeout=8, allow_redirects=True)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, 'html.parser')
+                if platform == 'Amazon':
+                    entry['results'] = _parse_amazon_search(soup)
+                elif platform == 'Flipkart':
+                    entry['results'] = _parse_flipkart_search(soup)
+                else:
+                    parsed = urlparse(search_url)
+                    base = f'{parsed.scheme}://{parsed.netloc}'
+                    entry['results'] = _parse_generic_search(soup, base)
             else:
-                parsed = urlparse(search_url)
-                base = f'{parsed.scheme}://{parsed.netloc}'
-                entry['results'] = _parse_generic_search(soup, base)
-
+                entry['error'] = 'blocked'
         except Exception as e:
-            entry['error'] = str(e)
-            log.info('Compare search failed for %s: %s', platform, e)
+            entry['error'] = 'timeout' if 'timeout' in str(e).lower() else 'blocked'
+            log.debug('Compare search failed for %s: %s', platform, e)
 
         comparison[platform] = entry
 

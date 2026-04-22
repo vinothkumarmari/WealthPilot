@@ -397,12 +397,20 @@ function showCompareModal(data, productName) {
     const old = document.getElementById('compareModal');
     if (old) old.remove();
 
+    // Use server-returned name (may be better than stored name)
+    const displayName = data.product_name || productName;
     let rows = '';
     let bestPrice = data.lowest_price;
+    let hasAnyResults = false;
 
     data.platforms.forEach(p => {
         const results = p.results || [];
+        if (results.length > 0) hasAnyResults = true;
+
         if (results.length === 0) {
+            const statusMsg = p.is_source
+                ? '<span class="text-muted small">Your tracked product</span>'
+                : '<span class="text-muted small"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">open_in_new</span> Click to search on this platform</span>';
             rows += `
                 <tr>
                     <td>
@@ -412,11 +420,11 @@ function showCompareModal(data, productName) {
                         </span>
                         ${p.is_source ? '<span class="badge bg-secondary ms-1" style="font-size:9px">YOUR PRODUCT</span>' : ''}
                     </td>
-                    <td class="text-muted small">No results found</td>
-                    <td></td>
+                    <td colspan="2">${statusMsg}</td>
                     <td>
-                        <a href="${p.search_url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
-                            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">search</span> Search
+                        <a href="${p.search_url}" target="_blank" rel="noopener" class="btn btn-sm ${p.is_source ? 'btn-outline-secondary' : 'btn-primary'}">
+                            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">${p.is_source ? 'open_in_new' : 'search'}</span>
+                            ${p.is_source ? 'View' : 'Search'}
                         </a>
                     </td>
                 </tr>`;
@@ -466,7 +474,7 @@ function showCompareModal(data, productName) {
                 <div class="modal-body p-0">
                     <div class="p-3 bg-light border-bottom">
                         <small class="text-muted">Comparing prices for:</small>
-                        <div class="fw-bold">${productName}</div>
+                        <div class="fw-bold">${displayName}</div>
                         ${bestPrice ? `<div class="text-success small mt-1"><span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">emoji_events</span> Best price found: <strong>₹${bestPrice.toLocaleString('en-IN')}</strong></div>` : ''}
                     </div>
                     <div class="table-responsive">
@@ -474,8 +482,8 @@ function showCompareModal(data, productName) {
                             <thead class="table-light">
                                 <tr>
                                     <th style="min-width:140px">Platform</th>
-                                    <th style="min-width:100px">Price</th>
-                                    <th>Product</th>
+                                    <th ${hasAnyResults ? 'style="min-width:100px"' : 'colspan="2"'}>Price</th>
+                                    ${hasAnyResults ? '<th>Product</th>' : ''}
                                     <th style="min-width:80px">Action</th>
                                 </tr>
                             </thead>
@@ -485,7 +493,7 @@ function showCompareModal(data, productName) {
                     <div class="p-3 bg-light border-top">
                         <small class="text-muted">
                             <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">info</span>
-                            Prices are fetched in real-time from search results. Click "Search" to see full results on each platform.
+                            Click "Search" to open each platform and compare prices directly. Most e-commerce sites require browser access for search results.
                         </small>
                     </div>
                 </div>
