@@ -508,13 +508,18 @@ def fetch_product_info(url):
 _SEARCH_URLS = {
     'Amazon': 'https://www.amazon.in/s?k={q}',
     'Flipkart': 'https://www.flipkart.com/search?q={q}',
+    'Myntra': 'https://www.myntra.com/{q}',
+    'Ajio': 'https://www.ajio.com/search/?text={q}',
+    'Meesho': 'https://www.meesho.com/search?q={q}',
     'Croma': 'https://www.croma.com/search/?q={q}',
     'Reliance Digital': 'https://www.reliancedigital.in/search?q={q}',
     'Vijay Sales': 'https://www.vijaysales.com/search/{q}',
     'JioMart': 'https://www.jiomart.com/search/{q}',
     'Snapdeal': 'https://www.snapdeal.com/search?keyword={q}',
+    'Nykaa': 'https://www.nykaa.com/search/result/?q={q}',
     'Tata CLiQ': 'https://www.tatacliq.com/search/?searchCategory=all&text={q}',
 }
+
 
 
 def _shorten_query(product_name):
