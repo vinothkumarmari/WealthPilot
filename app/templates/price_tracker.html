@@ -150,6 +150,11 @@
                         {% endif %}
                     </small>
                     <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-primary" title="{{ t('Compare Prices') }}"
+                                onclick="comparePrices({{ p.id }}, '{{ p.name | e }}')" id="compare-btn-{{ p.id }}">
+                            <span class="material-icons-outlined" style="font-size:16px">compare_arrows</span>
+                            <span class="d-none d-sm-inline small">{{ t('Compare') }}</span>
+                        </button>
                         <form method="POST" action="{{ url_for('main.price_tracker_refresh', product_id=p.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-outline-primary" title="{{ t('Refresh Price') }}">
@@ -364,5 +369,135 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
     {% endfor %}
 });
+
+// ── Price Comparison ──────────────────────────────
+function comparePrices(productId, productName) {
+    const btn = document.getElementById('compare-btn-' + productId);
+    const origHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Comparing...';
+
+    fetch('/price-tracker/compare/' + productId)
+        .then(r => r.json())
+        .then(data => {
+            showCompareModal(data, productName);
+        })
+        .catch(err => {
+            alert('Could not compare prices. Please try again.');
+            console.error(err);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = origHTML;
+        });
+}
+
+function showCompareModal(data, productName) {
+    // Remove existing modal
+    const old = document.getElementById('compareModal');
+    if (old) old.remove();
+
+    let rows = '';
+    let bestPrice = data.lowest_price;
+
+    data.platforms.forEach(p => {
+        const results = p.results || [];
+        if (results.length === 0) {
+            rows += `
+                <tr>
+                    <td>
+                        <span class="badge" style="background:${p.color};font-size:11px">
+                            <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">${p.icon}</span>
+                            ${p.platform}
+                        </span>
+                        ${p.is_source ? '<span class="badge bg-secondary ms-1" style="font-size:9px">YOUR PRODUCT</span>' : ''}
+                    </td>
+                    <td class="text-muted small">No results found</td>
+                    <td></td>
+                    <td>
+                        <a href="${p.search_url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">
+                            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">search</span> Search
+                        </a>
+                    </td>
+                </tr>`;
+        } else {
+            results.forEach((r, i) => {
+                const isBest = r.price && r.price === bestPrice;
+                const priceClass = isBest ? 'text-success fw-bold' : '';
+                const bestBadge = isBest ? '<span class="badge bg-success ms-1" style="font-size:9px">LOWEST</span>' : '';
+                rows += `
+                    <tr${isBest ? ' class="table-success"' : ''}>
+                        <td>
+                            ${i === 0 ? `<span class="badge" style="background:${p.color};font-size:11px">
+                                <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">${p.icon}</span>
+                                ${p.platform}
+                            </span>` : '<span class="text-muted small ms-3">also on ' + p.platform + '</span>'}
+                            ${p.is_source && i === 0 ? '<span class="badge bg-secondary ms-1" style="font-size:9px">YOUR PRODUCT</span>' : ''}
+                        </td>
+                        <td class="${priceClass}" style="font-size:1rem">
+                            ${r.price ? '₹' + r.price.toLocaleString('en-IN') : '--'}
+                            ${bestBadge}
+                        </td>
+                        <td class="small text-truncate" style="max-width:200px" title="${(r.name || '').replace(/"/g, '&quot;')}">${r.name || ''}</td>
+                        <td>
+                            ${r.url ? `<a href="${r.url}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">
+                                <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">shopping_cart</span> Buy
+                            </a>` : ''}
+                        </td>
+                    </tr>`;
+            });
+        }
+    });
+
+    const modal = document.createElement('div');
+    modal.id = 'compareModal';
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="material-icons-outlined" style="vertical-align:middle">compare_arrows</span>
+                        Price Comparison
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <small class="text-muted">Comparing prices for:</small>
+                        <div class="fw-bold">${productName}</div>
+                        ${bestPrice ? `<div class="text-success small mt-1"><span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">emoji_events</span> Best price found: <strong>₹${bestPrice.toLocaleString('en-IN')}</strong></div>` : ''}
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="min-width:140px">Platform</th>
+                                    <th style="min-width:100px">Price</th>
+                                    <th>Product</th>
+                                    <th style="min-width:80px">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 bg-light border-top">
+                        <small class="text-muted">
+                            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">info</span>
+                            Prices are fetched in real-time from search results. Click "Search" to see full results on each platform.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    modal.addEventListener('hidden.bs.modal', () => modal.remove());
+}
 </script>
 {% endblock %}

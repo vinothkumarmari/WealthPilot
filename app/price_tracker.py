@@ -467,3 +467,183 @@ def fetch_product_info(url):
             'success': False,
             'error': str(e),
         }
+
+
+# ── Cross-platform price comparison ───────────────────────────
+
+# Search URL templates for each platform
+_SEARCH_URLS = {
+    'Amazon': 'https://www.amazon.in/s?k={q}',
+    'Flipkart': 'https://www.flipkart.com/search?q={q}',
+    'Croma': 'https://www.croma.com/search/?q={q}',
+    'Reliance Digital': 'https://www.reliancedigital.in/search?q={q}',
+    'Vijay Sales': 'https://www.vijaysales.com/search/{q}',
+    'JioMart': 'https://www.jiomart.com/search/{q}',
+    'Snapdeal': 'https://www.snapdeal.com/search?keyword={q}',
+    'Tata CLiQ': 'https://www.tatacliq.com/search/?searchCategory=all&text={q}',
+}
+
+
+def _shorten_query(product_name):
+    """Shorten a long product name to key search terms (first 6-8 meaningful words)."""
+    if not product_name:
+        return ''
+    # Remove common noise words and special chars
+    name = re.sub(r'\([^)]*\)', '', product_name)  # Remove parenthesized text
+    name = re.sub(r'[,|/\-–—]', ' ', name)
+    # Remove filler words
+    stopwords = {'with', 'and', 'for', 'the', 'from', 'its', 'that', 'this', 'set', 'pack', 'combo'}
+    words = [w for w in name.split() if w.lower() not in stopwords and len(w) > 1]
+    # Take brand + model + key descriptors (first 7 words)
+    return ' '.join(words[:7]).strip()
+
+
+def _parse_amazon_search(soup):
+    """Extract first product result from Amazon search page."""
+    results = []
+    for item in soup.select('[data-component-type="s-search-result"]')[:3]:
+        name_el = item.select_one('h2 a span') or item.select_one('h2 span')
+        price_el = item.select_one('.a-price-whole') or item.select_one('.a-offscreen')
+        link_el = item.select_one('h2 a')
+
+        name = name_el.get_text(strip=True) if name_el else None
+        price = _clean_price(price_el.get_text()) if price_el else None
+        link = 'https://www.amazon.in' + link_el['href'] if link_el and link_el.get('href') else None
+
+        if name and price:
+            results.append({'name': name[:120], 'price': price, 'url': link})
+
+    return results
+
+
+def _parse_flipkart_search(soup):
+    """Extract first product result from Flipkart search page."""
+    results = []
+    # Flipkart uses dynamic class names, try multiple patterns
+    for item in soup.select('[data-id]')[:5]:
+        name_el = item.select_one('a[title]') or item.select_one('.KzDlHZ') or item.select_one('.IRpwTa') or item.select_one('.s1Q9rs')
+        price_el = item.select_one('.Nx9bqj') or item.select_one('._30jeq3')
+        link_el = item.select_one('a[href*="/p/"]') or item.select_one('a[href*="pid="]')
+
+        name = (name_el.get('title') or name_el.get_text(strip=True)) if name_el else None
+        price = _clean_price(price_el.get_text()) if price_el else None
+        link = None
+        if link_el and link_el.get('href'):
+            href = link_el['href']
+            link = ('https://www.flipkart.com' + href) if href.startswith('/') else href
+
+        if name and price:
+            results.append({'name': name[:120], 'price': price, 'url': link})
+
+    return results
+
+
+def _parse_generic_search(soup, base_url):
+    """Try to extract search results from generic e-commerce search pages."""
+    results = []
+
+    # Strategy 1: JSON-LD product data
+    for script in soup.find_all('script', type='application/ld+json'):
+        try:
+            data = json.loads(script.string or '')
+            items = data if isinstance(data, list) else [data]
+            for item in items:
+                if isinstance(item, dict) and item.get('@type') in ('Product', 'ItemList'):
+                    if item.get('@type') == 'ItemList':
+                        for elem in (item.get('itemListElement') or [])[:3]:
+                            ie = elem.get('item', elem) if isinstance(elem, dict) else {}
+                            n = ie.get('name')
+                            o = ie.get('offers', {})
+                            if isinstance(o, list):
+                                o = o[0] if o else {}
+                            p = _clean_price(str(o.get('price', '')))
+                            u = ie.get('url')
+                            if n and p:
+                                results.append({'name': n[:120], 'price': p, 'url': u})
+                    else:
+                        n = item.get('name')
+                        o = item.get('offers', {})
+                        if isinstance(o, list):
+                            o = o[0] if o else {}
+                        p = _clean_price(str(o.get('price', '')))
+                        u = item.get('url')
+                        if n and p:
+                            results.append({'name': n[:120], 'price': p, 'url': u})
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Strategy 2: Find product-like links with prices nearby
+    if not results:
+        for a_tag in soup.find_all('a', href=True)[:50]:
+            href = a_tag['href']
+            if '/product' in href or '/p/' in href or '/dp/' in href:
+                parent = a_tag.find_parent(['div', 'li', 'article'])
+                if parent:
+                    text = parent.get_text()
+                    price_match = re.search(r'₹\s*([\d,]+)', text)
+                    name_text = a_tag.get_text(strip=True)
+                    if price_match and name_text and len(name_text) > 10:
+                        p = _clean_price(price_match.group(1))
+                        if p and 10 < p < 10_000_000:
+                            full_url = href if href.startswith('http') else (base_url.rstrip('/') + '/' + href.lstrip('/'))
+                            results.append({'name': name_text[:120], 'price': p, 'url': full_url})
+                            if len(results) >= 3:
+                                break
+
+    return results[:3]
+
+
+def compare_prices(product_name, exclude_platform=None):
+    """Search for a product across multiple e-commerce platforms.
+
+    Returns dict: {platform: {results: [{name, price, url}], search_url, error}}
+    Results sorted by lowest price.
+    """
+    query = _shorten_query(product_name)
+    if not query:
+        return {}
+
+    from urllib.parse import quote_plus
+    encoded_q = quote_plus(query)
+
+    comparison = {}
+    session = requests.Session()
+    session.headers.update(_HEADERS_BROWSER)
+
+    for platform, url_tpl in _SEARCH_URLS.items():
+        if platform == exclude_platform:
+            continue
+
+        search_url = url_tpl.format(q=encoded_q)
+        entry = {'search_url': search_url, 'results': [], 'error': None}
+
+        try:
+            resp = session.get(search_url, timeout=12, allow_redirects=True)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, 'html.parser')
+
+            if platform == 'Amazon':
+                entry['results'] = _parse_amazon_search(soup)
+            elif platform == 'Flipkart':
+                entry['results'] = _parse_flipkart_search(soup)
+            else:
+                parsed = urlparse(search_url)
+                base = f'{parsed.scheme}://{parsed.netloc}'
+                entry['results'] = _parse_generic_search(soup, base)
+
+        except Exception as e:
+            entry['error'] = str(e)
+            log.info('Compare search failed for %s: %s', platform, e)
+
+        comparison[platform] = entry
+
+    # Sort platforms: those with results first, by lowest price
+    comparison = dict(sorted(
+        comparison.items(),
+        key=lambda x: (
+            0 if x[1]['results'] else 1,
+            min((r['price'] for r in x[1]['results']), default=float('inf'))
+        )
+    ))
+
+    return comparison

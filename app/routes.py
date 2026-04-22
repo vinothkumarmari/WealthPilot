@@ -2801,6 +2801,55 @@ def price_tracker_history(product_id):
     })
 
 
+@main.route('/price-tracker/compare/<int:product_id>')
+@login_required
+def price_tracker_compare(product_id):
+    from .price_tracker import compare_prices, PLATFORM_COLORS, PLATFORM_ICONS
+    product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
+
+    comparison = compare_prices(product.name, exclude_platform=product.platform)
+
+    # Build response
+    platforms = []
+    # Add the current product's platform first
+    platforms.append({
+        'platform': product.platform,
+        'color': PLATFORM_COLORS.get(product.platform, '#6c757d'),
+        'icon': PLATFORM_ICONS.get(product.platform, 'link'),
+        'results': [{
+            'name': product.name,
+            'price': product.current_price,
+            'url': product.url,
+        }] if product.current_price else [],
+        'search_url': product.url,
+        'is_source': True,
+    })
+
+    for plat, data in comparison.items():
+        platforms.append({
+            'platform': plat,
+            'color': PLATFORM_COLORS.get(plat, '#6c757d'),
+            'icon': PLATFORM_ICONS.get(plat, 'link'),
+            'results': data['results'][:2],
+            'search_url': data['search_url'],
+            'is_source': False,
+        })
+
+    # Find lowest price across all platforms
+    all_prices = []
+    for p in platforms:
+        for r in p.get('results', []):
+            if r.get('price'):
+                all_prices.append(r['price'])
+    lowest = min(all_prices) if all_prices else None
+
+    return jsonify({
+        'product_name': product.name,
+        'platforms': platforms,
+        'lowest_price': lowest,
+    })
+
+
 @main.route('/ai-playbooks')
 @login_required
 @subscription_required('pro_monthly')
