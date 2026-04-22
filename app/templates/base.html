@@ -66,17 +66,17 @@
             <a href="{{ url_for('main.policies') }}" class="nav-link {% if request.endpoint == 'main.policies' %}active{% endif %}">
                 <span class="material-icons-outlined">shield</span>
                 <span>{{ t('Policies') }}</span>
-                {% if not has_access('main.policies') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.policies') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.schemes') }}" class="nav-link {% if request.endpoint == 'main.schemes' %}active{% endif %}">
                 <span class="material-icons-outlined">workspace_premium</span>
                 <span>{{ t('Schemes & Bonds') }}</span>
-                {% if not has_access('main.schemes') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.schemes') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.sips') }}" class="nav-link {% if request.endpoint == 'main.sips' %}active{% endif %}">
                 <span class="material-icons-outlined">auto_graph</span>
                 <span>{{ t('SIP Tracker') }}</span>
-                {% if not has_access('main.sips') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.sips') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.gold_silver') }}" class="nav-link {% if request.endpoint == 'main.gold_silver' %}active{% endif %}">
                 <span class="material-icons-outlined">diamond</span>
@@ -89,12 +89,12 @@
             <a href="{{ url_for('main.gold_prediction') }}" class="nav-link {% if request.endpoint == 'main.gold_prediction' %}active{% endif %}">
                 <span class="material-icons-outlined">trending_up</span>
                 <span>{{ t('Gold Prediction') }}</span>
-                {% if not has_access('main.gold_prediction') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.gold_prediction') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.assets') }}" class="nav-link {% if request.endpoint == 'main.assets' %}active{% endif %}">
                 <span class="material-icons-outlined">real_estate_agent</span>
                 <span>{{ t('Assets') }}</span>
-                {% if not has_access('main.assets') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.assets') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.goals') }}" class="nav-link {% if request.endpoint == 'main.goals' %}active{% endif %}">
                 <span class="material-icons-outlined">flag</span>
@@ -105,12 +105,12 @@
             <a href="{{ url_for('main.tax_planning') }}" class="nav-link {% if request.endpoint == 'main.tax_planning' %}active{% endif %}">
                 <span class="material-icons-outlined">receipt</span>
                 <span>{{ t('Tax Planning') }}</span>
-                {% if not has_access('main.tax_planning') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.tax_planning') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.itr_guide') }}" class="nav-link {% if request.endpoint == 'main.itr_guide' %}active{% endif %}">
                 <span class="material-icons-outlined">request_quote</span>
                 <span>{{ t('ITR Guide') }}</span>
-                {% if not has_access('main.itr_guide') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.itr_guide') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.calculators') }}" class="nav-link {% if request.endpoint == 'main.calculators' %}active{% endif %}">
                 <span class="material-icons-outlined">calculate</span>
@@ -119,37 +119,37 @@
             <a href="{{ url_for('main.suggestions') }}" class="nav-link {% if request.endpoint == 'main.suggestions' %}active{% endif %}">
                 <span class="material-icons-outlined">psychology</span>
                 <span>{{ t('AI Suggestions') }}</span>
-                {% if not has_access('main.suggestions') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.suggestions') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.ai_playbooks') }}" class="nav-link {% if request.endpoint == 'main.ai_playbooks' %}active{% endif %}">
                 <span class="material-icons-outlined">menu_book</span>
                 <span>{{ t('AI Playbooks') }}</span>
-                {% if not has_access('main.ai_playbooks') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.ai_playbooks') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.future_planner') }}" class="nav-link {% if request.endpoint == 'main.future_planner' %}active{% endif %}">
                 <span class="material-icons-outlined">rocket_launch</span>
                 <span>{{ t('Future Planner') }} {{ current_user.future_target_year or 2040 }}+</span>
-                {% if not has_access('main.future_planner') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.future_planner') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.business_ideas') }}" class="nav-link {% if request.endpoint == 'main.business_ideas' %}active{% endif %}">
                 <span class="material-icons-outlined">lightbulb</span>
                 <span>{{ t('Business Ideas') }}</span>
-                {% if not has_access('main.business_ideas') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.business_ideas') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.reports') }}" class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}">
                 <span class="material-icons-outlined">assessment</span>
                 <span>{{ t('Reports') }}</span>
-                {% if not has_access('main.reports') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.reports') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.rate_monitor') }}" class="nav-link {% if request.endpoint == 'main.rate_monitor' %}active{% endif %}">
                 <span class="material-icons-outlined">monitoring</span>
                 <span>{{ t('Rate Monitor') }}</span>
-                {% if not has_access('main.rate_monitor') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.rate_monitor') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.govt_schemes') }}" class="nav-link {% if request.endpoint == 'main.govt_schemes' %}active{% endif %}">
                 <span class="material-icons-outlined">account_balance</span>
                 <span>{{ t('Govt Schemes') }}</span>
-                {% if not has_access('main.govt_schemes') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.govt_schemes') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.indian_budget') }}" class="nav-link {% if request.endpoint == 'main.indian_budget' %}active{% endif %}">
                 <span class="material-icons-outlined">receipt_long</span>
@@ -160,47 +160,47 @@
             <a href="{{ url_for('main.family_members') }}" class="nav-link {% if request.endpoint == 'main.family_members' %}active{% endif %}">
                 <span class="material-icons-outlined">family_restroom</span>
                 <span>{{ t('Family Members') }}</span>
-                {% if not has_access('main.family_members') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.family_members') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.family_dashboard') }}" class="nav-link {% if request.endpoint == 'main.family_dashboard' %}active{% endif %}">
                 <span class="material-icons-outlined">dashboard_customize</span>
                 <span>{{ t('Family Dashboard') }}</span>
-                {% if not has_access('main.family_dashboard') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.family_dashboard') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.joint_goals') }}" class="nav-link {% if request.endpoint == 'main.joint_goals' %}active{% endif %}">
                 <span class="material-icons-outlined">flag_circle</span>
                 <span>{{ t('Joint Goals') }}</span>
-                {% if not has_access('main.joint_goals') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.joint_goals') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.shared_expenses') }}" class="nav-link {% if request.endpoint == 'main.shared_expenses' %}active{% endif %}">
                 <span class="material-icons-outlined">group_work</span>
                 <span>{{ t('Shared Expenses') }}</span>
-                {% if not has_access('main.shared_expenses') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.shared_expenses') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.member_investments') }}" class="nav-link {% if request.endpoint == 'main.member_investments' %}active{% endif %}">
                 <span class="material-icons-outlined">diversity_3</span>
                 <span>{{ t('Member Investments') }}</span>
-                {% if not has_access('main.member_investments') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.member_investments') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.retirement_planner') }}" class="nav-link {% if request.endpoint == 'main.retirement_planner' %}active{% endif %}">
                 <span class="material-icons-outlined">elderly</span>
                 <span>{{ t('Retirement Planner') }}</span>
-                {% if not has_access('main.retirement_planner') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.retirement_planner') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.insurance_analyzer') }}" class="nav-link {% if request.endpoint == 'main.insurance_analyzer' %}active{% endif %}">
                 <span class="material-icons-outlined">health_and_safety</span>
                 <span>{{ t('Insurance Analyzer') }}</span>
-                {% if not has_access('main.insurance_analyzer') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.insurance_analyzer') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.custom_reports') }}" class="nav-link {% if request.endpoint == 'main.custom_reports' %}active{% endif %}">
                 <span class="material-icons-outlined">summarize</span>
                 <span>{{ t('Custom Reports') }}</span>
-                {% if not has_access('main.custom_reports') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.custom_reports') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.priority_support') }}" class="nav-link {% if request.endpoint == 'main.priority_support' %}active{% endif %}">
                 <span class="material-icons-outlined">support_agent</span>
                 <span>{{ t('Priority Support') }}</span>
-                {% if not has_access('main.priority_support') %}<span class="material-icons-outlined text-warning" style="font-size:14px;margin-left:auto">lock</span>{% endif %}
+                {% if not has_access('main.priority_support') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
 
         </nav>

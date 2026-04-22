@@ -198,6 +198,31 @@ body {
     flex-shrink: 0;
 }
 
+/* Lock badge for Pro/Family features */
+.nav-link { position: relative; }
+.sidebar-lock {
+    font-size: 10px !important;
+    width: auto !important;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.sidebar.expanded .sidebar-lock { opacity: 1; }
+/* Collapsed: show as a tiny dot on top-right of the icon */
+.sidebar:not(.expanded) .sidebar-lock {
+    position: absolute;
+    top: 6px;
+    left: 34px;
+    margin: 0;
+    opacity: 1;
+    font-size: 0 !important;
+    width: 7px !important;
+    height: 7px;
+    background: #f39c12;
+    border-radius: 50%;
+    display: block;
+}
+
 .sidebar-footer .nav-link .material-icons-outlined {
     flex-shrink: 0;
 }
