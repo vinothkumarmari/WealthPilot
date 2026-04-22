@@ -546,88 +546,201 @@ _DOMAIN_TO_PLATFORM = {
 }
 
 
-def _google_shopping_search(query):
-    """Search DuckDuckGo for product prices across all e-commerce platforms.
+def _search_duckduckgo(query):
+    """Search DuckDuckGo HTML for product prices across e-commerce platforms.
     
-    DuckDuckGo HTML search works reliably from server IPs (unlike Google Shopping).
-    Returns list of: [{name, price, url, platform}]
+    Retries once on rate-limit (202). Returns list of: [{name, price, url, platform}]
     """
+    import time as _time
     from urllib.parse import quote_plus, unquote
     search_url = f'https://html.duckduckgo.com/html/?q={quote_plus(query)}+price+buy+India'
     
     results = []
-    try:
-        session = requests.Session()
-        session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        })
-        resp = session.get(search_url, timeout=10)
-        if resp.status_code != 200:
-            return results
-        
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        
-        for item in soup.select('.result')[:12]:
-            title_el = item.select_one('.result__a')
-            snippet_el = item.select_one('.result__snippet')
-            if not title_el:
+    for attempt in range(2):
+        try:
+            resp = requests.get(search_url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            }, timeout=8)
+            if resp.status_code == 202 and attempt == 0:
+                _time.sleep(1)  # Rate limited, brief pause and retry
                 continue
+            if resp.status_code != 200:
+                log.debug('DDG returned %s on attempt %d', resp.status_code, attempt)
+                if attempt == 0:
+                    continue
+                return results
             
-            title = title_el.get_text(strip=True)
-            snippet = snippet_el.get_text(strip=True) if snippet_el else ''
+            soup = BeautifulSoup(resp.text, 'html.parser')
             
-            # Extract actual URL from DDG redirect
-            href = title_el.get('href', '')
-            um = re.search(r'uddg=([^&]+)', href)
-            actual_url = unquote(um.group(1)) if um else href
-            
-            # Skip ads and non-product pages
-            if not actual_url or 'duckduckgo.com/y.js' in actual_url:
-                continue
-            
-            # Detect platform from URL
-            platform = 'Other'
-            url_lower = actual_url.lower()
-            for domain_frag, plat_name in _DOMAIN_TO_PLATFORM.items():
-                if domain_frag in url_lower:
-                    platform = plat_name
-                    break
-            
-            # Skip non-commerce sites
-            if platform == 'Other':
-                continue
-            
-            # Extract price from snippet — multiple patterns
-            price = None
-            combined = title + ' ' + snippet
-            # Match: ₹17,990 or Rs. 23990 or Rs 15,989 or Price₹15,990.00
-            for pm in re.finditer(r'(?:₹|Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)', combined):
-                p = _clean_price(pm.group(1))
-                if p and 100 < p < 10_000_000:
-                    price = p
-                    break
-            
-            if title and price:
+            for item in soup.select('.result')[:15]:
+                title_el = item.select_one('.result__a')
+                snippet_el = item.select_one('.result__snippet')
+                if not title_el:
+                    continue
+                
+                title = title_el.get_text(strip=True)
+                snippet = snippet_el.get_text(strip=True) if snippet_el else ''
+                
+                href = title_el.get('href', '')
+                um = re.search(r'uddg=([^&]+)', href)
+                actual_url = unquote(um.group(1)) if um else href
+                
+                if not actual_url or 'duckduckgo.com' in actual_url:
+                    continue
+                
+                platform = 'Other'
+                url_lower = actual_url.lower()
+                for domain_frag, plat_name in _DOMAIN_TO_PLATFORM.items():
+                    if domain_frag in url_lower:
+                        platform = plat_name
+                        break
+                if platform == 'Other':
+                    continue
+                
+                price = None
+                combined = title + ' ' + snippet
+                for pm in re.finditer(r'(?:₹|Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)', combined):
+                    p = _clean_price(pm.group(1))
+                    if p and 100 < p < 10_000_000:
+                        price = p
+                        break
+                
                 results.append({
                     'name': title[:120],
                     'price': price,
                     'url': actual_url,
                     'platform': platform,
                 })
-            elif title and platform != 'Other':
-                # No price in snippet but valid e-commerce URL — mark for page fetch
+            
+            break  # Success, no need to retry
+            
+        except Exception as e:
+            log.debug('DDG search failed (attempt %d): %s', attempt, e)
+    
+    return results
+
+
+def _search_bing(query):
+    """Search Bing for product URLs. Bing may be more lenient with cloud IPs.
+    
+    Returns list of: [{name, price, url, platform}]
+    """
+    from urllib.parse import quote_plus
+    search_url = f'https://www.bing.com/search?q={quote_plus(query)}+price+buy+India&count=20'
+    
+    results = []
+    try:
+        resp = requests.get(search_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-IN,en;q=0.9',
+        }, timeout=6)
+        if resp.status_code != 200:
+            return results
+        
+        # Parse any e-commerce URLs from the page
+        for m in re.finditer(r'href="(https?://(?:www\.)?(?:amazon\.in|flipkart\.com|reliancedigital\.in|vijaysales\.com|croma\.com|jiomart\.com|snapdeal\.com|myntra\.com|ajio\.com|meesho\.com|nykaa\.com|tatacliq\.com)[^"]*)"', resp.text):
+            url = m.group(1)
+            platform = 'Other'
+            for domain_frag, plat_name in _DOMAIN_TO_PLATFORM.items():
+                if domain_frag in url.lower():
+                    platform = plat_name
+                    break
+            if platform != 'Other' and not any(r['url'] == url for r in results):
+                # Extract surrounding text for price
+                idx = m.start()
+                context = resp.text[max(0, idx-200):idx+200]
+                price = None
+                for pm in re.finditer(r'(?:₹|Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)', context):
+                    p = _clean_price(pm.group(1))
+                    if p and 100 < p < 10_000_000:
+                        price = p
+                        break
                 results.append({
-                    'name': title[:120],
-                    'price': None,
-                    'url': actual_url,
+                    'name': platform,
+                    'price': price,
+                    'url': url,
+                    'platform': platform,
+                })
+    except Exception as e:
+        log.debug('Bing search failed: %s', e)
+    
+    return results
+
+
+def _search_google_web(query):
+    """Search Google Web for product URLs.
+    
+    Returns list of: [{name, price, url, platform}]
+    """
+    from urllib.parse import quote_plus, unquote
+    search_url = f'https://www.google.com/search?q={quote_plus(query)}+price+buy+India&num=15&hl=en'
+    
+    results = []
+    try:
+        resp = requests.get(search_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        }, timeout=6)
+        if resp.status_code != 200:
+            return results
+        
+        # Google wraps URLs as /url?q=<actual>&... or direct href
+        ecom_pattern = r'(?:amazon\.in|flipkart\.com|reliancedigital\.in|vijaysales\.com|croma\.com|jiomart\.com|snapdeal\.com|myntra\.com|ajio\.com|meesho\.com|nykaa\.com|tatacliq\.com)'
+        
+        for m in re.finditer(r'/url\?q=(https?://(?:www\.)?' + ecom_pattern + r'[^&"]*)', resp.text):
+            url = unquote(m.group(1))
+            platform = 'Other'
+            for domain_frag, plat_name in _DOMAIN_TO_PLATFORM.items():
+                if domain_frag in url.lower():
+                    platform = plat_name
+                    break
+            if platform != 'Other' and not any(r['url'] == url for r in results):
+                idx = m.start()
+                context = resp.text[max(0, idx-200):idx+200]
+                price = None
+                for pm in re.finditer(r'(?:₹|Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)', context):
+                    p = _clean_price(pm.group(1))
+                    if p and 100 < p < 10_000_000:
+                        price = p
+                        break
+                results.append({
+                    'name': platform,
+                    'price': price,
+                    'url': url,
                     'platform': platform,
                 })
         
     except Exception as e:
-        log.debug('DuckDuckGo search failed: %s', e)
+        log.debug('Google web search failed: %s', e)
     
-    return results[:15]
+    return results
+
+
+def _multi_search(query):
+    """Try multiple search engines to find product URLs and prices.
+    
+    Returns list of: [{name, price, url, platform}]
+    Uses first engine that returns results.
+    """
+    # Strategy 1: DuckDuckGo (best for price extraction)
+    results = _search_duckduckgo(query)
+    if results:
+        log.debug('DDG returned %d results', len(results))
+        return results
+    
+    # Strategy 2: Bing (more lenient with cloud IPs)
+    results = _search_bing(query)
+    if results:
+        log.debug('Bing returned %d results', len(results))
+        return results
+    
+    # Strategy 3: Google Web (often blocked but worth trying)
+    results = _search_google_web(query)
+    if results:
+        log.debug('Google returned %d results', len(results))
+        return results
+    
+    log.warning('All search engines returned 0 results for: %s', query)
+    return []
 
 
 def _shorten_query(product_name):
@@ -762,13 +875,13 @@ def compare_prices(product_name, exclude_platform=None):
     from urllib.parse import quote_plus
     encoded_q = quote_plus(query)
 
-    # Step 1: DuckDuckGo search (single HTTP request)
-    ddg_results = _google_shopping_search(query)
+    # Step 1: Multi-engine search (DDG → Bing → Google)
+    search_results = _multi_search(query)
     
-    # Group DDG results by platform
+    # Group search results by platform
     ddg_by_platform = {}
     ddg_urls_by_platform = {}
-    for r in ddg_results:
+    for r in search_results:
         plat = r['platform']
         if plat not in ddg_urls_by_platform:
             ddg_urls_by_platform[plat] = r['url']
