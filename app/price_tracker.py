@@ -744,12 +744,17 @@ def compare_prices(product_name, exclude_platform=None):
 
     Strategy:
     1. DuckDuckGo search (finds product links + prices from snippets)
-    2. Fetch individual product pages found by DDG (product pages are less blocked than search pages)
-    3. Direct search on each platform (often blocked by 403)
-    4. Generate search URLs for user to click manually
+    2. Concurrent fetch of product pages found by DDG
+    3. Generate search URLs for user to click manually
 
+    Time-budgeted to complete within 25s for Render compatibility.
     Returns dict: {platform: {results: [{name, price, url}], search_url, error}}
     """
+    import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    start_time = time.time()
+    TIME_BUDGET = 25  # Render free tier has 30s limit
+
     query = _shorten_query(product_name)
     if not query:
         return {}
@@ -757,12 +762,12 @@ def compare_prices(product_name, exclude_platform=None):
     from urllib.parse import quote_plus
     encoded_q = quote_plus(query)
 
-    # Step 1: DuckDuckGo search for product links and prices
+    # Step 1: DuckDuckGo search (single HTTP request)
     ddg_results = _google_shopping_search(query)
     
     # Group DDG results by platform
     ddg_by_platform = {}
-    ddg_urls_by_platform = {}  # URLs found by DDG (product pages, not search pages)
+    ddg_urls_by_platform = {}
     for r in ddg_results:
         plat = r['platform']
         if plat not in ddg_urls_by_platform:
@@ -776,16 +781,15 @@ def compare_prices(product_name, exclude_platform=None):
                 'url': r['url'],
             })
     
-    # Step 2: For platforms where DDG found URLs but no prices,
-    # try fetching the actual product page
-    session = requests.Session()
-    session.headers.update(_HEADERS_BROWSER)
+    # Step 2: Concurrently fetch product pages for platforms without prices
+    urls_to_fetch = {plat: url for plat, url in ddg_urls_by_platform.items()
+                     if plat not in ddg_by_platform}
     
-    for plat, url in ddg_urls_by_platform.items():
-        if plat in ddg_by_platform:
-            continue  # Already have price from snippet
+    def _fetch_one(plat, url):
         try:
-            resp = session.get(url, timeout=8, allow_redirects=True)
+            s = requests.Session()
+            s.headers.update(_HEADERS_BROWSER)
+            resp = s.get(url, timeout=6, allow_redirects=True)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, 'html.parser')
                 if plat == 'Amazon':
@@ -795,50 +799,35 @@ def compare_prices(product_name, exclude_platform=None):
                 else:
                     name, price, mrp, disc, img = _parse_generic(soup, resp.text)
                 if price and price > 500:
-                    ddg_by_platform[plat] = [{
-                        'name': (name or product_name)[:120],
-                        'price': price,
-                        'url': url,
-                    }]
+                    return plat, [{'name': (name or product_name)[:120], 'price': price, 'url': url}]
         except Exception as e:
-            log.debug('Product page fetch failed for %s: %s', plat, e)
+            log.debug('Page fetch failed %s: %s', plat, e)
+        return plat, None
+    
+    if urls_to_fetch and (time.time() - start_time) < TIME_BUDGET - 8:
+        remaining = max(2, int(TIME_BUDGET - 8 - (time.time() - start_time)))
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(_fetch_one, p, u): p
+                       for p, u in list(urls_to_fetch.items())[:6]}
+            for future in as_completed(futures, timeout=remaining):
+                try:
+                    plat, result = future.result(timeout=1)
+                    if result:
+                        ddg_by_platform[plat] = result
+                except Exception:
+                    pass
 
+    # Step 3: Build comparison dict
     comparison = {}
-
     for platform, url_tpl in _SEARCH_URLS.items():
         if platform == exclude_platform:
             continue
-
         search_url = url_tpl.format(q=encoded_q)
         entry = {'search_url': search_url, 'results': [], 'error': None}
-
-        # Use DDG results for this platform if available
         if platform in ddg_by_platform:
             entry['results'] = ddg_by_platform[platform][:3]
-            # Use the actual product URL as the search_url if DDG found one
             if platform in ddg_urls_by_platform:
                 entry['search_url'] = ddg_urls_by_platform[platform]
-        
-        # If no DDG results, try direct search
-        if not entry['results']:
-            try:
-                resp = session.get(search_url, timeout=8, allow_redirects=True)
-                if resp.status_code == 200:
-                    soup = BeautifulSoup(resp.text, 'html.parser')
-                    if platform == 'Amazon':
-                        entry['results'] = _parse_amazon_search(soup)
-                    elif platform == 'Flipkart':
-                        entry['results'] = _parse_flipkart_search(soup)
-                    else:
-                        parsed = urlparse(search_url)
-                        base = f'{parsed.scheme}://{parsed.netloc}'
-                        entry['results'] = _parse_generic_search(soup, base)
-                else:
-                    entry['error'] = 'blocked'
-            except Exception as e:
-                entry['error'] = 'timeout' if 'timeout' in str(e).lower() else 'blocked'
-                log.debug('Compare search failed for %s: %s', platform, e)
-
         comparison[platform] = entry
 
     # Sort platforms: those with results first, by lowest price

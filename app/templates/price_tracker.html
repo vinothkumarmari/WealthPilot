@@ -140,8 +140,10 @@
                 </div>
                 {% endif %}
 
-                <!-- Price History Chart -->
-                <div style="height:80px;position:relative;margin-bottom:8px">
+                <!-- Price History Chart (click to expand) -->
+                <div style="height:80px;position:relative;margin-bottom:8px;cursor:pointer"
+                     onclick="showHistoryModal({{ p.id }}, '{{ p.name[:60] | e }}', '{{ platform_color(p.platform) }}')"
+                     title="Click to view full price history">
                     <canvas id="chart-{{ p.id }}"></canvas>
                 </div>
 
@@ -154,6 +156,10 @@
                         {% endif %}
                     </small>
                     <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-info" title="{{ t('Price History') }}"
+                                onclick="showHistoryModal({{ p.id }}, '{{ p.name[:60] | e }}', '{{ platform_color(p.platform) }}')">
+                            <span class="material-icons-outlined" style="font-size:16px">show_chart</span>
+                        </button>
                         <button type="button" class="btn btn-sm btn-primary" title="{{ t('Compare Prices') }}"
                                 onclick="comparePrices({{ p.id }}, '{{ p.name[:60] | e }}')" id="compare-btn-{{ p.id }}">
                             <span class="material-icons-outlined" style="font-size:16px">compare_arrows</span>
@@ -379,6 +385,192 @@ document.addEventListener('DOMContentLoaded', function() {
     })();
     {% endfor %}
 });
+
+// ── Price History Modal ──────────────────────────────
+let historyChart = null;
+
+function showHistoryModal(productId, productName, color) {
+    // Remove existing modal
+    const old = document.getElementById('historyModal');
+    if (old) { if (historyChart) { historyChart.destroy(); historyChart = null; } old.remove(); }
+
+    const modal = document.createElement('div');
+    modal.id = 'historyModal';
+    modal.className = 'modal fade';
+    modal.tabIndex = -1;
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="material-icons-outlined" style="vertical-align:middle">show_chart</span>
+                        Price History
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="fw-bold mb-1">${productName}</div>
+                    <div id="history-stats" class="d-flex gap-3 mb-3 small"></div>
+                    <div class="btn-group btn-group-sm mb-3 w-100 d-flex" id="period-btns">
+                        <button class="btn btn-outline-primary" data-period="1d">1 Day</button>
+                        <button class="btn btn-outline-primary" data-period="7d">7 Days</button>
+                        <button class="btn btn-outline-primary" data-period="1m">1 Month</button>
+                        <button class="btn btn-outline-primary" data-period="3m">3 Months</button>
+                        <button class="btn btn-outline-primary" data-period="6m">6 Months</button>
+                        <button class="btn btn-outline-primary" data-period="1y">1 Year</button>
+                        <button class="btn btn-primary active" data-period="all">All Time</button>
+                    </div>
+                    <div id="history-loading" class="text-center py-4">
+                        <span class="spinner-border spinner-border-sm"></span> Loading...
+                    </div>
+                    <div style="height:300px;position:relative">
+                        <canvas id="history-chart-full"></canvas>
+                    </div>
+                    <div id="history-info" class="text-muted small mt-2 text-center"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    modal.addEventListener('hidden.bs.modal', () => {
+        if (historyChart) { historyChart.destroy(); historyChart = null; }
+        modal.remove();
+    });
+
+    // Period button click handlers
+    modal.querySelectorAll('#period-btns button').forEach(btn => {
+        btn.addEventListener('click', function() {
+            modal.querySelectorAll('#period-btns button').forEach(b => {
+                b.classList.remove('btn-primary', 'active');
+                b.classList.add('btn-outline-primary');
+            });
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-primary', 'active');
+            loadHistoryData(productId, this.dataset.period, color);
+        });
+    });
+
+    // Load initial data (all time)
+    loadHistoryData(productId, 'all', color);
+}
+
+function loadHistoryData(productId, period, color) {
+    const loading = document.getElementById('history-loading');
+    const stats = document.getElementById('history-stats');
+    const info = document.getElementById('history-info');
+    if (loading) loading.style.display = 'block';
+
+    fetch('/price-tracker/history/' + productId + '?period=' + period)
+        .then(r => r.json())
+        .then(data => {
+            if (loading) loading.style.display = 'none';
+
+            // Show stats
+            if (stats) {
+                const minP = data.min_price || '--';
+                const maxP = data.max_price || '--';
+                const curP = data.current_price || '--';
+                const since = data.tracked_since || '';
+                stats.innerHTML = `
+                    <span class="badge bg-success"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_downward</span> Low: ₹${typeof minP === 'number' ? minP.toLocaleString('en-IN') : minP}</span>
+                    <span class="badge bg-primary">Current: ₹${typeof curP === 'number' ? curP.toLocaleString('en-IN') : curP}</span>
+                    <span class="badge bg-danger"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_upward</span> High: ₹${typeof maxP === 'number' ? maxP.toLocaleString('en-IN') : maxP}</span>
+                    ${since ? '<span class="text-muted">Tracked since: ' + since + '</span>' : ''}
+                `;
+            }
+
+            // Render chart
+            if (historyChart) { historyChart.destroy(); historyChart = null; }
+            const ctx = document.getElementById('history-chart-full');
+            if (!ctx) return;
+
+            const hist = data.history || [];
+            if (hist.length === 0) {
+                if (info) info.textContent = 'No price data for this period. Try "All Time" or refresh the product price.';
+                return;
+            }
+            if (info) info.textContent = hist.length + ' data point' + (hist.length !== 1 ? 's' : '') + ' in this period';
+
+            const labels = hist.map(h => h.date);
+            const prices = hist.map(h => h.price);
+            const fullDates = hist.map(h => h.full_date || h.date);
+            const minP = Math.min(...prices);
+            const maxP = Math.max(...prices);
+
+            // Duplicate single points for visibility
+            const chartLabels = labels.length === 1 ? [labels[0], 'Now'] : labels;
+            const chartPrices = prices.length === 1 ? [prices[0], prices[0]] : prices;
+
+            historyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Price (₹)',
+                        data: chartPrices,
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: chartPrices.length <= 10 ? 5 : (chartPrices.length > 50 ? 0 : 3),
+                        pointBackgroundColor: color,
+                        pointHoverRadius: 7,
+                        borderWidth: 2.5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: function(items) {
+                                    const idx = items[0].dataIndex;
+                                    return fullDates[idx] || chartLabels[idx];
+                                },
+                                label: function(ctx) {
+                                    return '₹' + ctx.parsed.y.toLocaleString('en-IN');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            ticks: {
+                                maxTicksLimit: 8,
+                                font: { size: 10 },
+                                maxRotation: 45,
+                            },
+                            grid: { display: false }
+                        },
+                        y: {
+                            display: true,
+                            suggestedMin: minP * 0.95,
+                            suggestedMax: maxP * 1.05,
+                            ticks: {
+                                callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + 'K' : v),
+                                font: { size: 10 },
+                                maxTicksLimit: 6
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(err => {
+            if (loading) loading.style.display = 'none';
+            if (info) info.textContent = 'Failed to load price history.';
+            console.error(err);
+        });
+}
 
 // ── Price Comparison ──────────────────────────────
 function comparePrices(productId, productName) {

@@ -2823,16 +2823,44 @@ def price_tracker_delete(product_id):
 @login_required
 def price_tracker_history(product_id):
     product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
-    snapshots = PriceHistory.query.filter_by(product_id=product.id)\
-        .order_by(PriceHistory.recorded_at).all()
-    data = [{'date': s.recorded_at.strftime('%d %b %Y %H:%M'), 'price': s.price} for s in snapshots]
+
+    # Period filtering: 1d, 7d, 1m, 3m, 6m, 1y, all
+    period = request.args.get('period', 'all')
+    query = PriceHistory.query.filter_by(product_id=product.id)
+    now = datetime.utcnow()
+    period_map = {
+        '1d': timedelta(days=1),
+        '7d': timedelta(days=7),
+        '1m': timedelta(days=30),
+        '3m': timedelta(days=90),
+        '6m': timedelta(days=180),
+        '1y': timedelta(days=365),
+    }
+    if period in period_map:
+        cutoff = now - period_map[period]
+        query = query.filter(PriceHistory.recorded_at >= cutoff)
+
+    snapshots = query.order_by(PriceHistory.recorded_at).all()
+
+    # Format dates based on period
+    if period in ('1d',):
+        fmt = '%I:%M %p'
+    elif period in ('7d', '1m'):
+        fmt = '%d %b %H:%M'
+    else:
+        fmt = '%d %b %Y'
+    data = [{'date': s.recorded_at.strftime(fmt), 'price': s.price,
+             'full_date': s.recorded_at.strftime('%d %b %Y %I:%M %p')} for s in snapshots]
+
     return jsonify({
         'name': product.name,
         'platform': product.platform,
         'min_price': product.min_price,
         'max_price': product.max_price,
         'current_price': product.current_price,
+        'tracked_since': product.created_at.strftime('%d %b %Y') if product.created_at else None,
         'history': data,
+        'period': period,
     })
 
 
