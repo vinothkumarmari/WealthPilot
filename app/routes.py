@@ -2852,11 +2852,16 @@ def price_tracker_history(product_id):
     data = [{'date': s.recorded_at.strftime(fmt), 'price': s.price,
              'full_date': s.recorded_at.strftime('%d %b %Y %I:%M %p')} for s in snapshots]
 
+    # Calculate average from history
+    prices = [s.price for s in snapshots if s.price]
+    avg_price = round(sum(prices) / len(prices), 2) if prices else None
+
     return jsonify({
         'name': product.name,
         'platform': product.platform,
         'min_price': product.min_price,
         'max_price': product.max_price,
+        'avg_price': avg_price,
         'current_price': product.current_price,
         'tracked_since': product.created_at.strftime('%d %b %Y') if product.created_at else None,
         'history': data,
