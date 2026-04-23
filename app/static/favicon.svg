@@ -1,13 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#667eea"/>
-      <stop offset="100%" style="stop-color:#764ba2"/>
+      <stop offset="0%" style="stop-color:#4A00E0"/>
+      <stop offset="50%" style="stop-color:#6C5CE7"/>
+      <stop offset="100%" style="stop-color:#8E2DE2"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#e0d4ff;stop-opacity:0.85"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="100%" style="stop-color:#FFA500"/>
     </linearGradient>
   </defs>
+  <!-- Background rounded square -->
   <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <text x="32" y="28" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="20" fill="#fff">₹</text>
-  <rect x="16" y="36" width="32" height="3" rx="1.5" fill="rgba(255,255,255,0.6)"/>
-  <rect x="16" y="42" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.4)"/>
-  <rect x="16" y="48" width="28" height="3" rx="1.5" fill="rgba(255,255,255,0.3)"/>
+  <!-- Subtle compass ring (control & direction) -->
+  <circle cx="32" cy="32" r="26" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="23" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.8"/>
+  <!-- Compass tick marks (N/S/E/W = clarity of direction) -->
+  <line x1="32" y1="6" x2="32" y2="10" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="32" y1="54" x2="32" y2="58" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="6" y1="32" x2="10" y2="32" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="54" y1="32" x2="58" y2="32" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Shield shape (importance of handling money + legal trust) -->
+  <path d="M32 12 L44 18 L44 32 C44 42 38 48 32 52 C26 48 20 42 20 32 L20 18 Z"
+        fill="url(#shield)" opacity="0.92"/>
+  <path d="M32 12 L44 18 L44 32 C44 42 38 48 32 52 C26 48 20 42 20 32 L20 18 Z"
+        fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+  <!-- Rupee symbol inside shield (money) -->
+  <text x="32" y="33" text-anchor="middle" dominant-baseline="central"
+        font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="18"
+        fill="#4A00E0">₹</text>
+  <!-- Small balance scale below rupee (legal/governance) -->
+  <line x1="27" y1="39" x2="37" y2="39" stroke="#6C5CE7" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="32" y1="39" x2="32" y2="42" stroke="#6C5CE7" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M27 39 L25.5 42 L28.5 42 Z" fill="#6C5CE7" opacity="0.7"/>
+  <path d="M37 39 L35.5 42 L38.5 42 Z" fill="#6C5CE7" opacity="0.7"/>
+  <!-- Upward arrow at shield top (growth/control) -->
+  <path d="M32 14 L35 18 L33 18 L33 21 L31 21 L31 18 L29 18 Z"
+        fill="url(#gold)" opacity="0.9"/>
 </svg>
