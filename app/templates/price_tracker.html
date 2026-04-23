@@ -152,7 +152,7 @@
 
                 <!-- Price History Chart (click to expand) -->
                 <div style="height:80px;position:relative;margin-bottom:8px;cursor:pointer"
-                     onclick="showHistoryModal({{ p.id }}, '{{ p.name[:60] | e }}', '{{ platform_color(p.platform) }}')"
+                     onclick="showHistoryModal({{ p.id }}, decodeURIComponent('{{ p.name[:60] | urlencode }}'), '{{ platform_color(p.platform) }}')"
                      title="Click to view full price history">
                     <canvas id="chart-{{ p.id }}"></canvas>
                 </div>
@@ -167,11 +167,11 @@
                     </small>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-sm btn-outline-info" title="{{ t('Price History') }}"
-                                onclick="showHistoryModal({{ p.id }}, '{{ p.name[:60] | e }}', '{{ platform_color(p.platform) }}')">
+                                onclick="showHistoryModal({{ p.id }}, decodeURIComponent('{{ p.name[:60] | urlencode }}'), '{{ platform_color(p.platform) }}')">
                             <span class="material-icons-outlined" style="font-size:16px">show_chart</span>
                         </button>
                         <button type="button" class="btn btn-sm btn-primary" title="{{ t('Compare Prices') }}"
-                                onclick="comparePrices({{ p.id }}, '{{ p.name[:60] | e }}')" id="compare-btn-{{ p.id }}">
+                                onclick="comparePrices({{ p.id }}, decodeURIComponent('{{ p.name[:60] | urlencode }}'))" id="compare-btn-{{ p.id }}">
                             <span class="material-icons-outlined" style="font-size:16px">compare_arrows</span>
                             <span class="d-none d-sm-inline small">{{ t('Compare') }}</span>
                         </button>
@@ -767,17 +767,6 @@ function showCompareModal(data, productName) {
                         <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">info</span>
                         Prices may vary. Click Buy to see latest price on each platform.
                     </small>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>`;
-    document.body.appendChild(modal);
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
-    modal.addEventListener('hidden.bs.modal', () => modal.remove());
-}
-                </div>
-                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
