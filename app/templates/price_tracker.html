@@ -185,7 +185,7 @@
                             <span class="material-icons-outlined" style="font-size:16px">shopping_cart</span>
                         </a>
                         <form method="POST" action="{{ url_for('main.price_tracker_delete', product_id=p.id) }}" class="d-inline"
-                              onsubmit="return confirm('Remove this product from tracking?')">
+                              onsubmit="return confirm(_t('Remove this product from tracking?'))">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ t('Remove') }}">
                                 <span class="material-icons-outlined" style="font-size:16px">delete</span>
@@ -366,6 +366,60 @@
 </style>
 
 <script>
+// ── JS Translation helper for price tracker ──
+const _TR = {
+    'Price History': {{ t('Price History') | tojson }},
+    'Cross-Platform Price History': {{ t('Cross-Platform Price History') | tojson }},
+    '1 Day': {{ t('1 Day') | tojson }},
+    '7 Days': {{ t('7 Days') | tojson }},
+    '1 Month': {{ t('1 Month') | tojson }},
+    '3 Months': {{ t('3 Months') | tojson }},
+    '6 Months': {{ t('6 Months') | tojson }},
+    '1 Year': {{ t('1 Year') | tojson }},
+    'All Time': {{ t('All Time') | tojson }},
+    'Loading': {{ t('Loading') | tojson }},
+    'Close': {{ t('Close') | tojson }},
+    'Lowest': {{ t('Lowest') | tojson }},
+    'Average': {{ t('Average') | tojson }},
+    'Current': {{ t('Current') | tojson }},
+    'Highest': {{ t('Highest') | tojson }},
+    'Since': {{ t('Since') | tojson }},
+    'Tracking since': {{ t('Tracking since') | tojson }},
+    'price history builds over time with each refresh': {{ t('price history builds over time with each refresh') | tojson }},
+    'No price data for this period': {{ t('No price data for this period') | tojson }},
+    'data point(s) in this period': {{ t('data point(s) in this period') | tojson }},
+    'Failed to load price history': {{ t('Failed to load price history') | tojson }},
+    'Comparing': {{ t('Comparing') | tojson }},
+    'Could not compare prices': {{ t('Could not compare prices') | tojson }},
+    'Cheaper': {{ t('Cheaper') | tojson }},
+    'Higher': {{ t('Higher') | tojson }},
+    'Same Price': {{ t('Same Price') | tojson }},
+    'Out of Stock': {{ t('Out of Stock') | tojson }},
+    'May be MRP': {{ t('May be MRP') | tojson }},
+    'Best Price': {{ t('Best Price') | tojson }},
+    'SOURCE': 'SOURCE',
+    'Sold Out': {{ t('Sold Out') | tojson }},
+    'View': {{ t('View') | tojson }},
+    'Buy': {{ t('Buy') | tojson }},
+    'Search on other platforms': {{ t('Search on other platforms') | tojson }},
+    'Best price': {{ t('Best price') | tojson }},
+    'Save': {{ t('Save') | tojson }},
+    'Prices may vary': {{ t('Prices may vary') | tojson }},
+    'Click Buy to see latest price on each platform': {{ t('Click Buy to see latest price on each platform') | tojson }},
+    'No prices found automatically': {{ t('No prices found automatically') | tojson }},
+    'Try searching on platforms below': {{ t('Try searching on platforms below') | tojson }},
+    'Compare': {{ t('Compare') | tojson }},
+    'Available Prices': {{ t('Available Prices') | tojson }},
+    'record': {{ t('record') | tojson }},
+    'records': {{ t('records') | tojson }},
+    'Remove this product from tracking?': {{ t('Remove this product from tracking?') | tojson }},
+    'Low': {{ t('Low') | tojson }},
+    'High': {{ t('High') | tojson }},
+};
+function _t(key) { return _TR[key] || key; }
+</script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function() {
     {% for p in products %}
     (function() {
@@ -449,7 +503,7 @@ function showHistoryModal(productId, productName, color) {
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <span class="material-icons-outlined" style="vertical-align:middle">show_chart</span>
-                        Price History
+                        ${_t('Price History')}
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -457,16 +511,16 @@ function showHistoryModal(productId, productName, color) {
                     <div class="fw-bold mb-1">${productName}</div>
                     <div id="history-stats" class="d-flex gap-3 mb-3 small"></div>
                     <div class="btn-group btn-group-sm mb-3 w-100 d-flex" id="period-btns">
-                        <button class="btn btn-outline-primary" data-period="1d">1 Day</button>
-                        <button class="btn btn-outline-primary" data-period="7d">7 Days</button>
-                        <button class="btn btn-outline-primary" data-period="1m">1 Month</button>
-                        <button class="btn btn-outline-primary" data-period="3m">3 Months</button>
-                        <button class="btn btn-outline-primary" data-period="6m">6 Months</button>
-                        <button class="btn btn-outline-primary" data-period="1y">1 Year</button>
-                        <button class="btn btn-primary active" data-period="all">All Time</button>
+                        <button class="btn btn-outline-primary" data-period="1d">${_t('1 Day')}</button>
+                        <button class="btn btn-outline-primary" data-period="7d">${_t('7 Days')}</button>
+                        <button class="btn btn-outline-primary" data-period="1m">${_t('1 Month')}</button>
+                        <button class="btn btn-outline-primary" data-period="3m">${_t('3 Months')}</button>
+                        <button class="btn btn-outline-primary" data-period="6m">${_t('6 Months')}</button>
+                        <button class="btn btn-outline-primary" data-period="1y">${_t('1 Year')}</button>
+                        <button class="btn btn-primary active" data-period="all">${_t('All Time')}</button>
                     </div>
                     <div id="history-loading" class="text-center py-4">
-                        <span class="spinner-border spinner-border-sm"></span> Loading...
+                        <span class="spinner-border spinner-border-sm"></span> ${_t('Loading')}...
                     </div>
                     <div style="height:300px;position:relative">
                         <canvas id="history-chart-full"></canvas>
@@ -474,13 +528,13 @@ function showHistoryModal(productId, productName, color) {
                     <div id="history-info" class="text-muted small mt-2 text-center"></div>
                     <div id="global-price-section" class="mt-3" style="display:none">
                         <hr>
-                        <h6 class="fw-bold"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">public</span> Cross-Platform Price History</h6>
+                        <h6 class="fw-bold"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">public</span> ${_t('Cross-Platform Price History')}</h6>
                         <div id="global-low-high" class="d-flex gap-2 mb-2 flex-wrap"></div>
                         <div id="global-timeline" class="small" style="max-height:180px;overflow-y:auto"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${_t('Close')}</button>
                 </div>
             </div>
         </div>`;
@@ -531,16 +585,16 @@ function loadHistoryData(productId, period, color) {
 
                 if (hasRange) {
                     stats.innerHTML = `
-                        <span class="badge bg-success"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_downward</span> Lowest: ₹${minP.toLocaleString('en-IN')}</span>
-                        <span class="badge bg-info">Average: ₹${avgP.toLocaleString('en-IN')}</span>
-                        <span class="badge bg-primary">Current: ₹${typeof curP === 'number' ? curP.toLocaleString('en-IN') : curP}</span>
-                        <span class="badge bg-danger"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_upward</span> Highest: ₹${maxP.toLocaleString('en-IN')}</span>
-                        ${since ? '<span class="text-muted">Since: ' + since + '</span>' : ''}
+                        <span class="badge bg-success"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_downward</span> ${_t('Lowest')}: ₹${minP.toLocaleString('en-IN')}</span>
+                        <span class="badge bg-info">${_t('Average')}: ₹${avgP.toLocaleString('en-IN')}</span>
+                        <span class="badge bg-primary">${_t('Current')}: ₹${typeof curP === 'number' ? curP.toLocaleString('en-IN') : curP}</span>
+                        <span class="badge bg-danger"><span class="material-icons-outlined" style="font-size:12px;vertical-align:middle">arrow_upward</span> ${_t('Highest')}: ₹${maxP.toLocaleString('en-IN')}</span>
+                        ${since ? '<span class="text-muted">' + _t('Since') + ': ' + since + '</span>' : ''}
                     `;
                 } else {
                     stats.innerHTML = `
-                        <span class="badge bg-primary">Current: ₹${typeof curP === 'number' ? curP.toLocaleString('en-IN') : curP}</span>
-                        ${since ? '<span class="text-muted">Tracking since ' + since + ' — price history builds over time with each refresh</span>' : ''}
+                        <span class="badge bg-primary">${_t('Current')}: ₹${typeof curP === 'number' ? curP.toLocaleString('en-IN') : curP}</span>
+                        ${since ? '<span class="text-muted">' + _t('Tracking since') + ' ' + since + ' — ' + _t('price history builds over time with each refresh') + '</span>' : ''}
                     `;
                 }
             }
@@ -552,10 +606,10 @@ function loadHistoryData(productId, period, color) {
 
             const hist = data.history || [];
             if (hist.length === 0) {
-                if (info) info.textContent = 'No price data for this period. Try "All Time" or refresh the product price.';
+                if (info) info.textContent = _t('No price data for this period') + '. ' + _t('All Time') + '.';
                 return;
             }
-            if (info) info.textContent = hist.length + ' data point' + (hist.length !== 1 ? 's' : '') + ' in this period';
+            if (info) info.textContent = hist.length + ' ' + _t('data point(s) in this period');
 
             const labels = hist.map(h => h.date);
             const prices = hist.map(h => h.price);
@@ -643,13 +697,13 @@ function loadHistoryData(productId, period, color) {
                 if (gLow) {
                     lhHtml += `<span class="badge bg-success py-2 px-3">
                         <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">arrow_downward</span>
-                        Lowest: ₹${gLow.price.toLocaleString('en-IN')} — ${gLow.platform} (${gLow.date})
+                        ${_t('Lowest')}: ₹${gLow.price.toLocaleString('en-IN')} — ${gLow.platform} (${gLow.date})
                     </span>`;
                 }
                 if (gHigh) {
                     lhHtml += `<span class="badge bg-danger py-2 px-3">
                         <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">arrow_upward</span>
-                        Highest: ₹${gHigh.price.toLocaleString('en-IN')} — ${gHigh.platform} (${gHigh.date})
+                        ${_t('Highest')}: ₹${gHigh.price.toLocaleString('en-IN')} — ${gHigh.platform} (${gHigh.date})
                     </span>`;
                 }
                 if (globalLowHigh) globalLowHigh.innerHTML = lhHtml;
@@ -671,9 +725,9 @@ function loadHistoryData(productId, period, color) {
                         <td><span class="fw-bold" style="color:${platColor}">${plat}</span></td>
                         <td>₹${latest.price.toLocaleString('en-IN')}</td>
                         <td class="text-muted">${latest.full_date}</td>
-                        <td><span class="text-success small">Low: ₹${platLow.toLocaleString('en-IN')}</span></td>
-                        <td><span class="text-danger small">High: ₹${platHigh.toLocaleString('en-IN')}</span></td>
-                        <td class="text-muted small">${entries.length} record${entries.length > 1 ? 's' : ''}</td>
+                        <td><span class="text-success small">${_t('Low')}: ₹${platLow.toLocaleString('en-IN')}</span></td>
+                        <td><span class="text-danger small">${_t('High')}: ₹${platHigh.toLocaleString('en-IN')}</span></td>
+                        <td class="text-muted small">${entries.length} ${entries.length > 1 ? _t('records') : _t('record')}</td>
                     </tr>`;
                 }
                 tlHtml += '</tbody></table>';
@@ -684,7 +738,7 @@ function loadHistoryData(productId, period, color) {
         })
         .catch(err => {
             if (loading) loading.style.display = 'none';
-            if (info) info.textContent = 'Failed to load price history.';
+            if (info) info.textContent = _t('Failed to load price history') + '.';
             console.error(err);
         });
 }
@@ -694,7 +748,7 @@ function comparePrices(productId, productName) {
     const btn = document.getElementById('compare-btn-' + productId);
     const origHTML = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Comparing...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ' + _t('Comparing') + '...';
 
     fetch('/price-tracker/compare/' + productId)
         .then(r => r.json())
@@ -702,7 +756,7 @@ function comparePrices(productId, productName) {
             showCompareModal(data, productName);
         })
         .catch(err => {
-            alert('Could not compare prices. Please try again.');
+            alert(_t('Could not compare prices') + '.');
             console.error(err);
         })
         .finally(() => {
@@ -758,12 +812,12 @@ function showCompareModal(data, productName) {
             ? Math.round(((sourcePrice - price) / sourcePrice) * 100)
             : 0;
         const diffLabel = isOOS
-            ? '<span class="badge bg-danger ms-2">Out of Stock</span>'
+            ? '<span class="badge bg-danger ms-2">' + _t('Out of Stock') + '</span>'
             : (diffPct > 0
-                ? `<span class="badge bg-success ms-2">${diffPct}% Cheaper</span>`
+                ? `<span class="badge bg-success ms-2">${diffPct}% ${_t('Cheaper')}</span>`
                 : (diffPct < 0
-                    ? `<span class="badge bg-warning text-dark ms-2">${Math.abs(diffPct)}% Higher</span>`
-                    : (p.is_source ? '' : '<span class="badge bg-secondary ms-2">Same Price</span>')));
+                    ? `<span class="badge bg-warning text-dark ms-2">${Math.abs(diffPct)}% ${_t('Higher')}</span>`
+                    : (p.is_source ? '' : '<span class="badge bg-secondary ms-2">' + _t('Same Price') + '</span>')));
 
         // MRP and discount display
         const mrpInfo = r.mrp && r.discount && price
@@ -771,7 +825,7 @@ function showCompareModal(data, productName) {
             : '';
         // If price is much higher than best and no discount info, it might be MRP
         const mightBeMRP = !isOOS && price && bestPrice && price > bestPrice * 1.3 && !r.mrp && !r.discount;
-        const mrpHint = mightBeMRP ? '<div class="text-muted" style="font-size:10px">May be MRP</div>' : '';
+        const mrpHint = mightBeMRP ? '<div class="text-muted" style="font-size:10px">' + _t('May be MRP') + '</div>' : '';
 
         cards += `
             <div class="compare-card ${isBest ? 'compare-best' : ''} ${p.is_source ? 'compare-source' : ''} ${isOOS ? 'compare-oos' : ''}">
@@ -782,7 +836,7 @@ function showCompareModal(data, productName) {
                     <div class="flex-grow-1 min-width-0">
                         <div class="d-flex align-items-center flex-wrap gap-1">
                             <strong style="color:${p.color}">${p.platform}</strong>
-                            ${isBest ? '<span class="badge bg-success"><span class="material-icons-outlined" style="font-size:11px;vertical-align:middle">emoji_events</span> Best Price</span>' : ''}
+                            ${isBest ? '<span class="badge bg-success"><span class="material-icons-outlined" style="font-size:11px;vertical-align:middle">emoji_events</span> ' + _t('Best Price') + '</span>' : ''}
                             ${p.is_source ? '<span class="badge bg-secondary" style="font-size:9px">SOURCE</span>' : ''}
                             ${diffLabel}
                         </div>
@@ -790,12 +844,12 @@ function showCompareModal(data, productName) {
                     </div>
                     <div class="text-end">
                         ${isOOS
-                            ? '<div class="text-danger fw-bold small">Sold Out</div>'
+                            ? '<div class="text-danger fw-bold small">' + _t('Sold Out') + '</div>'
                             : `<div class="fw-bold fs-5 ${isBest ? 'text-success' : ''}" style="white-space:nowrap">₹${price.toLocaleString('en-IN')}</div>${mrpInfo}${mrpHint}`
                         }
                     </div>
                     <a href="${r.url || p.search_url}" target="_blank" rel="noopener" class="btn btn-sm ${isOOS ? 'btn-outline-secondary' : (isBest ? 'btn-success' : 'btn-outline-primary')}" style="white-space:nowrap">
-                        <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">${isOOS ? 'open_in_new' : 'shopping_cart'}</span> ${isOOS ? 'View' : 'Buy'}
+                        <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">${isOOS ? 'open_in_new' : 'shopping_cart'}</span> ${isOOS ? _t('View') : _t('Buy')}
                     </a>
                 </div>
             </div>`;
@@ -813,7 +867,7 @@ function showCompareModal(data, productName) {
             <div class="px-3 py-2 bg-light border-top">
                 <small class="text-muted d-block mb-2">
                     <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">search</span>
-                    Search on other platforms:
+                    ${_t('Search on other platforms')}:
                 </small>
                 <div class="d-flex flex-wrap gap-1">${searchBtns}</div>
             </div>`;
@@ -829,7 +883,7 @@ function showCompareModal(data, productName) {
                 <div class="modal-header" style="background: linear-gradient(135deg, #667eea, #764ba2); color: #fff;">
                     <h5 class="modal-title">
                         <span class="material-icons-outlined" style="vertical-align:middle">compare_arrows</span>
-                        Compare ${withResults.length} Available Price${withResults.length !== 1 ? 's' : ''}
+                        ${_t('Compare')} ${withResults.length} ${_t('Available Prices')}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -838,21 +892,21 @@ function showCompareModal(data, productName) {
                         <div class="fw-bold">${displayName}</div>
                         ${bestPrice ? `<div class="d-flex align-items-center gap-2 mt-1">
                             <span class="material-icons-outlined text-success" style="font-size:18px">verified</span>
-                            <span class="text-success fw-bold">Best price: ₹${bestPrice.toLocaleString('en-IN')}</span>
-                            ${sourcePrice && sourcePrice > bestPrice ? `<span class="badge bg-success">Save ₹${(sourcePrice - bestPrice).toLocaleString('en-IN')}</span>` : ''}
+                            <span class="text-success fw-bold">${_t('Best price')}: ₹${bestPrice.toLocaleString('en-IN')}</span>
+                            ${sourcePrice && sourcePrice > bestPrice ? `<span class="badge bg-success">${_t('Save')} ₹${(sourcePrice - bestPrice).toLocaleString('en-IN')}</span>` : ''}
                         </div>` : ''}
                     </div>
                     <div class="p-3">
-                        ${cards || '<div class="text-center text-muted py-4"><span class="material-icons-outlined" style="font-size:48px">search_off</span><p class="mt-2">No prices found automatically. Try searching on platforms below.</p></div>'}
+                        ${cards || '<div class="text-center text-muted py-4"><span class="material-icons-outlined" style="font-size:48px">search_off</span><p class="mt-2">' + _t('No prices found automatically') + '. ' + _t('Try searching on platforms below') + '.</p></div>'}
                     </div>
                     ${searchLinks}
                 </div>
                 <div class="modal-footer">
                     <small class="text-muted me-auto">
                         <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">info</span>
-                        Prices may vary. Click Buy to see latest price on each platform.
+                        ${_t('Prices may vary')}. ${_t('Click Buy to see latest price on each platform')}.
                     </small>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${_t('Close')}</button>
                 </div>
             </div>
         </div>`;
