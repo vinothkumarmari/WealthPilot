@@ -2671,7 +2671,7 @@ def price_tracker():
 @main.route('/price-tracker/add', methods=['POST'])
 @login_required
 def price_tracker_add():
-    from .price_tracker import fetch_product_info, detect_platform, is_allowed_url
+    from .price_tracker import fetch_product_info, detect_platform, is_allowed_url, record_global_snapshot
 
     url = request.form.get('product_url', '').strip()
     target_price = request.form.get('target_price', type=float)
@@ -2719,6 +2719,7 @@ def price_tracker_add():
     if info.get('price'):
         snapshot = PriceHistory(product_id=product.id, price=info['price'])
         db.session.add(snapshot)
+        record_global_snapshot(product.name, platform, info['price'], url)
 
     db.session.commit()
 
@@ -2733,7 +2734,7 @@ def price_tracker_add():
 @main.route('/price-tracker/refresh/<int:product_id>', methods=['POST'])
 @login_required
 def price_tracker_refresh(product_id):
-    from .price_tracker import fetch_product_info, _extract_name_from_url
+    from .price_tracker import fetch_product_info, _extract_name_from_url, record_global_snapshot
 
     product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
 
@@ -2787,6 +2788,10 @@ def price_tracker_refresh(product_id):
 
         snapshot = PriceHistory(product_id=product.id, price=info['price'])
         db.session.add(snapshot)
+
+        # Write to global shared price cache
+        record_global_snapshot(product.name, product.platform, info['price'], product.url)
+
         db.session.commit()
 
         change = ''
@@ -2822,6 +2827,7 @@ def price_tracker_delete(product_id):
 @main.route('/price-tracker/history/<int:product_id>')
 @login_required
 def price_tracker_history(product_id):
+    from .price_tracker import normalize_product_key, PLATFORM_COLORS
     product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
 
     # Period filtering: 1d, 7d, 1m, 3m, 6m, 1y, all
@@ -2856,6 +2862,34 @@ def price_tracker_history(product_id):
     prices = [s.price for s in snapshots if s.price]
     avg_price = round(sum(prices) / len(prices), 2) if prices else None
 
+    # ── Global cross-platform price history ──
+    from .models import GlobalPriceSnapshot
+    product_key = normalize_product_key(product.name)
+    global_snaps = []
+    global_low = None
+    global_high = None
+    if product_key:
+        gq = GlobalPriceSnapshot.query.filter_by(product_key=product_key)
+        if period in period_map:
+            gq = gq.filter(GlobalPriceSnapshot.recorded_at >= cutoff)
+        gq = gq.order_by(GlobalPriceSnapshot.recorded_at).all()
+
+        for g in gq:
+            entry = {
+                'date': g.recorded_at.strftime(fmt),
+                'full_date': g.recorded_at.strftime('%d %b %Y %I:%M %p'),
+                'price': g.price,
+                'platform': g.platform,
+                'color': PLATFORM_COLORS.get(g.platform, '#6c757d'),
+            }
+            global_snaps.append(entry)
+            if global_low is None or g.price < global_low['price']:
+                global_low = {'price': g.price, 'platform': g.platform,
+                              'date': g.recorded_at.strftime('%d %b %Y')}
+            if global_high is None or g.price > global_high['price']:
+                global_high = {'price': g.price, 'platform': g.platform,
+                               'date': g.recorded_at.strftime('%d %b %Y')}
+
     return jsonify({
         'name': product.name,
         'platform': product.platform,
@@ -2866,13 +2900,17 @@ def price_tracker_history(product_id):
         'tracked_since': product.created_at.strftime('%d %b %Y') if product.created_at else None,
         'history': data,
         'period': period,
+        # Global shared data
+        'global_history': global_snaps,
+        'global_low': global_low,
+        'global_high': global_high,
     })
 
 
 @main.route('/price-tracker/compare/<int:product_id>')
 @login_required
 def price_tracker_compare(product_id):
-    from .price_tracker import compare_prices, PLATFORM_COLORS, PLATFORM_ICONS, _extract_name_from_url
+    from .price_tracker import compare_prices, PLATFORM_COLORS, PLATFORM_ICONS, _extract_name_from_url, record_global_snapshot
     product = TrackedProduct.query.filter_by(id=product_id, user_id=current_user.id).first_or_404()
 
     # Use a meaningful name for search — fallback to URL extraction
@@ -2922,7 +2960,14 @@ def price_tracker_compare(product_id):
         for r in p.get('results', []):
             if r.get('price'):
                 all_prices.append(r['price'])
+                # Write every discovered price to global shared cache
+                record_global_snapshot(search_name, p['platform'], r['price'], r.get('url'))
     lowest = min(all_prices) if all_prices else None
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     return jsonify({
         'product_name': search_name,

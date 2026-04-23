@@ -472,6 +472,12 @@ function showHistoryModal(productId, productName, color) {
                         <canvas id="history-chart-full"></canvas>
                     </div>
                     <div id="history-info" class="text-muted small mt-2 text-center"></div>
+                    <div id="global-price-section" class="mt-3" style="display:none">
+                        <hr>
+                        <h6 class="fw-bold"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">public</span> Cross-Platform Price History</h6>
+                        <div id="global-low-high" class="d-flex gap-2 mb-2 flex-wrap"></div>
+                        <div id="global-timeline" class="small" style="max-height:180px;overflow-y:auto"></div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -566,7 +572,7 @@ function loadHistoryData(productId, period, color) {
                 data: {
                     labels: chartLabels,
                     datasets: [{
-                        label: 'Price (₹)',
+                        label: data.platform + ' (₹)',
                         data: chartPrices,
                         borderColor: color,
                         backgroundColor: color + '20',
@@ -620,6 +626,61 @@ function loadHistoryData(productId, period, color) {
                     }
                 }
             });
+
+            // ── Render global cross-platform data ──
+            const globalSection = document.getElementById('global-price-section');
+            const globalLowHigh = document.getElementById('global-low-high');
+            const globalTimeline = document.getElementById('global-timeline');
+            const gHistory = data.global_history || [];
+            const gLow = data.global_low;
+            const gHigh = data.global_high;
+
+            if (gHistory.length > 0 && globalSection) {
+                globalSection.style.display = 'block';
+
+                // Show low/high badges with platform + date
+                let lhHtml = '';
+                if (gLow) {
+                    lhHtml += `<span class="badge bg-success py-2 px-3">
+                        <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">arrow_downward</span>
+                        Lowest: ₹${gLow.price.toLocaleString('en-IN')} — ${gLow.platform} (${gLow.date})
+                    </span>`;
+                }
+                if (gHigh) {
+                    lhHtml += `<span class="badge bg-danger py-2 px-3">
+                        <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">arrow_upward</span>
+                        Highest: ₹${gHigh.price.toLocaleString('en-IN')} — ${gHigh.platform} (${gHigh.date})
+                    </span>`;
+                }
+                if (globalLowHigh) globalLowHigh.innerHTML = lhHtml;
+
+                // Show timeline of prices across platforms
+                // Group by platform, show latest per platform
+                const byPlatform = {};
+                gHistory.forEach(g => {
+                    if (!byPlatform[g.platform]) byPlatform[g.platform] = [];
+                    byPlatform[g.platform].push(g);
+                });
+                let tlHtml = '<table class="table table-sm table-borderless mb-0"><tbody>';
+                for (const [plat, entries] of Object.entries(byPlatform)) {
+                    const latest = entries[entries.length - 1];
+                    const platLow = Math.min(...entries.map(e => e.price));
+                    const platHigh = Math.max(...entries.map(e => e.price));
+                    const platColor = latest.color || '#6c757d';
+                    tlHtml += `<tr>
+                        <td><span class="fw-bold" style="color:${platColor}">${plat}</span></td>
+                        <td>₹${latest.price.toLocaleString('en-IN')}</td>
+                        <td class="text-muted">${latest.full_date}</td>
+                        <td><span class="text-success small">Low: ₹${platLow.toLocaleString('en-IN')}</span></td>
+                        <td><span class="text-danger small">High: ₹${platHigh.toLocaleString('en-IN')}</span></td>
+                        <td class="text-muted small">${entries.length} record${entries.length > 1 ? 's' : ''}</td>
+                    </tr>`;
+                }
+                tlHtml += '</tbody></table>';
+                if (globalTimeline) globalTimeline.innerHTML = tlHtml;
+            } else if (globalSection) {
+                globalSection.style.display = 'none';
+            }
         })
         .catch(err => {
             if (loading) loading.style.display = 'none';

@@ -518,6 +518,48 @@ def fetch_product_info(url):
         }
 
 
+# ── Global price cache helpers ────────────────────────────────
+
+import re as _re
+import hashlib as _hashlib
+
+def normalize_product_key(name):
+    """Create a stable key from a product name for cross-user matching.
+    Lowercases, strips noise words, sorts remaining tokens, returns hash."""
+    if not name:
+        return ''
+    name = name.lower()
+    # Remove common noise
+    noise = {'buy', 'online', 'india', 'best', 'price', 'new', 'latest',
+             'with', 'and', 'the', 'for', 'from', 'in', 'on', 'at', 'to',
+             'of', 'by', 'a', 'an', '&', '-', '|', ',', '.', '(', ')', '/'}
+    tokens = _re.findall(r'[a-z0-9]+', name)
+    tokens = [t for t in tokens if t not in noise and len(t) > 1]
+    # Keep first 8 significant tokens, sorted for stability
+    key_str = ' '.join(sorted(tokens[:8]))
+    return _hashlib.md5(key_str.encode()).hexdigest()[:20]
+
+
+def record_global_snapshot(product_name, platform, price, url=None):
+    """Write a price snapshot to the global shared cache."""
+    from . import db
+    from .models import GlobalPriceSnapshot
+    if not product_name or not platform or not price:
+        return
+    key = normalize_product_key(product_name)
+    if not key:
+        return
+    snap = GlobalPriceSnapshot(
+        product_key=key,
+        product_name=product_name,
+        platform=platform,
+        price=price,
+        url=url,
+    )
+    db.session.add(snap)
+    # Don't commit here — let the caller commit
+
+
 # ── Cross-platform price comparison ───────────────────────────
 
 # Search URL templates for each platform

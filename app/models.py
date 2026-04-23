@@ -383,3 +383,19 @@ class PriceHistory(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('tracked_product.id', ondelete='CASCADE'), nullable=False)
     price = db.Column(db.Float, nullable=False)
     recorded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class GlobalPriceSnapshot(db.Model):
+    """Shared price cache across all users. Stores every price seen for a product
+    across all e-commerce platforms. Enables cross-user, cross-platform history."""
+    __table_args__ = (
+        db.Index('ix_gps_product_key', 'product_key'),
+        db.Index('ix_gps_key_platform', 'product_key', 'platform'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    product_key = db.Column(db.String(200), nullable=False)  # normalized product name
+    product_name = db.Column(db.String(500))  # display name
+    platform = db.Column(db.String(50), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    url = db.Column(db.String(2048))
+    recorded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
