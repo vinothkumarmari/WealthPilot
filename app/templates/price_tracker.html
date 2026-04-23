@@ -344,6 +344,11 @@
     border-left: 4px solid #6c757d;
     background: #f8f9fa;
 }
+.compare-oos {
+    opacity: 0.6;
+    background: #f8f9fa;
+    border-style: dashed;
+}
 .compare-platform-icon {
     width: 40px;
     height: 40px;
@@ -666,33 +671,49 @@ function showCompareModal(data, productName) {
     const withResults = [];
     const withoutResults = [];
     data.platforms.forEach(p => {
-        if (p.results && p.results.length > 0 && p.results[0].price) {
+        if (p.results && p.results.length > 0 && (p.results[0].price || p.results[0].out_of_stock)) {
             withResults.push(p);
         } else {
             withoutResults.push(p);
         }
     });
 
-    // Sort platforms with results by price (lowest first)
-    withResults.sort((a, b) => (a.results[0].price || Infinity) - (b.results[0].price || Infinity));
+    // Sort platforms with results by price (lowest first), out-of-stock last
+    withResults.sort((a, b) => {
+        const aOOS = a.results[0].out_of_stock ? 1 : 0;
+        const bOOS = b.results[0].out_of_stock ? 1 : 0;
+        if (aOOS !== bOOS) return aOOS - bOOS;
+        return (a.results[0].price || Infinity) - (b.results[0].price || Infinity);
+    });
 
     // Build result cards (BuyHatke style)
     let cards = '';
     withResults.forEach((p, idx) => {
         const r = p.results[0];
         const price = r.price;
-        const isBest = price === bestPrice && withResults.length > 1;
-        const diffPct = sourcePrice && sourcePrice !== price
+        const isOOS = r.out_of_stock;
+        const isBest = price && price === bestPrice && withResults.filter(w => w.results[0].price).length > 1;
+        const diffPct = sourcePrice && price && sourcePrice !== price
             ? Math.round(((sourcePrice - price) / sourcePrice) * 100)
             : 0;
-        const diffLabel = diffPct > 0
-            ? `<span class="badge bg-success ms-2">${diffPct}% Cheaper</span>`
-            : (diffPct < 0
-                ? `<span class="badge bg-warning text-dark ms-2">${Math.abs(diffPct)}% Higher</span>`
-                : (p.is_source ? '' : '<span class="badge bg-secondary ms-2">Same Price</span>'));
+        const diffLabel = isOOS
+            ? '<span class="badge bg-danger ms-2">Out of Stock</span>'
+            : (diffPct > 0
+                ? `<span class="badge bg-success ms-2">${diffPct}% Cheaper</span>`
+                : (diffPct < 0
+                    ? `<span class="badge bg-warning text-dark ms-2">${Math.abs(diffPct)}% Higher</span>`
+                    : (p.is_source ? '' : '<span class="badge bg-secondary ms-2">Same Price</span>')));
+
+        // MRP and discount display
+        const mrpInfo = r.mrp && r.discount && price
+            ? `<span class="text-muted text-decoration-line-through small ms-2">₹${r.mrp.toLocaleString('en-IN')}</span><span class="text-success small ms-1">-${r.discount}%</span>`
+            : '';
+        // If price is much higher than best and no discount info, it might be MRP
+        const mightBeMRP = !isOOS && price && bestPrice && price > bestPrice * 1.3 && !r.mrp && !r.discount;
+        const mrpHint = mightBeMRP ? '<div class="text-muted" style="font-size:10px">May be MRP</div>' : '';
 
         cards += `
-            <div class="compare-card ${isBest ? 'compare-best' : ''} ${p.is_source ? 'compare-source' : ''}">
+            <div class="compare-card ${isBest ? 'compare-best' : ''} ${p.is_source ? 'compare-source' : ''} ${isOOS ? 'compare-oos' : ''}">
                 <div class="d-flex align-items-center gap-3">
                     <div class="compare-platform-icon" style="background:${p.color}20;border:2px solid ${p.color}">
                         <span class="material-icons-outlined" style="color:${p.color};font-size:20px">${p.icon}</span>
@@ -707,10 +728,13 @@ function showCompareModal(data, productName) {
                         <div class="text-muted small text-truncate" style="max-width:300px" title="${(r.name || '').replace(/"/g, '&quot;')}">${r.name || displayName}</div>
                     </div>
                     <div class="text-end">
-                        <div class="fw-bold fs-5 ${isBest ? 'text-success' : ''}" style="white-space:nowrap">₹${price.toLocaleString('en-IN')}</div>
+                        ${isOOS
+                            ? '<div class="text-danger fw-bold small">Sold Out</div>'
+                            : `<div class="fw-bold fs-5 ${isBest ? 'text-success' : ''}" style="white-space:nowrap">₹${price.toLocaleString('en-IN')}</div>${mrpInfo}${mrpHint}`
+                        }
                     </div>
-                    <a href="${r.url || p.search_url}" target="_blank" rel="noopener" class="btn btn-sm ${isBest ? 'btn-success' : 'btn-outline-primary'}" style="white-space:nowrap">
-                        <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">shopping_cart</span> Buy
+                    <a href="${r.url || p.search_url}" target="_blank" rel="noopener" class="btn btn-sm ${isOOS ? 'btn-outline-secondary' : (isBest ? 'btn-success' : 'btn-outline-primary')}" style="white-space:nowrap">
+                        <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">${isOOS ? 'open_in_new' : 'shopping_cart'}</span> ${isOOS ? 'View' : 'Buy'}
                     </a>
                 </div>
             </div>`;

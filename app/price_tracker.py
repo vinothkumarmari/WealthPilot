@@ -597,13 +597,14 @@ def _search_duckduckgo(query):
                 if platform == 'Other':
                     continue
                 
-                price = None
+                # Collect ALL prices from snippet and pick the LOWEST (offered/sale price, not MRP)
+                all_prices = []
                 combined = title + ' ' + snippet
                 for pm in re.finditer(r'(?:₹|Rs\.?\s*)([\d,]+(?:\.\d{1,2})?)', combined):
                     p = _clean_price(pm.group(1))
                     if p and 100 < p < 10_000_000:
-                        price = p
-                        break
+                        all_prices.append(p)
+                price = min(all_prices) if all_prices else None
                 
                 results.append({
                     'name': title[:120],
@@ -894,9 +895,9 @@ def compare_prices(product_name, exclude_platform=None):
                 'url': r['url'],
             })
     
-    # Step 2: Concurrently fetch product pages for platforms without prices
-    urls_to_fetch = {plat: url for plat, url in ddg_urls_by_platform.items()
-                     if plat not in ddg_by_platform}
+    # Step 2: Concurrently fetch product pages to get accurate sale prices
+    # Fetch ALL platforms with URLs (even those with DDG prices, since DDG may show MRP)
+    urls_to_fetch = dict(ddg_urls_by_platform)
     
     def _fetch_one(plat, url):
         try:
@@ -904,15 +905,30 @@ def compare_prices(product_name, exclude_platform=None):
             s.headers.update(_HEADERS_BROWSER)
             resp = s.get(url, timeout=6, allow_redirects=True)
             if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, 'html.parser')
+                raw = resp.text
+                raw_lower = raw.lower()
+                # Detect out-of-stock
+                oos_signals = ['out of stock', 'currently sold out', 'currently unavailable',
+                               'notify me when available', 'sold out']
+                is_oos = any(sig in raw_lower for sig in oos_signals)
+                
+                soup = BeautifulSoup(raw, 'html.parser')
                 if plat == 'Amazon':
-                    name, price, mrp, disc, img = _parse_amazon(soup, resp.text, url)
+                    name, price, mrp, disc, img = _parse_amazon(soup, raw, url)
                 elif plat == 'Flipkart':
-                    name, price, mrp, disc, img = _parse_flipkart(soup, resp.text)
+                    name, price, mrp, disc, img = _parse_flipkart(soup, raw)
                 else:
-                    name, price, mrp, disc, img = _parse_generic(soup, resp.text)
+                    name, price, mrp, disc, img = _parse_generic(soup, raw)
+                
+                if is_oos:
+                    return plat, [{'name': (name or product_name)[:120], 'price': None,
+                                   'mrp': mrp, 'url': url, 'out_of_stock': True}]
                 if price and price > 500:
-                    return plat, [{'name': (name or product_name)[:120], 'price': price, 'url': url}]
+                    entry = {'name': (name or product_name)[:120], 'price': price, 'url': url}
+                    if mrp and mrp > price:
+                        entry['mrp'] = mrp
+                        entry['discount'] = round((1 - price / mrp) * 100)
+                    return plat, [entry]
         except Exception as e:
             log.debug('Page fetch failed %s: %s', plat, e)
         return plat, None
