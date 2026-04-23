@@ -33,7 +33,7 @@
                 </div>
                 <div class="text-end">
                     <span class="badge bg-{{ 'success' if g.change >= 0 else 'danger' }}">
-                        {{ '+' if g.change >= 0 else '' }}₹{{ "{:,.2f}".format(g.change) }}
+                        {{ '+' if g.change >= 0 else '-' }}₹{{ "{:,.2f}".format(g.change|abs) }}
                         ({{ '{:+.2f}'.format(g.change_pct) }}%)
                     </span>
                     <div class="mt-1">
@@ -70,7 +70,7 @@
                 </div>
                 <div class="text-end">
                     <span class="badge bg-{{ 'success' if ep.change >= 0 else 'danger' }}">
-                        {{ '+' if ep.change >= 0 else '' }}₹{{ "{:,.2f}".format(ep.change) }}
+                        {{ '+' if ep.change >= 0 else '-' }}₹{{ "{:,.2f}".format(ep.change|abs) }}
                         ({{ '{:+.2f}'.format(ep.change_pct) }}%)
                     </span>
                     <div class="mt-1">
@@ -100,7 +100,7 @@
                 </div>
                 <div class="text-end">
                     <span class="badge bg-{{ 'success' if analysis.silver.change >= 0 else 'danger' }}">
-                        {{ '+' if analysis.silver.change >= 0 else '' }}₹{{ "{:,.2f}".format(analysis.silver.change) }}
+                        {{ '+' if analysis.silver.change >= 0 else '-' }}₹{{ "{:,.2f}".format(analysis.silver.change|abs) }}
                         ({{ '{:+.2f}'.format(analysis.silver.change_pct) }}%)
                     </span>
                     <div class="mt-1">

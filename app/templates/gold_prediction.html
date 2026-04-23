@@ -185,7 +185,7 @@
             </div>
             <div class="text-center mb-3">
                 <span class="badge {{ 'bg-success' if p.change >= 0 else 'bg-danger' }}" style="font-size:13px;">
-                    {{ '+' if p.change >= 0 else '' }}₹{{ "{:,.2f}".format(p.change) }} ({{ '+' if p.change_pct >= 0 else '' }}{{ p.change_pct }}%)
+                    {{ '+' if p.change >= 0 else '-' }}₹{{ "{:,.2f}".format(p.change|abs) }} ({{ '+' if p.change_pct >= 0 else '' }}{{ p.change_pct }}%)
                 </span>
             </div>
             <div class="small text-muted mb-2 d-flex justify-content-between">
@@ -231,7 +231,7 @@
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h6 class="text-muted mb-0"><span class="material-icons-outlined" style="color:#C0C0C0;vertical-align:middle;font-size:18px;">insights</span> Silver 999</h6>
                 <span class="badge {{ 'bg-success' if s.change >= 0 else 'bg-danger' }}">
-                    {{ '+' if s.change >= 0 else '' }}₹{{ "{:,.2f}".format(s.change) }} ({{ s.change_pct }}%)
+                    {{ '+' if s.change >= 0 else '-' }}₹{{ "{:,.2f}".format(s.change|abs) }} ({{ s.change_pct }}%)
                 </span>
             </div>
             <div class="d-flex justify-content-between">
@@ -256,7 +256,7 @@
             <h4 class="mb-1">${{ "{:,.2f}".format(mc.comex_oz_usd) }} <small class="text-muted">/troy oz</small></h4>
             {% if mc.comex_change_usd %}
             <span class="badge {{ 'bg-success' if mc.comex_change_usd >= 0 else 'bg-danger' }} mb-1">
-                {{ '+' if mc.comex_change_usd >= 0 else '' }}${{ "{:,.2f}".format(mc.comex_change_usd) }} ({{ mc.comex_change_pct }}%)
+                {{ '+' if mc.comex_change_usd >= 0 else '-' }}${{ "{:,.2f}".format(mc.comex_change_usd|abs) }} ({{ mc.comex_change_pct }}%)
             </span>
             {% endif %}
             <p class="mb-1 small">= ₹{{ "{:,.2f}".format(mc.comex_inr_gram) }}/gram <small class="text-muted">(@ USD/INR {{ mc.usd_inr }})</small></p>
@@ -313,7 +313,7 @@
                             <td>₹{{ "{:,.2f}".format(row.am_price) }}</td>
                             <td>₹{{ "{:,.2f}".format(row.pm_price) }}</td>
                             <td class="{{ 'text-success' if row.intraday_change >= 0 else 'text-danger' }}">
-                                {{ '+' if row.intraday_change >= 0 else '' }}₹{{ "{:,.2f}".format(row.intraday_change) }}
+                                {{ '+' if row.intraday_change >= 0 else '-' }}₹{{ "{:,.2f}".format(row.intraday_change|abs) }}
                             </td>
                             <td class="small text-muted">
                                 {{ 'AM was cheaper' if row.intraday_change > 0 else 'PM was cheaper' }}
@@ -324,8 +324,8 @@
                 </table>
             </div>
             <div class="mt-2 small text-muted d-flex gap-3">
-                <span>Avg AM→PM change: <strong class="{{ 'text-success' if prediction.am_avg_change >= 0 else 'text-danger' }}">{{ '+' if prediction.am_avg_change >= 0 else '' }}₹{{ prediction.am_avg_change }}/gram</strong></span>
-                <span>Avg overnight (PM→AM): <strong class="{{ 'text-success' if prediction.pm_to_next_am >= 0 else 'text-danger' }}">{{ '+' if prediction.pm_to_next_am >= 0 else '' }}₹{{ prediction.pm_to_next_am }}/gram</strong></span>
+                <span>Avg AM→PM change: <strong class="{{ 'text-success' if prediction.am_avg_change >= 0 else 'text-danger' }}">{{ '+' if prediction.am_avg_change >= 0 else '-' }}₹{{ prediction.am_avg_change|abs }}/gram</strong></span>
+                <span>Avg overnight (PM→AM): <strong class="{{ 'text-success' if prediction.pm_to_next_am >= 0 else 'text-danger' }}">{{ '+' if prediction.pm_to_next_am >= 0 else '-' }}₹{{ prediction.pm_to_next_am|abs }}/gram</strong></span>
             </div>
         </div>
     </div>
