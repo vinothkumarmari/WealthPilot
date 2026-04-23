@@ -722,7 +722,7 @@ function showCompareModal(data, productName) {
                         <div class="d-flex align-items-center flex-wrap gap-1">
                             <strong style="color:${p.color}">${p.platform}</strong>
                             ${isBest ? '<span class="badge bg-success"><span class="material-icons-outlined" style="font-size:11px;vertical-align:middle">emoji_events</span> Best Price</span>' : ''}
-                            ${p.is_source ? '<span class="badge bg-secondary" style="font-size:9px">YOUR PRODUCT</span>' : ''}
+                            ${p.is_source ? '<span class="badge bg-secondary" style="font-size:9px">SOURCE</span>' : ''}
                             ${diffLabel}
                         </div>
                         <div class="text-muted small text-truncate" style="max-width:300px" title="${(r.name || '').replace(/"/g, '&quot;')}">${r.name || displayName}</div>
