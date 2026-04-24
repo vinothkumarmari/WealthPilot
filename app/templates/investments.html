@@ -58,7 +58,7 @@
     <div class="col-md-6 mb-3">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0"><span class="material-icons-outlined">account_balance</span> {{ t('Bank Accounts') }}</h6>
+                <h6 class="mb-0"><span class="material-icons-outlined">account_balance</span> {{ t('Bank Accounts') }} <small class="text-muted fw-normal" style="font-size:11px;">{{ t('(manual entry only)') }}</small></h6>
                 <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#addBankModal">
                     <span class="material-icons-outlined" style="font-size:16px">add</span>
                 </button>
@@ -365,6 +365,10 @@
             <form method="POST" action="{{ url_for('main.add_bank_account') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
+                    <div class="alert alert-info py-2 px-3 d-flex align-items-start mb-3" style="font-size:13px;border-radius:8px;">
+                        <span class="material-icons-outlined me-2" style="font-size:18px;">info</span>
+                        <span>{{ t('We do NOT connect to your bank. Just enter your current balance manually for tracking. No bank login, password, or UPI details needed.') }}</span>
+                    </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ t('Bank Name') }}</label>
@@ -478,8 +482,8 @@
     <div class="col-md-6 mb-3">
         <div class="card p-4 text-center">
             <span class="material-icons-outlined" style="font-size:48px; color: var(--accent)">account_balance</span>
-            <h6 class="mt-2">Add Bank Account</h6>
-            <p class="text-muted small">Track your savings/current account balances for better AI suggestions</p>
+            <h6 class="mt-2">{{ t('Add Bank Account') }}</h6>
+            <p class="text-muted small">{{ t('Just enter your balance manually — we never connect to your bank or ask for login details') }}</p>
             <button class="btn btn-sm btn-accent mx-auto" style="width:fit-content" data-bs-toggle="modal" data-bs-target="#addBankModal">
                 <span class="material-icons-outlined" style="font-size:16px">add</span> Add Bank Account
             </button>

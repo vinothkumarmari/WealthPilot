@@ -4924,7 +4924,7 @@ BADGE_DEFINITIONS = [
     ('login_30', 'Dedicated User', 'login', '#FFD700', 'streak', 'Log in 30 days in a row'),
     # Profile badges
     ('profile_complete', 'Profile Pro', 'person', '#673AB7', 'general', 'Complete your profile (name, age, salary, profession)'),
-    ('bank_added', 'Bank Connected', 'account_balance', '#1976D2', 'general', 'Add a bank account'),
+    ('bank_added', 'Balance Tracker', 'account_balance', '#1976D2', 'general', 'Add your bank balance (manual entry, no bank login needed)'),
 ]
 
 
