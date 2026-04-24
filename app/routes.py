@@ -5170,15 +5170,23 @@ def _calculate_financial_score(user):
 @login_required
 def achievements():
     """Gamification page: streaks, badges, financial health score."""
-    # Update streaks
-    streak = _update_streaks(current_user)
+    try:
+        # Update streaks
+        streak = _update_streaks(current_user)
 
-    # Check and award badges
-    new_badges = _check_and_award_badges(current_user)
+        # Check and award badges
+        new_badges = _check_and_award_badges(current_user)
 
-    # Get all badges
-    earned_badges = UserBadge.query.filter_by(user_id=current_user.id).order_by(UserBadge.earned_at.desc()).all()
-    earned_keys = {b.badge_key for b in earned_badges}
+        # Get all badges
+        earned_badges = UserBadge.query.filter_by(user_id=current_user.id).order_by(UserBadge.earned_at.desc()).all()
+        earned_keys = {b.badge_key for b in earned_badges}
+    except Exception:
+        db.session.rollback()
+        # Tables may not exist yet — show empty state
+        streak = None
+        new_badges = []
+        earned_badges = []
+        earned_keys = set()
 
     # Build full badge list with locked/unlocked status
     all_badges = []
