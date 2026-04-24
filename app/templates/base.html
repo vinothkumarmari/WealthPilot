@@ -159,6 +159,10 @@
                 <span class="material-icons-outlined">receipt_long</span>
                 <span>{{ t('Indian Budget') }}</span>
             </a>
+            <a href="{{ url_for('main.achievements') }}" class="nav-link {% if request.endpoint == 'main.achievements' %}active{% endif %}">
+                <span class="material-icons-outlined">emoji_events</span>
+                <span>{{ t('Achievements') }}</span>
+            </a>
 
             <div class="sidebar-divider"><small>{{ t('FAMILY') }}</small></div>
             <a href="{{ url_for('main.family_members') }}" class="nav-link {% if request.endpoint == 'main.family_members' %}active{% endif %}">

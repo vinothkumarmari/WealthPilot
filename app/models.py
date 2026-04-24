@@ -399,3 +399,40 @@ class GlobalPriceSnapshot(db.Model):
     price = db.Column(db.Float, nullable=False)
     url = db.Column(db.String(2048))
     recorded_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+# ======================== GAMIFICATION ========================
+
+class UserStreak(db.Model):
+    """Tracks daily/weekly engagement streaks per user."""
+    __table_args__ = (
+        db.Index('ix_streak_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    expense_streak = db.Column(db.Integer, default=0)       # consecutive days with expense entry
+    login_streak = db.Column(db.Integer, default=0)          # consecutive days logged in
+    budget_streak = db.Column(db.Integer, default=0)         # consecutive months with budget set
+    best_expense_streak = db.Column(db.Integer, default=0)   # all-time best
+    best_login_streak = db.Column(db.Integer, default=0)
+    last_expense_date = db.Column(db.Date)
+    last_login_date = db.Column(db.Date)
+    last_budget_month = db.Column(db.String(7))              # YYYY-MM
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('streak', uselist=False, lazy=True, cascade='all, delete-orphan'))
+
+
+class UserBadge(db.Model):
+    """Badges earned by users for financial milestones."""
+    __table_args__ = (
+        db.Index('ix_badge_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    badge_key = db.Column(db.String(50), nullable=False)     # unique badge identifier
+    badge_name = db.Column(db.String(100), nullable=False)   # display name
+    badge_icon = db.Column(db.String(50), default='emoji_events')  # material icon
+    badge_color = db.Column(db.String(20), default='#FFD700')
+    category = db.Column(db.String(30), default='general')   # tracking, saving, investing, streak
+    earned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('badges', lazy=True, cascade='all, delete-orphan'))

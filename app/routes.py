@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -402,6 +402,7 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.calculators': 'starter',
     'main.pricing': 'starter',
     'main.help_guide': 'starter',
+    'main.achievements': 'starter',
     'main.gold_silver': 'starter',
     'main.global_gold_prices': 'starter',
     # Pro modules
@@ -4892,6 +4893,320 @@ def billing_history():
         PaymentTransaction.created_at.desc()
     ).all()
     return render_template('billing_history.html', transactions=txns)
+
+
+# ======================== ACHIEVEMENTS / GAMIFICATION ========================
+
+# Badge definitions: (key, name, icon, color, category, check_description)
+BADGE_DEFINITIONS = [
+    # Tracking badges
+    ('first_expense', 'First Step', 'receipt_long', '#4CAF50', 'tracking', 'Record your first expense'),
+    ('expense_10', 'Expense Tracker', 'receipt_long', '#2196F3', 'tracking', 'Record 10 expenses'),
+    ('expense_50', 'Expense Pro', 'receipt_long', '#9C27B0', 'tracking', 'Record 50 expenses'),
+    ('expense_100', 'Expense Master', 'receipt_long', '#FFD700', 'tracking', 'Record 100 expenses'),
+    ('first_income', 'Income Tracker', 'payments', '#4CAF50', 'tracking', 'Record your first income'),
+    ('income_10', 'Income Pro', 'payments', '#2196F3', 'tracking', 'Record 10 income entries'),
+    # Saving & budgeting badges
+    ('budget_set', 'Budget Planner', 'account_balance_wallet', '#FF9800', 'saving', 'Set your first monthly budget'),
+    ('first_goal', 'Goal Setter', 'flag', '#E91E63', 'saving', 'Create your first financial goal'),
+    ('goal_50', 'Halfway There', 'trending_up', '#FF5722', 'saving', 'Reach 50% on any goal'),
+    ('goal_complete', 'Goal Achiever', 'flag', '#FFD700', 'saving', 'Complete a financial goal'),
+    # Investing badges
+    ('first_investment', 'Investor', 'trending_up', '#00BCD4', 'investing', 'Add your first investment'),
+    ('investment_5', 'Portfolio Builder', 'trending_up', '#3F51B5', 'investing', 'Add 5 investments'),
+    ('first_sip', 'SIP Starter', 'auto_graph', '#009688', 'investing', 'Start your first SIP'),
+    ('first_policy', 'Insured', 'shield', '#795548', 'investing', 'Add your first insurance policy'),
+    # Streak badges
+    ('streak_7', '7-Day Streak', 'local_fire_department', '#FF5722', 'streak', 'Log expenses 7 days in a row'),
+    ('streak_30', '30-Day Streak', 'local_fire_department', '#FF9800', 'streak', 'Log expenses 30 days in a row'),
+    ('streak_100', '100-Day Streak', 'local_fire_department', '#FFD700', 'streak', 'Log expenses 100 days in a row'),
+    ('login_7', 'Regular User', 'login', '#607D8B', 'streak', 'Log in 7 days in a row'),
+    ('login_30', 'Dedicated User', 'login', '#FFD700', 'streak', 'Log in 30 days in a row'),
+    # Profile badges
+    ('profile_complete', 'Profile Pro', 'person', '#673AB7', 'general', 'Complete your profile (name, age, salary, profession)'),
+    ('bank_added', 'Bank Connected', 'account_balance', '#1976D2', 'general', 'Add a bank account'),
+]
+
+
+def _update_streaks(user):
+    """Update user streaks based on current activity. Returns the streak object."""
+    today = date.today()
+    streak = UserStreak.query.filter_by(user_id=user.id).first()
+    if not streak:
+        streak = UserStreak(user_id=user.id)
+        db.session.add(streak)
+
+    # Login streak
+    if streak.last_login_date:
+        diff = (today - streak.last_login_date).days
+        if diff == 1:
+            streak.login_streak += 1
+        elif diff > 1:
+            streak.login_streak = 1
+        # diff == 0: same day, no change
+    else:
+        streak.login_streak = 1
+    streak.last_login_date = today
+    if streak.login_streak > streak.best_login_streak:
+        streak.best_login_streak = streak.login_streak
+
+    # Expense streak — check latest expense date
+    latest_expense = Expense.query.filter_by(user_id=user.id).order_by(Expense.date.desc()).first()
+    if latest_expense and latest_expense.date:
+        exp_date = latest_expense.date
+        if streak.last_expense_date:
+            diff = (exp_date - streak.last_expense_date).days
+            if diff == 1:
+                streak.expense_streak += 1
+            elif diff > 1:
+                streak.expense_streak = 1
+        else:
+            streak.expense_streak = 1
+        streak.last_expense_date = exp_date
+        if streak.expense_streak > streak.best_expense_streak:
+            streak.best_expense_streak = streak.expense_streak
+
+    # Budget streak — check how many consecutive months have budgets
+    current_month = today.strftime('%Y-%m')
+    has_budget = Budget.query.filter_by(user_id=user.id, month=current_month).first()
+    if has_budget:
+        if streak.last_budget_month and streak.last_budget_month != current_month:
+            # Check if it's the consecutive month
+            from dateutil.relativedelta import relativedelta
+            last_dt = datetime.strptime(streak.last_budget_month, '%Y-%m').date()
+            expected = (last_dt + relativedelta(months=1)).strftime('%Y-%m')
+            if current_month == expected:
+                streak.budget_streak += 1
+            else:
+                streak.budget_streak = 1
+        elif not streak.last_budget_month:
+            streak.budget_streak = 1
+        streak.last_budget_month = current_month
+
+    streak.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return streak
+
+
+def _check_and_award_badges(user):
+    """Check all badge conditions and award any new badges. Returns newly awarded badges."""
+    existing_keys = {b.badge_key for b in UserBadge.query.filter_by(user_id=user.id).all()}
+    new_badges = []
+
+    def _award(key):
+        if key in existing_keys:
+            return
+        defn = next((d for d in BADGE_DEFINITIONS if d[0] == key), None)
+        if not defn:
+            return
+        badge = UserBadge(
+            user_id=user.id, badge_key=key, badge_name=defn[1],
+            badge_icon=defn[2], badge_color=defn[3], category=defn[4]
+        )
+        db.session.add(badge)
+        new_badges.append(badge)
+
+    # Expense count badges
+    exp_count = Expense.query.filter_by(user_id=user.id).count()
+    if exp_count >= 1: _award('first_expense')
+    if exp_count >= 10: _award('expense_10')
+    if exp_count >= 50: _award('expense_50')
+    if exp_count >= 100: _award('expense_100')
+
+    # Income count badges
+    inc_count = Income.query.filter_by(user_id=user.id).count()
+    if inc_count >= 1: _award('first_income')
+    if inc_count >= 10: _award('income_10')
+
+    # Budget
+    if Budget.query.filter_by(user_id=user.id).first():
+        _award('budget_set')
+
+    # Goals
+    goals = FinancialGoal.query.filter_by(user_id=user.id).all()
+    if goals:
+        _award('first_goal')
+        for g in goals:
+            if g.target_amount and g.current_saved:
+                pct = (g.current_saved / g.target_amount) * 100
+                if pct >= 50: _award('goal_50')
+                if pct >= 100: _award('goal_complete')
+
+    # Investments
+    inv_count = Investment.query.filter_by(user_id=user.id).count()
+    if inv_count >= 1: _award('first_investment')
+    if inv_count >= 5: _award('investment_5')
+
+    # SIP
+    if SIP.query.filter_by(user_id=user.id).first():
+        _award('first_sip')
+
+    # Policy
+    if InsurancePolicy.query.filter_by(user_id=user.id).first():
+        _award('first_policy')
+
+    # Streaks
+    streak = UserStreak.query.filter_by(user_id=user.id).first()
+    if streak:
+        if streak.best_expense_streak >= 7: _award('streak_7')
+        if streak.best_expense_streak >= 30: _award('streak_30')
+        if streak.best_expense_streak >= 100: _award('streak_100')
+        if streak.best_login_streak >= 7: _award('login_7')
+        if streak.best_login_streak >= 30: _award('login_30')
+
+    # Profile completeness
+    if user.full_name and user.age and user.monthly_salary and user.profession:
+        _award('profile_complete')
+
+    # Bank account
+    if BankAccount.query.filter_by(user_id=user.id).first():
+        _award('bank_added')
+
+    if new_badges:
+        db.session.commit()
+    return new_badges
+
+
+def _calculate_financial_score(user):
+    """Calculate a 0-100 financial health score based on user's financial data."""
+    score = 0
+    reasons = []
+    today = date.today()
+    current_month = today.strftime('%Y-%m')
+
+    # 1. Savings rate (0-25 points)
+    monthly_income = user.monthly_salary or 0
+    month_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == user.id,
+        db.extract('year', Expense.date) == today.year,
+        db.extract('month', Expense.date) == today.month
+    ).scalar() or 0
+
+    if monthly_income > 0:
+        savings_rate = max(0, (monthly_income - month_expenses) / monthly_income)
+        savings_pts = min(25, int(savings_rate * 50))  # 50% savings = 25 pts
+        score += savings_pts
+        if savings_rate >= 0.2:
+            reasons.append(('good', f'Savings rate: {savings_rate*100:.0f}%'))
+        else:
+            reasons.append(('warn', f'Savings rate: {savings_rate*100:.0f}% — aim for 20%+'))
+    else:
+        reasons.append(('warn', 'Set your monthly salary in Profile'))
+
+    # 2. Budget discipline (0-15 points)
+    has_budget = Budget.query.filter_by(user_id=user.id, month=current_month).first()
+    if has_budget:
+        score += 15
+        reasons.append(('good', 'Budget set for this month'))
+    else:
+        reasons.append(('warn', 'Set a budget for this month'))
+
+    # 3. Investment coverage (0-20 points)
+    total_invested = db.session.query(db.func.sum(Investment.amount_invested)).filter_by(
+        user_id=user.id, is_active=True
+    ).scalar() or 0
+    if monthly_income > 0 and total_invested > 0:
+        inv_months = total_invested / monthly_income
+        inv_pts = min(20, int(inv_months * 2))  # 10 months' salary invested = 20 pts
+        score += inv_pts
+        reasons.append(('good' if inv_pts >= 10 else 'warn', f'Investments: {inv_months:.1f}x monthly income'))
+    else:
+        reasons.append(('warn', 'Start investing to improve your score'))
+
+    # 4. Insurance coverage (0-10 points)
+    total_cover = db.session.query(db.func.sum(InsurancePolicy.sum_assured)).filter_by(
+        user_id=user.id, status='active'
+    ).scalar() or 0
+    if monthly_income > 0 and total_cover > 0:
+        cover_ratio = total_cover / (monthly_income * 12)
+        ins_pts = min(10, int(cover_ratio))  # 10x annual income = 10 pts
+        score += ins_pts
+        reasons.append(('good' if ins_pts >= 5 else 'warn', f'Insurance: {cover_ratio:.1f}x annual income'))
+    else:
+        reasons.append(('warn', 'Add insurance policies for protection'))
+
+    # 5. Debt management (0-15 points)
+    active_loans = Loan.query.filter_by(user_id=user.id, is_active=True).all()
+    total_emi = sum(l.emi_amount or 0 for l in active_loans)
+    if monthly_income > 0:
+        if total_emi == 0:
+            score += 15
+            reasons.append(('good', 'No active loan EMIs'))
+        else:
+            emi_ratio = total_emi / monthly_income
+            if emi_ratio <= 0.3:
+                score += 15
+                reasons.append(('good', f'EMI ratio: {emi_ratio*100:.0f}% (healthy)'))
+            elif emi_ratio <= 0.5:
+                score += 8
+                reasons.append(('warn', f'EMI ratio: {emi_ratio*100:.0f}% — try to keep under 30%'))
+            else:
+                reasons.append(('warn', f'EMI ratio: {emi_ratio*100:.0f}% — high debt burden'))
+
+    # 6. Goal tracking (0-10 points)
+    goals = FinancialGoal.query.filter_by(user_id=user.id).all()
+    if goals:
+        avg_progress = sum(min(100, (g.current_saved / g.target_amount * 100) if g.target_amount else 0) for g in goals) / len(goals)
+        goal_pts = min(10, int(avg_progress / 10))
+        score += goal_pts
+        reasons.append(('good' if goal_pts >= 5 else 'warn', f'Goal progress: {avg_progress:.0f}% average'))
+    else:
+        reasons.append(('warn', 'Set financial goals to track progress'))
+
+    # 7. Profile completeness (0-5 points)
+    profile_fields = [user.full_name, user.age, user.monthly_salary, user.profession, user.email]
+    filled = sum(1 for f in profile_fields if f)
+    profile_pts = filled  # 1 pt each, max 5
+    score += profile_pts
+    if profile_pts >= 5:
+        reasons.append(('good', 'Profile complete'))
+    else:
+        reasons.append(('warn', f'Complete your profile ({filled}/5 fields)'))
+
+    return min(100, score), reasons
+
+
+@main.route('/achievements')
+@login_required
+def achievements():
+    """Gamification page: streaks, badges, financial health score."""
+    # Update streaks
+    streak = _update_streaks(current_user)
+
+    # Check and award badges
+    new_badges = _check_and_award_badges(current_user)
+
+    # Get all badges
+    earned_badges = UserBadge.query.filter_by(user_id=current_user.id).order_by(UserBadge.earned_at.desc()).all()
+    earned_keys = {b.badge_key for b in earned_badges}
+
+    # Build full badge list with locked/unlocked status
+    all_badges = []
+    for defn in BADGE_DEFINITIONS:
+        badge_info = {
+            'key': defn[0], 'name': defn[1], 'icon': defn[2],
+            'color': defn[3], 'category': defn[4], 'description': defn[5],
+            'earned': defn[0] in earned_keys,
+            'earned_at': next((b.earned_at for b in earned_badges if b.badge_key == defn[0]), None)
+        }
+        all_badges.append(badge_info)
+
+    # Calculate financial score
+    financial_score, score_reasons = _calculate_financial_score(current_user)
+
+    # Stats for summary cards
+    total_badges = len(BADGE_DEFINITIONS)
+    earned_count = len(earned_badges)
+
+    return render_template('achievements.html',
+        streak=streak,
+        all_badges=all_badges,
+        new_badges=new_badges,
+        financial_score=financial_score,
+        score_reasons=score_reasons,
+        total_badges=total_badges,
+        earned_count=earned_count,
+    )
 
 
 @main.route('/privacy-policy')

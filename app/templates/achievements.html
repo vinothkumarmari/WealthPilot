@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% block title %}Achievements - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">emoji_events</span> {{ t('Achievements') }}</h4>
+    <p class="text-muted">{{ t('Track your streaks, earn badges, and monitor your financial health') }}</p>
+</div>
+
+{% if new_badges %}
+<div class="alert alert-success d-flex align-items-center mb-4" style="border-radius:12px;">
+    <span class="material-icons-outlined me-2">celebration</span>
+    <div>
+        <strong>{{ t('New Badge Earned!') }}</strong>
+        {% for b in new_badges %}
+        <span class="badge ms-2" style="background:{{ b.badge_color }};color:#fff;font-size:13px;">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">{{ b.badge_icon }}</span>
+            {{ b.badge_name }}
+        </span>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Financial Health Score -->
+<div class="row mb-4">
+    <div class="col-lg-5 mb-3">
+        <div class="card h-100" style="border-radius:16px;overflow:hidden;">
+            <div class="card-body text-center py-4">
+                <h5 class="mb-3">{{ t('Financial Health Score') }}</h5>
+                <div class="position-relative d-inline-block" style="width:180px;height:180px;">
+                    <canvas id="scoreGauge" width="180" height="180"></canvas>
+                    <div class="position-absolute top-50 start-50 translate-middle">
+                        <span style="font-size:42px;font-weight:800;color:var(--accent);">{{ financial_score }}</span>
+                        <br><small class="text-muted">/100</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    {% if financial_score >= 80 %}
+                    <span class="badge bg-success px-3 py-2" style="font-size:13px;">{{ t('Excellent') }}</span>
+                    {% elif financial_score >= 60 %}
+                    <span class="badge bg-primary px-3 py-2" style="font-size:13px;">{{ t('Good') }}</span>
+                    {% elif financial_score >= 40 %}
+                    <span class="badge bg-warning text-dark px-3 py-2" style="font-size:13px;">{{ t('Fair') }}</span>
+                    {% else %}
+                    <span class="badge bg-danger px-3 py-2" style="font-size:13px;">{{ t('Needs Work') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7 mb-3">
+        <div class="card h-100" style="border-radius:16px;">
+            <div class="card-body">
+                <h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;">insights</span> {{ t('Score Breakdown') }}</h5>
+                {% for level, reason in score_reasons %}
+                <div class="d-flex align-items-center mb-2">
+                    {% if level == 'good' %}
+                    <span class="material-icons-outlined text-success me-2" style="font-size:20px;">check_circle</span>
+                    {% else %}
+                    <span class="material-icons-outlined text-warning me-2" style="font-size:20px;">info</span>
+                    {% endif %}
+                    <span style="font-size:14px;">{{ reason }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Streaks -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-radius:16px;">
+            <div class="card-body py-4">
+                <span class="material-icons-outlined" style="font-size:40px;color:#FF5722;">local_fire_department</span>
+                <h2 class="mt-2 mb-0" style="font-weight:800;color:var(--accent);">{{ streak.expense_streak if streak else 0 }}</h2>
+                <p class="text-muted mb-1">{{ t('Expense Tracking Streak') }}</p>
+                <small class="text-muted">{{ t('Best') }}: {{ streak.best_expense_streak if streak else 0 }} {{ t('days') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-radius:16px;">
+            <div class="card-body py-4">
+                <span class="material-icons-outlined" style="font-size:40px;color:#2196F3;">login</span>
+                <h2 class="mt-2 mb-0" style="font-weight:800;color:var(--accent);">{{ streak.login_streak if streak else 0 }}</h2>
+                <p class="text-muted mb-1">{{ t('Login Streak') }}</p>
+                <small class="text-muted">{{ t('Best') }}: {{ streak.best_login_streak if streak else 0 }} {{ t('days') }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-radius:16px;">
+            <div class="card-body py-4">
+                <span class="material-icons-outlined" style="font-size:40px;color:#4CAF50;">account_balance_wallet</span>
+                <h2 class="mt-2 mb-0" style="font-weight:800;color:var(--accent);">{{ streak.budget_streak if streak else 0 }}</h2>
+                <p class="text-muted mb-1">{{ t('Budget Streak') }}</p>
+                <small class="text-muted">{{ t('consecutive months') }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Badge Gallery -->
+<div class="card mb-4" style="border-radius:16px;">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><span class="material-icons-outlined" style="vertical-align:middle;">emoji_events</span> {{ t('Badges') }}</h5>
+            <span class="badge bg-primary px-3 py-2" style="font-size:13px;">{{ earned_count }} / {{ total_badges }}</span>
+        </div>
+
+        <!-- Badge category tabs -->
+        <ul class="nav nav-pills mb-3" id="badgeTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#badge-all" type="button">{{ t('All') }}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#badge-tracking" type="button">{{ t('Tracking') }}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#badge-saving" type="button">{{ t('Saving') }}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#badge-investing" type="button">{{ t('Investing') }}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#badge-streak" type="button">{{ t('Streaks') }}</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#badge-general" type="button">{{ t('General') }}</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="badgeTabContent">
+            {% set categories = ['all', 'tracking', 'saving', 'investing', 'streak', 'general'] %}
+            {% for cat in categories %}
+            <div class="tab-pane fade {% if cat == 'all' %}show active{% endif %}" id="badge-{{ cat }}">
+                <div class="row">
+                    {% for badge in all_badges %}
+                    {% if cat == 'all' or badge.category == cat %}
+                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                        <div class="text-center p-3 rounded-3 h-100 {% if badge.earned %}badge-earned{% else %}badge-locked{% endif %}"
+                             style="border:2px solid {% if badge.earned %}{{ badge.color }}{% else %}var(--border-color){% endif %};
+                                    background:{% if badge.earned %}{{ badge.color }}10{% else %}var(--card-bg){% endif %};
+                                    transition:transform 0.2s;cursor:default;"
+                             title="{{ badge.description }}">
+                            <span class="material-icons-outlined" style="font-size:36px;color:{% if badge.earned %}{{ badge.color }}{% else %}#ccc{% endif %};">
+                                {% if badge.earned %}{{ badge.icon }}{% else %}lock{% endif %}
+                            </span>
+                            <p class="mb-1 mt-2" style="font-size:13px;font-weight:600;{% if not badge.earned %}color:#999;{% endif %}">
+                                {{ badge.name }}
+                            </p>
+                            <small class="text-muted" style="font-size:11px;">
+                                {% if badge.earned and badge.earned_at %}
+                                {{ badge.earned_at.strftime('%d %b %Y') }}
+                                {% else %}
+                                {{ badge.description }}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Progress bar showing overall badge completion -->
+<div class="card mb-4" style="border-radius:16px;">
+    <div class="card-body">
+        <h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;">military_tech</span> {{ t('Overall Progress') }}</h5>
+        <div class="progress" style="height:24px;border-radius:12px;">
+            {% set pct = (earned_count / total_badges * 100)|int if total_badges > 0 else 0 %}
+            <div class="progress-bar" role="progressbar" style="width:{{ pct }}%;background:linear-gradient(135deg,#4A00E0,#6C5CE7,#8E2DE2);font-weight:600;font-size:13px;" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                {{ pct }}%
+            </div>
+        </div>
+        <small class="text-muted mt-2 d-block">{{ earned_count }} {{ t('of') }} {{ total_badges }} {{ t('badges earned') }}</small>
+    </div>
+</div>
+
+<script>
+// Financial Score Gauge
+(function(){
+    const canvas = document.getElementById('scoreGauge');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const score = {{ financial_score }};
+    const size = 180, cx = size/2, cy = size/2, r = 70, lw = 14;
+
+    // Background arc
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0.75 * Math.PI, 2.25 * Math.PI);
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color') || '#e0e0e0';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Score arc
+    const pct = score / 100;
+    const endAngle = 0.75 * Math.PI + pct * 1.5 * Math.PI;
+    let color = '#f44336';
+    if(score >= 80) color = '#4CAF50';
+    else if(score >= 60) color = '#2196F3';
+    else if(score >= 40) color = '#FF9800';
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0.75 * Math.PI, endAngle);
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = color;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+})();
+</script>
+{% endblock %}
