@@ -158,6 +158,26 @@
         </div>
     </div>
 
+    <!-- Monthly Breakdown Table (Loan only) -->
+    <div id="loanTableWrap" class="d-none">
+        <div class="card mb-4" style="border-radius:16px;">
+            <div class="card-body">
+                <h5><span class="material-icons-outlined" style="vertical-align:middle;">table_chart</span> Monthly EMI Breakdown</h5>
+                <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+                    <table class="table table-sm table-striped table-hover mb-0" style="font-size:0.85rem;">
+                        <thead class="table-dark sticky-top">
+                            <tr><th>Month</th><th class="text-end">EMI</th><th class="text-end">Principal</th><th class="text-end">Interest</th><th class="text-end">Balance</th></tr>
+                        </thead>
+                        <tbody id="loanTableBody"></tbody>
+                        <tfoot class="table-secondary fw-bold">
+                            <tr id="loanTableFoot"></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Insights -->
     <div class="card mb-4" style="border-radius:16px;">
         <div class="card-body">
@@ -202,6 +222,7 @@ function fmt(n) {
 function runSimulation() {
     const results = document.getElementById('simResults');
     results.classList.remove('d-none');
+    document.getElementById('loanTableWrap').classList.add('d-none');
 
     if (activeScenario === 'loan') simulateLoan();
     else if (activeScenario === 'invest') simulateInvestment();
@@ -231,26 +252,76 @@ function simulateLoan() {
         <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Monthly Savings After</small><h5 class="mb-0 ${monthlySavingsAfter < 0 ? 'text-danger' : 'text-success'}">${fmt(monthlySavingsAfter)}</h5></div></div>
     `;
 
-    // Chart — principal vs interest over time
-    const labels = [], principal = [], interest = [], balance = [];
-    let bal = P;
+    // Month-wise amortization
+    const labels = [], principalData = [], interestData = [], balanceData = [];
+    let bal = P, totalPrinPaid = 0, totalIntPaid = 0;
+    let tableRows = '';
+
     for (let m = 1; m <= n; m++) {
         const intPart = bal * r;
         const prinPart = emi - intPart;
-        bal -= prinPart;
-        if (m % 12 === 0 || m === n) {
-            labels.push('Year ' + Math.ceil(m/12));
-            principal.push(Math.round(P - bal));
-            interest.push(Math.round(totalPayment * m/n - (P - bal) - P * (1 - bal/P)));
-            balance.push(Math.round(Math.max(0, bal)));
-        }
+        bal = Math.max(0, bal - prinPart);
+        totalPrinPaid += prinPart;
+        totalIntPaid += intPart;
+
+        labels.push('M' + m);
+        principalData.push(Math.round(prinPart));
+        interestData.push(Math.round(intPart));
+        balanceData.push(Math.round(bal));
+
+        tableRows += `<tr>
+            <td>${m}</td>
+            <td class="text-end">${fmt(emi)}</td>
+            <td class="text-end text-success">${fmt(prinPart)}</td>
+            <td class="text-end text-danger">${fmt(intPart)}</td>
+            <td class="text-end">${fmt(bal)}</td>
+        </tr>`;
     }
 
-    document.getElementById('chartTitle').textContent = 'Loan Repayment Over Time';
-    renderChart(labels, [
-        { label: 'Outstanding Balance', data: balance, borderColor: '#f44336', backgroundColor: 'rgba(244,67,54,0.1)', fill: true },
-        { label: 'Principal Paid', data: principal, borderColor: '#4CAF50', backgroundColor: 'rgba(76,175,80,0.1)', fill: true },
-    ]);
+    // Show table
+    document.getElementById('loanTableWrap').classList.remove('d-none');
+    document.getElementById('loanTableBody').innerHTML = tableRows;
+    document.getElementById('loanTableFoot').innerHTML = `
+        <td>Total</td>
+        <td class="text-end">${fmt(totalPayment)}</td>
+        <td class="text-end text-success">${fmt(totalPrinPaid)}</td>
+        <td class="text-end text-danger">${fmt(totalIntPaid)}</td>
+        <td class="text-end">₹0</td>
+    `;
+
+    // Chart — monthly principal vs interest (bar) + balance line
+    document.getElementById('chartTitle').textContent = 'Monthly EMI Breakdown — Principal vs Interest';
+    if (simChartInstance) simChartInstance.destroy();
+    const ctx = document.getElementById('simChart').getContext('2d');
+    simChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Principal', data: principalData, backgroundColor: 'rgba(76,175,80,0.7)', stack: 'emi', order: 2 },
+                { label: 'Interest', data: interestData, backgroundColor: 'rgba(244,67,54,0.7)', stack: 'emi', order: 2 },
+                { label: 'Outstanding Balance', data: balanceData, type: 'line', borderColor: '#6C5CE7', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2, yAxisID: 'y1', order: 1 },
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } },
+            scales: {
+                x: { ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+                y: {
+                    stacked: true,
+                    title: { display: true, text: 'EMI Split (₹)' },
+                    ticks: { callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(0)+'K' : v) }
+                },
+                y1: {
+                    position: 'right', grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Balance (₹)' },
+                    ticks: { callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v) }
+                }
+            }
+        }
+    });
 
     // Insights
     let insights = '';
@@ -258,6 +329,7 @@ function simulateLoan() {
     else if (emiToIncomeRatio > 30) insights += '<div class="alert alert-warning py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">info</span> EMI is 30-50% of income — manageable but tight.</div>';
     else insights += '<div class="alert alert-success py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">check_circle</span> EMI is under 30% — healthy debt level.</div>';
     insights += `<p>You'll pay <strong>${fmt(totalInterest)}</strong> in interest over ${document.getElementById('loanTenure').value} years — that's <strong>${(totalInterest/P*100).toFixed(0)}%</strong> of the loan amount.</p>`;
+    insights += `<p><strong>Month 1:</strong> Interest ₹${Math.round(P*r).toLocaleString('en-IN')} vs Principal ₹${Math.round(emi - P*r).toLocaleString('en-IN')} | <strong>Last month:</strong> Interest ₹${Math.round(interestData[n-1]).toLocaleString('en-IN')} vs Principal ₹${Math.round(principalData[n-1]).toLocaleString('en-IN')}</p>`;
     if (monthlySavingsAfter < 0) insights += '<div class="alert alert-danger py-2"><span class="material-icons-outlined me-1" style="font-size:18px;">dangerous</span> You would go into negative savings! Consider a smaller loan or longer tenure.</div>';
     document.getElementById('simInsights').innerHTML = insights;
 }
