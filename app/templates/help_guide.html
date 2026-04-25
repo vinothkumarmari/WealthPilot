@@ -50,6 +50,10 @@
             <a href="#insuranceanalyzer" class="btn btn-sm btn-outline-warning">Insurance Analyzer</a>
             <a href="#customreports" class="btn btn-sm btn-outline-warning">Custom Reports</a>
             <a href="#prioritysupport" class="btn btn-sm btn-outline-warning">Priority Support</a>
+            <a href="#voiceentry" class="btn btn-sm btn-outline-success">Voice Entry</a>
+            <a href="#offlinemode" class="btn btn-sm btn-outline-success">Offline Mode</a>
+            <a href="#whatifsimulator" class="btn btn-sm btn-outline-success">What-If Simulator</a>
+            <a href="#achievements" class="btn btn-sm btn-outline-success">Achievements</a>
             <a href="#profile" class="btn btn-sm btn-outline-primary">Profile</a>
             <a href="#feedback" class="btn btn-sm btn-outline-primary">Feedback</a>
             <a href="#forgotpassword" class="btn btn-sm btn-outline-primary">Forgot Password</a>
@@ -829,6 +833,81 @@
             <li><strong>Response Time:</strong> Within 24 hours guaranteed.</li>
             <li><strong>Direct Email:</strong> Your message is sent directly to the MyWealthPilot team.</li>
             <li><strong>Include Details:</strong> Provide your username and screenshots for faster resolution.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Voice Expense Entry -->
+<div class="card mb-3" id="voiceentry">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">mic</span>Voice Expense Entry <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Add expenses hands-free using voice commands in English, Tamil, Hindi, or Telugu.</p>
+        <ul class="small">
+            <li><strong>How to Use:</strong> On the Expenses page, tap the <span class="material-icons-outlined" style="font-size:16px;">mic</span> microphone button next to "Add Expense".</li>
+            <li><strong>Speak Naturally:</strong> Say something like "Spent 500 on food" or "200 rupees auto" — the app detects the amount and category automatically.</li>
+            <li><strong>Multi-Language:</strong> Speak in Tamil (தமிழ்), Hindi (हिन्दी), Telugu (తెలుగు), or English — switches based on your app language setting.</li>
+            <li><strong>Category Detection:</strong> The app recognizes 15+ expense categories from keywords in all 4 languages (e.g., "பெட்ரோல்" → Transportation, "खाना" → Food).</li>
+            <li><strong>Number Words:</strong> Understands spoken numbers like "five hundred", "ஐநூறு", "पांच सौ" and converts them to digits.</li>
+            <li><strong>Browser Support:</strong> Works best on Chrome (desktop & mobile). Uses Web Speech API — no data leaves your device.</li>
+            <li><strong>Tip:</strong> Speak clearly and include both amount and category for best results. You can always edit before saving.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Offline Mode (PWA) -->
+<div class="card mb-3" id="offlinemode">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">cloud_off</span>Offline Mode (PWA) <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Add expenses even without internet — they sync automatically when you're back online.</p>
+        <ul class="small">
+            <li><strong>How It Works:</strong> When offline, submit an expense normally. It's saved locally in your browser's IndexedDB storage.</li>
+            <li><strong>Offline Banner:</strong> A red banner appears at the bottom when you lose internet connection.</li>
+            <li><strong>Pending Badge:</strong> A purple badge at the bottom-right shows how many expenses are waiting to sync. Tap it to manually sync.</li>
+            <li><strong>Auto-Sync:</strong> When internet returns, all pending expenses are automatically uploaded and a success toast confirms it.</li>
+            <li><strong>Data Safety:</strong> Pending expenses are stored securely in your browser. They persist even if you close the tab.</li>
+            <li><strong>Install as App:</strong> For the best offline experience, install MyWealthPilot as a PWA from your browser menu (Chrome → "Install app").</li>
+            <li><strong>Supported Browsers:</strong> Chrome, Edge, Firefox on both desktop and mobile.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- What-If Financial Simulator -->
+<div class="card mb-3" id="whatifsimulator">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">science</span>What-If Financial Simulator <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Model financial scenarios to see how decisions impact your future — all calculations happen instantly in your browser.</p>
+        <ul class="small">
+            <li><strong>New Loan:</strong> Enter loan amount, interest rate, and tenure to see EMI, total interest, EMI-to-income ratio, and monthly savings impact. Color-coded warnings (green/yellow/red) for healthy/tight/risky debt levels.</li>
+            <li><strong>New Investment (SIP):</strong> Run 500 Monte Carlo simulations with market volatility to see best-case, expected, and worst-case outcomes for your SIP investments.</li>
+            <li><strong>Salary Change:</strong> Project how a salary change (with annual increments) affects your 10-year wealth accumulation.</li>
+            <li><strong>Inflation Impact:</strong> Visualize how inflation erodes your purchasing power — see what today's ₹100 will be worth in the future.</li>
+            <li><strong>Pre-filled Data:</strong> Your current income, expenses, investments, loans, EMI, and bank balance are automatically loaded from your profile.</li>
+            <li><strong>Charts & Insights:</strong> Each scenario shows interactive Chart.js visualizations and contextual insights with actionable tips.</li>
+            <li><strong>Privacy:</strong> All simulations run 100% client-side — no data is sent to any server.</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Achievements & Gamification -->
+<div class="card mb-3" id="achievements">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">emoji_events</span>Achievements & Gamification <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Track your financial discipline through streaks, earn badges, and monitor your financial health score.</p>
+        <ul class="small">
+            <li><strong>Streaks:</strong> Maintain daily login, expense tracking, and budget streaks. Your best records are tracked — try to beat them!</li>
+            <li><strong>Badges (22 Total):</strong> Earn badges across 5 categories — Tracking, Saving, Investing, Streaks, and General. Each has unique icons and colors.</li>
+            <li><strong>Financial Health Score:</strong> A 0-100 score based on savings rate (25 pts), budget adherence (15 pts), investment diversity (20 pts), insurance (10 pts), debt ratio (15 pts), goals (10 pts), and profile completeness (5 pts).</li>
+            <li><strong>New Badge Alert:</strong> When you earn a new badge, a celebration alert appears on the Achievements page.</li>
+            <li><strong>Progress Tracking:</strong> See your overall badge completion percentage and which badges you still need to earn.</li>
+            <li><strong>Free Feature:</strong> Achievements are available on all plans including Starter (free).</li>
         </ul>
     </div>
 </div>
