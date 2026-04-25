@@ -204,7 +204,7 @@
                 <h5 class="modal-title"><span class="material-icons-outlined">add_circle</span> {{ t('Add Expense') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="{{ url_for('main.add_expense') }}" method="POST">
+            <form action="{{ url_for('main.add_expense') }}" method="POST" id="addExpenseForm" onsubmit="return handleExpenseSubmit(event)">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="row">
@@ -447,6 +447,33 @@
             const modal = new bootstrap.Modal(document.getElementById('addExpenseModal'));
             modal.show();
         }, 1200);
+    }
+    /* ======================== OFFLINE EXPENSE SUBMIT ======================== */
+    function handleExpenseSubmit(event) {
+        if (navigator.onLine) return true; // Normal submit when online
+
+        event.preventDefault();
+        const form = document.getElementById('addExpenseForm');
+        const data = {
+            category: form.querySelector('[name=category]').value,
+            amount: parseFloat(form.querySelector('[name=amount]').value),
+            date: form.querySelector('[name=date]').value || new Date().toISOString().split('T')[0],
+            description: form.querySelector('[name=description]').value,
+            is_recurring: form.querySelector('[name=is_recurring]').checked
+        };
+
+        saveExpenseOffline(data).then(() => {
+            // Close modal and show confirmation
+            bootstrap.Modal.getInstance(document.getElementById('addExpenseModal'))?.hide();
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#FF9800;color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.2);display:flex;align-items:center;gap:8px;';
+            toast.innerHTML = '<span class="material-icons-outlined">cloud_off</span> Saved offline! Will sync when online.';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+            form.reset();
+            showPendingBadge();
+        });
+        return false;
     }
 </script>
 {% endblock %}
