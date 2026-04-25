@@ -6,10 +6,38 @@
         <h4><span class="material-icons-outlined">receipt_long</span> {{ t('Expense Tracker') }}</h4>
         <p class="text-muted">{{ t('Track and analyze your spending') }}</p>
     </div>
-    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
-        <span class="material-icons-outlined">add</span> {{ t('Add Expense') }}
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-accent position-relative" id="voiceExpenseBtn" onclick="startVoiceExpense()" title="{{ t('Voice Input') }}">
+            <span class="material-icons-outlined" id="voiceMicIcon">mic</span>
+            <span class="d-none d-md-inline" id="voiceBtnText">{{ t('Voice') }}</span>
+        </button>
+        <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+            <span class="material-icons-outlined">add</span> {{ t('Add Expense') }}
+        </button>
+    </div>
 </div>
+
+<!-- Voice Input Feedback -->
+<div id="voiceFeedback" class="alert alert-info d-none mb-3" style="border-radius:12px;">
+    <div class="d-flex align-items-center">
+        <div class="voice-pulse me-3" id="voicePulse">
+            <span class="material-icons-outlined" style="font-size:32px;color:var(--accent);">mic</span>
+        </div>
+        <div class="flex-grow-1">
+            <strong id="voiceStatus">{{ t('Listening...') }}</strong>
+            <p class="mb-0 mt-1" id="voiceTranscript" style="font-size:14px;"></p>
+        </div>
+        <button class="btn btn-sm btn-outline-danger ms-2" onclick="stopVoiceExpense()">
+            <span class="material-icons-outlined" style="font-size:18px;">close</span>
+        </button>
+    </div>
+</div>
+<style>
+.voice-pulse{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(108,92,231,0.1);}
+.voice-pulse.active{animation:vpulse 1.2s ease-in-out infinite;}
+@keyframes vpulse{0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,0.4);}50%{box-shadow:0 0 0 16px rgba(108,92,231,0);}}
+#voiceExpenseBtn.recording{background:var(--accent);color:#fff;animation:vpulse 1.2s ease-in-out infinite;}
+</style>
 
 <!-- Summary -->
 <div class="row mb-4">
@@ -232,6 +260,193 @@
             },
             options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
         });
+    }
+
+    /* ======================== VOICE EXPENSE ENTRY ======================== */
+    let voiceRecognition = null;
+    let isRecording = false;
+
+    // Language mapping for Web Speech API
+    const langMap = {
+        'en': 'en-IN', 'ta': 'ta-IN', 'hi': 'hi-IN', 'te': 'te-IN'
+    };
+
+    // Category keywords — supports EN + Tamil + Hindi + Telugu
+    const categoryKeywords = {
+        'Housing':          ['housing','rent','house','home','வீடு','வாடகை','किराया','घर','मकान','ఇల్లు','అద్దె'],
+        'Food & Groceries': ['food','grocery','groceries','rice','vegetables','fruit','meal','lunch','dinner','breakfast','snack','restaurant','hotel','biryani','tea','coffee','milk','சாப்பாடு','அரிசி','காய்கறி','பால்','உணவு','மளிகை','खाना','खाने','सब्जी','चावल','दूध','किराना','భోజనం','బియ్యం','కూరగాయలు','పాలు','టీ'],
+        'Transportation':   ['transport','bus','auto','petrol','diesel','fuel','cab','uber','ola','metro','train','travel','bike','car','பெட்ரோல்','பஸ்','ஆட்டோ','பயணம்','पेट्रोल','बस','ऑटो','ट्रेन','यात्रा','पెట్రోల్','బస్','ఆటో','ప్రయాణం'],
+        'Utilities':        ['utility','electricity','water','gas','internet','wifi','phone','mobile','recharge','bill','current','மின்சாரம்','தண்ணீர்','இணையம்','ரீசார்ஜ்','बिजली','पानी','गैस','इंटरनेट','रिचार्ज','బిల్లు','కరెంట్','నీరు','ఇంటర్నెట్','రీచార్జ్'],
+        'Healthcare':       ['health','hospital','doctor','medicine','medical','pharma','pharmacy','clinic','மருந்து','மருத்துவர்','दवा','डॉक्टर','अस्पताल','మందు','డాక్టర్','ఆసుపత్రి'],
+        'Insurance':        ['insurance','premium','காப்பீடு','பிரீமியம்','बीमा','प्रीमियम','బీమా','ప్రీమియం'],
+        'Education':        ['education','school','college','tuition','book','course','fees','class','படிப்பு','புத்தகம்','கல்வி','पढ़ाई','किताब','स्कूल','फीस','చదువు','పుస్తకం','ఫీజు'],
+        'Entertainment':    ['entertainment','movie','netflix','cinema','game','party','outing','திரைப்படம்','சினிமா','फिल्म','मूवी','पार्टी','సినిమా','పార్టీ'],
+        'Shopping':         ['shopping','clothes','dress','shirt','amazon','flipkart','online','ஷாப்பிங்','ஆடை','शॉपिंग','कपड़े','షాపింగ్','బట్టలు'],
+        'Personal Care':    ['salon','haircut','spa','cosmetic','beauty','சலூன்','அழகு','सैलून','ब్యూటీ','సెలూన్'],
+        'Debt Payments':    ['emi','loan','debt','கடன்','ईएमआई','कर्ज','అప్పు','EMI'],
+        'Savings':          ['savings','deposit','சேமிப்பு','बचत','పొదుపు'],
+        'Investments':      ['invest','mutual fund','sip','stock','share','முதலீடு','निवेश','పెట్టుబడి'],
+        'Charity':          ['charity','donate','donation','temple','church','mosque','நன்கொடை','கோவில்','दान','मंदिर','విరాళం','గుడి'],
+        'Miscellaneous':    ['misc','other','miscellaneous','மற்றவை','अन्य','ఇతరం']
+    };
+
+    // Number words in Indian languages
+    const numberWords = {
+        // Tamil
+        'ஒரு': 1, 'இரண்டு': 2, 'மூன்று': 3, 'நான்கு': 4, 'ஐந்து': 5,
+        'ஆறு': 6, 'ஏழு': 7, 'எட்டு': 8, 'ஒன்பது': 9, 'பத்து': 10,
+        'இருபது': 20, 'ஐம்பது': 50, 'நூறு': 100, 'ஆயிரம்': 1000,
+        // Hindi
+        'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5,
+        'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
+        'बीस': 20, 'तीस': 30, 'चालीस': 40, 'पचास': 50,
+        'सौ': 100, 'हजार': 1000, 'हज़ार': 1000, 'लाख': 100000,
+        // Telugu
+        'ఒకటి': 1, 'రెండు': 2, 'మూడు': 3, 'నాలుగు': 4, 'ఐదు': 5,
+        'ఆరు': 6, 'ఏడు': 7, 'ఎనిమిది': 8, 'తొమ్మిది': 9, 'పది': 10,
+        'ఇరవై': 20, 'యాభై': 50, 'వంద': 100, 'వెయ్యి': 1000,
+        // English
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+        'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+        'twenty': 20, 'thirty': 30, 'forty': 40, 'fifty': 50,
+        'hundred': 100, 'thousand': 1000, 'lakh': 100000,
+    };
+
+    function detectCategory(text) {
+        const lower = text.toLowerCase();
+        let bestCat = 'Miscellaneous';
+        let bestScore = 0;
+        for (const [cat, keywords] of Object.entries(categoryKeywords)) {
+            for (const kw of keywords) {
+                if (lower.includes(kw.toLowerCase()) && kw.length > bestScore) {
+                    bestCat = cat;
+                    bestScore = kw.length;
+                }
+            }
+        }
+        return bestCat;
+    }
+
+    function extractAmount(text) {
+        // Try numeric digits first: "500", "1,500", "₹500"
+        const numMatch = text.match(/[₹]?\s*(\d[\d,]*\.?\d*)/)
+        if (numMatch) {
+            return parseFloat(numMatch[1].replace(/,/g, ''));
+        }
+        // Try word-based numbers
+        const words = text.split(/\s+/);
+        let total = 0, current = 0;
+        for (const w of words) {
+            const val = numberWords[w] || numberWords[w.toLowerCase()];
+            if (val) {
+                if (val >= 100) {
+                    current = (current || 1) * val;
+                } else {
+                    current += val;
+                }
+            } else if (current > 0) {
+                total += current;
+                current = 0;
+            }
+        }
+        total += current;
+        return total > 0 ? total : null;
+    }
+
+    function startVoiceExpense() {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Voice input is not supported in this browser. Please use Chrome.');
+            return;
+        }
+
+        if (isRecording) { stopVoiceExpense(); return; }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        voiceRecognition = new SpeechRecognition();
+
+        // Set language based on user's app language
+        const userLang = '{{ current_lang }}';
+        voiceRecognition.lang = langMap[userLang] || 'en-IN';
+        voiceRecognition.continuous = false;
+        voiceRecognition.interimResults = true;
+        voiceRecognition.maxAlternatives = 1;
+
+        isRecording = true;
+        document.getElementById('voiceExpenseBtn').classList.add('recording');
+        document.getElementById('voiceMicIcon').textContent = 'mic';
+        document.getElementById('voiceFeedback').classList.remove('d-none');
+        document.getElementById('voicePulse').classList.add('active');
+        document.getElementById('voiceStatus').textContent = '{{ t("Listening...") }}';
+        document.getElementById('voiceTranscript').textContent = '';
+
+        voiceRecognition.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('voiceTranscript').textContent = '"' + transcript + '"';
+
+            // Only process final result
+            if (event.results[event.results.length - 1].isFinal) {
+                processVoiceInput(transcript);
+            }
+        };
+
+        voiceRecognition.onerror = function(event) {
+            console.error('Voice error:', event.error);
+            let msg = '{{ t("Could not understand. Please try again.") }}';
+            if (event.error === 'no-speech') msg = '{{ t("No speech detected. Please speak clearly.") }}';
+            if (event.error === 'not-allowed') msg = '{{ t("Microphone access denied. Please allow microphone.") }}';
+            document.getElementById('voiceStatus').textContent = msg;
+            document.getElementById('voicePulse').classList.remove('active');
+            setTimeout(stopVoiceExpense, 2500);
+        };
+
+        voiceRecognition.onend = function() {
+            if (isRecording) {
+                document.getElementById('voicePulse').classList.remove('active');
+            }
+        };
+
+        voiceRecognition.start();
+    }
+
+    function stopVoiceExpense() {
+        isRecording = false;
+        if (voiceRecognition) { voiceRecognition.abort(); voiceRecognition = null; }
+        document.getElementById('voiceExpenseBtn').classList.remove('recording');
+        document.getElementById('voiceMicIcon').textContent = 'mic';
+        document.getElementById('voiceFeedback').classList.add('d-none');
+        document.getElementById('voicePulse').classList.remove('active');
+    }
+
+    function processVoiceInput(text) {
+        const amount = extractAmount(text);
+        const category = detectCategory(text);
+
+        // Fill the Add Expense form
+        const form = document.querySelector('#addExpenseModal form');
+        if (amount) form.querySelector('[name=amount]').value = amount;
+        form.querySelector('[name=category]').value = category;
+        form.querySelector('[name=description]').value = text.trim();
+        // Set today's date if empty
+        const dateField = form.querySelector('[name=date]');
+        if (!dateField.value) dateField.value = new Date().toISOString().split('T')[0];
+
+        // Update feedback
+        document.getElementById('voiceStatus').textContent = '{{ t("Understood!") }}';
+        document.getElementById('voicePulse').classList.remove('active');
+
+        const summary = (amount ? '₹' + amount.toLocaleString('en-IN') : '?') + ' → ' + category;
+        document.getElementById('voiceTranscript').innerHTML = summary +
+            '<br><small class="text-muted">"' + text + '"</small>';
+
+        // Open the modal after a short delay so user sees the feedback
+        setTimeout(() => {
+            stopVoiceExpense();
+            const modal = new bootstrap.Modal(document.getElementById('addExpenseModal'));
+            modal.show();
+        }, 1200);
     }
 </script>
 {% endblock %}
