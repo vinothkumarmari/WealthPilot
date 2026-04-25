@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% block title %}What-If Simulator - WealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">science</span> {{ t('What-If Simulator') }}</h4>
+    <p class="text-muted">{{ t('Run scenarios to see how financial decisions impact your future') }}</p>
+</div>
+
+<!-- Current Snapshot -->
+<div class="row mb-4">
+    <div class="col-md-2 col-6 mb-2">
+        <div class="card text-center p-2"><small class="text-muted">{{ t('Monthly Income') }}</small><strong>₹{{ monthly_income|inr }}</strong></div>
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+        <div class="card text-center p-2"><small class="text-muted">{{ t('Monthly Expenses') }}</small><strong>₹{{ monthly_expenses|inr }}</strong></div>
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+        <div class="card text-center p-2"><small class="text-muted">{{ t('Investments') }}</small><strong>₹{{ total_investments|inr }}</strong></div>
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+        <div class="card text-center p-2"><small class="text-muted">{{ t('Bank Balance') }}</small><strong>₹{{ bank_balance|inr }}</strong></div>
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+        <div class="card text-center p-2"><small class="text-muted">{{ t('Loans') }}</small><strong>₹{{ total_loans|inr }}</strong></div>
+    </div>
+    <div class="col-md-2 col-6 mb-2">
+        <div class="card text-center p-2"><small class="text-muted">{{ t('Monthly EMI') }}</small><strong>₹{{ monthly_emi|inr }}</strong></div>
+    </div>
+</div>
+
+<!-- Scenario Selector -->
+<div class="card mb-4" style="border-radius:16px;">
+    <div class="card-body">
+        <h5 class="mb-3"><span class="material-icons-outlined" style="vertical-align:middle;">tune</span> {{ t('Choose a Scenario') }}</h5>
+        <div class="row g-2 mb-3">
+            <div class="col-md-3 col-6">
+                <button class="btn btn-outline-primary w-100 scenario-btn active" data-scenario="loan" onclick="selectScenario('loan')">
+                    <span class="material-icons-outlined d-block" style="font-size:28px;">credit_score</span>
+                    {{ t('New Loan') }}
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button class="btn btn-outline-primary w-100 scenario-btn" data-scenario="invest" onclick="selectScenario('invest')">
+                    <span class="material-icons-outlined d-block" style="font-size:28px;">trending_up</span>
+                    {{ t('New Investment') }}
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button class="btn btn-outline-primary w-100 scenario-btn" data-scenario="salary" onclick="selectScenario('salary')">
+                    <span class="material-icons-outlined d-block" style="font-size:28px;">payments</span>
+                    {{ t('Salary Change') }}
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button class="btn btn-outline-primary w-100 scenario-btn" data-scenario="inflation" onclick="selectScenario('inflation')">
+                    <span class="material-icons-outlined d-block" style="font-size:28px;">price_change</span>
+                    {{ t('Inflation Impact') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Loan Scenario -->
+        <div id="scenario-loan" class="scenario-panel">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ t('Loan Amount') }} (₹)</label>
+                    <input type="number" id="loanAmount" class="form-control" value="1000000" min="0">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ t('Interest Rate') }} (%)</label>
+                    <input type="number" id="loanRate" class="form-control" value="9" step="0.1">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ t('Tenure') }} ({{ t('years') }})</label>
+                    <input type="number" id="loanTenure" class="form-control" value="5" min="1" max="30">
+                </div>
+                <div class="col-md-3 mb-2 d-flex align-items-end">
+                    <button class="btn btn-accent w-100" onclick="runSimulation()">
+                        <span class="material-icons-outlined" style="font-size:18px;">play_arrow</span> {{ t('Simulate') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Investment Scenario -->
+        <div id="scenario-invest" class="scenario-panel d-none">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ t('Monthly SIP') }} (₹)</label>
+                    <input type="number" id="sipAmount" class="form-control" value="5000" min="0">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ t('Expected Return') }} (%)</label>
+                    <input type="number" id="sipReturn" class="form-control" value="12" step="0.5">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ t('Duration') }} ({{ t('years') }})</label>
+                    <input type="number" id="sipYears" class="form-control" value="10" min="1" max="40">
+                </div>
+                <div class="col-md-3 mb-2 d-flex align-items-end">
+                    <button class="btn btn-accent w-100" onclick="runSimulation()">
+                        <span class="material-icons-outlined" style="font-size:18px;">play_arrow</span> {{ t('Simulate') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salary Scenario -->
+        <div id="scenario-salary" class="scenario-panel d-none">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ t('New Salary') }} (₹/month)</label>
+                    <input type="number" id="newSalary" class="form-control" value="{{ (monthly_income * 1.2)|int }}" min="0">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ t('Annual Increment') }} (%)</label>
+                    <input type="number" id="salaryIncrement" class="form-control" value="8" step="0.5">
+                </div>
+                <div class="col-md-4 mb-2 d-flex align-items-end">
+                    <button class="btn btn-accent w-100" onclick="runSimulation()">
+                        <span class="material-icons-outlined" style="font-size:18px;">play_arrow</span> {{ t('Simulate') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inflation Scenario -->
+        <div id="scenario-inflation" class="scenario-panel d-none">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ t('Inflation Rate') }} (%)</label>
+                    <input type="number" id="inflationRate" class="form-control" value="6" step="0.5">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ t('Years to Project') }}</label>
+                    <input type="number" id="inflationYears" class="form-control" value="10" min="1" max="30">
+                </div>
+                <div class="col-md-4 mb-2 d-flex align-items-end">
+                    <button class="btn btn-accent w-100" onclick="runSimulation()">
+                        <span class="material-icons-outlined" style="font-size:18px;">play_arrow</span> {{ t('Simulate') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results -->
+<div id="simResults" class="d-none">
+    <!-- Impact Summary -->
+    <div class="row mb-4" id="impactCards"></div>
+
+    <!-- Chart -->
+    <div class="card mb-4" style="border-radius:16px;">
+        <div class="card-body">
+            <h5 id="chartTitle" class="mb-3"></h5>
+            <canvas id="simChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <!-- Insights -->
+    <div class="card mb-4" style="border-radius:16px;">
+        <div class="card-body">
+            <h5><span class="material-icons-outlined" style="vertical-align:middle;">lightbulb</span> {{ t('Insights') }}</h5>
+            <div id="simInsights"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.scenario-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.scenario-btn:hover{transform:translateY(-2px);transition:0.2s;}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const currentData = {
+    income: {{ monthly_income }},
+    expenses: {{ monthly_expenses }},
+    investments: {{ total_investments }},
+    loans: {{ total_loans }},
+    emi: {{ monthly_emi }},
+    bank: {{ bank_balance }}
+};
+
+let activeScenario = 'loan';
+let simChartInstance = null;
+
+function selectScenario(type) {
+    activeScenario = type;
+    document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-scenario="${type}"]`).classList.add('active');
+    document.querySelectorAll('.scenario-panel').forEach(p => p.classList.add('d-none'));
+    document.getElementById('scenario-' + type).classList.remove('d-none');
+}
+
+function fmt(n) {
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+function runSimulation() {
+    const results = document.getElementById('simResults');
+    results.classList.remove('d-none');
+
+    if (activeScenario === 'loan') simulateLoan();
+    else if (activeScenario === 'invest') simulateInvestment();
+    else if (activeScenario === 'salary') simulateSalary();
+    else if (activeScenario === 'inflation') simulateInflation();
+
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function simulateLoan() {
+    const P = parseFloat(document.getElementById('loanAmount').value) || 0;
+    const r = (parseFloat(document.getElementById('loanRate').value) || 9) / 1200;
+    const n = (parseInt(document.getElementById('loanTenure').value) || 5) * 12;
+
+    const emi = P * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+    const totalPayment = emi * n;
+    const totalInterest = totalPayment - P;
+    const newTotalEmi = currentData.emi + emi;
+    const emiToIncomeRatio = currentData.income > 0 ? (newTotalEmi / currentData.income * 100) : 0;
+    const monthlySavingsAfter = currentData.income - currentData.expenses - newTotalEmi;
+
+    // Impact cards
+    document.getElementById('impactCards').innerHTML = `
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">New EMI</small><h5 class="mb-0" style="color:var(--accent);">${fmt(emi)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Total Interest</small><h5 class="mb-0 text-danger">${fmt(totalInterest)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">EMI/Income Ratio</small><h5 class="mb-0 ${emiToIncomeRatio > 50 ? 'text-danger' : emiToIncomeRatio > 30 ? 'text-warning' : 'text-success'}">${emiToIncomeRatio.toFixed(1)}%</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Monthly Savings After</small><h5 class="mb-0 ${monthlySavingsAfter < 0 ? 'text-danger' : 'text-success'}">${fmt(monthlySavingsAfter)}</h5></div></div>
+    `;
+
+    // Chart — principal vs interest over time
+    const labels = [], principal = [], interest = [], balance = [];
+    let bal = P;
+    for (let m = 1; m <= n; m++) {
+        const intPart = bal * r;
+        const prinPart = emi - intPart;
+        bal -= prinPart;
+        if (m % 12 === 0 || m === n) {
+            labels.push('Year ' + Math.ceil(m/12));
+            principal.push(Math.round(P - bal));
+            interest.push(Math.round(totalPayment * m/n - (P - bal) - P * (1 - bal/P)));
+            balance.push(Math.round(Math.max(0, bal)));
+        }
+    }
+
+    document.getElementById('chartTitle').textContent = 'Loan Repayment Over Time';
+    renderChart(labels, [
+        { label: 'Outstanding Balance', data: balance, borderColor: '#f44336', backgroundColor: 'rgba(244,67,54,0.1)', fill: true },
+        { label: 'Principal Paid', data: principal, borderColor: '#4CAF50', backgroundColor: 'rgba(76,175,80,0.1)', fill: true },
+    ]);
+
+    // Insights
+    let insights = '';
+    if (emiToIncomeRatio > 50) insights += '<div class="alert alert-danger py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">warning</span> EMI exceeds 50% of income — very risky!</div>';
+    else if (emiToIncomeRatio > 30) insights += '<div class="alert alert-warning py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">info</span> EMI is 30-50% of income — manageable but tight.</div>';
+    else insights += '<div class="alert alert-success py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">check_circle</span> EMI is under 30% — healthy debt level.</div>';
+    insights += `<p>You'll pay <strong>${fmt(totalInterest)}</strong> in interest over ${document.getElementById('loanTenure').value} years — that's <strong>${(totalInterest/P*100).toFixed(0)}%</strong> of the loan amount.</p>`;
+    if (monthlySavingsAfter < 0) insights += '<div class="alert alert-danger py-2"><span class="material-icons-outlined me-1" style="font-size:18px;">dangerous</span> You would go into negative savings! Consider a smaller loan or longer tenure.</div>';
+    document.getElementById('simInsights').innerHTML = insights;
+}
+
+function simulateInvestment() {
+    const monthly = parseFloat(document.getElementById('sipAmount').value) || 0;
+    const rate = (parseFloat(document.getElementById('sipReturn').value) || 12) / 100;
+    const years = parseInt(document.getElementById('sipYears').value) || 10;
+    const monthlyRate = rate / 12;
+
+    const labels = [], invested = [], projected = [];
+    // Monte Carlo: 500 simulations with random annual returns (mean=rate, std=8%)
+    const simCount = 500;
+    const outcomes = [];
+
+    for (let s = 0; s < simCount; s++) {
+        let total = 0;
+        for (let y = 1; y <= years; y++) {
+            const annualReturn = rate + (Math.random() - 0.5) * 0.16; // ±8% std dev
+            const mr = annualReturn / 12;
+            for (let m = 0; m < 12; m++) {
+                total = (total + monthly) * (1 + mr);
+            }
+        }
+        outcomes.push(total);
+    }
+    outcomes.sort((a, b) => a - b);
+    const p10 = outcomes[Math.floor(simCount * 0.1)];
+    const p50 = outcomes[Math.floor(simCount * 0.5)];
+    const p90 = outcomes[Math.floor(simCount * 0.9)];
+
+    // Deterministic projection for chart
+    for (let y = 1; y <= years; y++) {
+        labels.push('Year ' + y);
+        invested.push(monthly * 12 * y);
+        let fv = 0;
+        const n = y * 12;
+        fv = monthly * ((Math.pow(1 + monthlyRate, n) - 1) / monthlyRate) * (1 + monthlyRate);
+        projected.push(Math.round(fv));
+    }
+
+    const totalInvested = monthly * 12 * years;
+    const wealth = projected[projected.length - 1];
+
+    document.getElementById('impactCards').innerHTML = `
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Total Invested</small><h5 class="mb-0">${fmt(totalInvested)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Expected Value</small><h5 class="mb-0" style="color:var(--accent);">${fmt(p50)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Best Case (90th %ile)</small><h5 class="mb-0 text-success">${fmt(p90)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Worst Case (10th %ile)</small><h5 class="mb-0 text-warning">${fmt(p10)}</h5></div></div>
+    `;
+
+    document.getElementById('chartTitle').textContent = 'Investment Growth (Monte Carlo)';
+    renderChart(labels, [
+        { label: 'Invested', data: invested, borderColor: '#9E9E9E', borderDash: [5,5], fill: false },
+        { label: 'Projected Value', data: projected, borderColor: '#6C5CE7', backgroundColor: 'rgba(108,92,231,0.1)', fill: true },
+    ]);
+
+    const returns = wealth - totalInvested;
+    document.getElementById('simInsights').innerHTML = `
+        <div class="alert alert-info py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">info</span> Based on 500 Monte Carlo simulations with market volatility.</div>
+        <p>Investing <strong>${fmt(monthly)}/month</strong> for ${years} years could grow to <strong>${fmt(p50)}</strong> (median). Your returns: <strong>${fmt(returns)}</strong> (${(returns/totalInvested*100).toFixed(0)}% gain).</p>
+        <p>In the worst 10% of scenarios, you'd still have <strong>${fmt(p10)}</strong>. In the best 10%, up to <strong>${fmt(p90)}</strong>.</p>
+    `;
+}
+
+function simulateSalary() {
+    const newSalary = parseFloat(document.getElementById('newSalary').value) || 0;
+    const increment = (parseFloat(document.getElementById('salaryIncrement').value) || 8) / 100;
+    const years = 10;
+
+    const labels = [], salaryLine = [], savingsLine = [], wealthLine = [];
+    let salary = newSalary, totalWealth = currentData.bank + currentData.investments;
+
+    for (let y = 1; y <= years; y++) {
+        labels.push('Year ' + y);
+        salaryLine.push(Math.round(salary));
+        const annualSavings = Math.max(0, (salary - currentData.expenses - currentData.emi) * 12);
+        totalWealth += annualSavings * 1.1; // Assume 10% returns on savings
+        savingsLine.push(Math.round(annualSavings));
+        wealthLine.push(Math.round(totalWealth));
+        salary *= (1 + increment);
+    }
+
+    const salaryIn10 = salaryLine[salaryLine.length - 1];
+    const diff = newSalary - currentData.income;
+
+    document.getElementById('impactCards').innerHTML = `
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Monthly Change</small><h5 class="mb-0 ${diff >= 0 ? 'text-success' : 'text-danger'}">${diff >= 0 ? '+' : ''}${fmt(diff)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Salary in 10 Years</small><h5 class="mb-0" style="color:var(--accent);">${fmt(salaryIn10)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Annual Savings (Yr 1)</small><h5 class="mb-0">${fmt(savingsLine[0])}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Projected Wealth</small><h5 class="mb-0 text-success">${fmt(totalWealth)}</h5></div></div>
+    `;
+
+    document.getElementById('chartTitle').textContent = 'Salary & Wealth Projection (10 Years)';
+    renderChart(labels, [
+        { label: 'Monthly Salary', data: salaryLine, borderColor: '#2196F3', fill: false, yAxisID: 'y' },
+        { label: 'Total Wealth', data: wealthLine, borderColor: '#4CAF50', backgroundColor: 'rgba(76,175,80,0.1)', fill: true, yAxisID: 'y1' },
+    ], true);
+
+    document.getElementById('simInsights').innerHTML = `
+        <p>With ${(increment*100).toFixed(0)}% annual increments, your salary grows from <strong>${fmt(newSalary)}</strong> to <strong>${fmt(salaryIn10)}</strong> in 10 years.</p>
+        <p>Projected total wealth (investments + savings): <strong>${fmt(totalWealth)}</strong>.</p>
+    `;
+}
+
+function simulateInflation() {
+    const inflation = (parseFloat(document.getElementById('inflationRate').value) || 6) / 100;
+    const years = parseInt(document.getElementById('inflationYears').value) || 10;
+
+    const labels = [], expenseLine = [], realIncome = [], purchasingPower = [];
+    let expenses = currentData.expenses;
+
+    for (let y = 1; y <= years; y++) {
+        expenses *= (1 + inflation);
+        labels.push('Year ' + y);
+        expenseLine.push(Math.round(expenses));
+        realIncome.push(Math.round(currentData.income / Math.pow(1 + inflation, y)));
+        purchasingPower.push(Math.round(100 / Math.pow(1 + inflation, y)));
+    }
+
+    const futureExpenses = expenseLine[expenseLine.length - 1];
+    const realIncomeEnd = realIncome[realIncome.length - 1];
+    const ppEnd = purchasingPower[purchasingPower.length - 1];
+
+    document.getElementById('impactCards').innerHTML = `
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Expenses in ${years} Years</small><h5 class="mb-0 text-danger">${fmt(futureExpenses)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Real Income Value</small><h5 class="mb-0 text-warning">${fmt(realIncomeEnd)}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">₹100 Worth Then</small><h5 class="mb-0 text-danger">₹${ppEnd}</h5></div></div>
+        <div class="col-md-3 col-6 mb-2"><div class="card text-center p-3"><small class="text-muted">Expense Increase</small><h5 class="mb-0 text-danger">+${((futureExpenses/currentData.expenses - 1)*100).toFixed(0)}%</h5></div></div>
+    `;
+
+    document.getElementById('chartTitle').textContent = 'Inflation Impact Over ' + years + ' Years';
+    renderChart(labels, [
+        { label: 'Monthly Expenses', data: expenseLine, borderColor: '#f44336', backgroundColor: 'rgba(244,67,54,0.1)', fill: true },
+        { label: 'Real Income Value', data: realIncome, borderColor: '#FF9800', borderDash: [5,5], fill: false },
+    ]);
+
+    document.getElementById('simInsights').innerHTML = `
+        <div class="alert alert-warning py-2 mb-2"><span class="material-icons-outlined me-1" style="font-size:18px;">trending_up</span> At ${(inflation*100).toFixed(0)}% inflation, your expenses nearly ${(futureExpenses/currentData.expenses).toFixed(1)}x in ${years} years.</div>
+        <p>Today's ₹100 will be worth only <strong>₹${ppEnd}</strong> in ${years} years. Your current salary of <strong>${fmt(currentData.income)}</strong> would feel like <strong>${fmt(realIncomeEnd)}</strong>.</p>
+        <p><strong>Tip:</strong> Invest in assets that beat inflation (equity, real estate) to protect your purchasing power.</p>
+    `;
+}
+
+function renderChart(labels, datasets, dualAxis) {
+    if (simChartInstance) simChartInstance.destroy();
+    const ctx = document.getElementById('simChart').getContext('2d');
+    const opts = {
+        responsive: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } },
+        scales: {
+            y: {
+                ticks: { callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v) }
+            }
+        }
+    };
+    if (dualAxis) {
+        opts.scales.y1 = {
+            position: 'right', grid: { drawOnChartArea: false },
+            ticks: { callback: v => '₹' + (v >= 100000 ? (v/100000).toFixed(1)+'L' : v >= 1000 ? (v/1000).toFixed(0)+'K' : v) }
+        };
+    }
+    simChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: datasets.map(d => ({ ...d, tension: 0.3, pointRadius: 3 })) },
+        options: opts
+    });
+}
+</script>
+{% endblock %}

@@ -163,6 +163,10 @@
                 <span class="material-icons-outlined">emoji_events</span>
                 <span>{{ t('Achievements') }}</span>
             </a>
+            <a href="{{ url_for('main.what_if_simulator') }}" class="nav-link {% if request.endpoint == 'main.what_if_simulator' %}active{% endif %}">
+                <span class="material-icons-outlined">science</span>
+                <span>{{ t('What-If Simulator') }}</span>
+            </a>
 
             <div class="sidebar-divider"><small>{{ t('FAMILY') }}</small></div>
             <a href="{{ url_for('main.family_members') }}" class="nav-link {% if request.endpoint == 'main.family_members' %}active{% endif %}">

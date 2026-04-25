@@ -403,6 +403,7 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.pricing': 'starter',
     'main.help_guide': 'starter',
     'main.achievements': 'starter',
+    'main.what_if_simulator': 'starter',
     'main.gold_silver': 'starter',
     'main.global_gold_prices': 'starter',
     # Pro modules
@@ -5164,6 +5165,48 @@ def _calculate_financial_score(user):
         reasons.append(('warn', f'Complete your profile ({filled}/5 fields)'))
 
     return min(100, score), reasons
+
+
+# ======================== WHAT-IF SIMULATOR ========================
+
+@main.route('/what-if')
+@login_required
+def what_if_simulator():
+    """What-If financial simulator — client-side Monte Carlo simulations."""
+    # Pass current user's financial snapshot for pre-filling
+    monthly_income = current_user.monthly_salary or 0
+    today = date.today()
+
+    month_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == current_user.id,
+        db.extract('year', Expense.date) == today.year,
+        db.extract('month', Expense.date) == today.month
+    ).scalar() or 0
+
+    total_investments = db.session.query(db.func.sum(Investment.amount_invested)).filter_by(
+        user_id=current_user.id, is_active=True
+    ).scalar() or 0
+
+    total_loans = db.session.query(db.func.sum(Loan.outstanding_balance)).filter_by(
+        user_id=current_user.id, is_active=True
+    ).scalar() or 0
+
+    total_emi = db.session.query(db.func.sum(Loan.emi_amount)).filter_by(
+        user_id=current_user.id, is_active=True
+    ).scalar() or 0
+
+    bank_balance = db.session.query(db.func.sum(BankAccount.balance)).filter_by(
+        user_id=current_user.id
+    ).scalar() or 0
+
+    return render_template('what_if.html',
+        monthly_income=monthly_income,
+        monthly_expenses=month_expenses,
+        total_investments=total_investments,
+        total_loans=total_loans,
+        monthly_emi=total_emi,
+        bank_balance=bank_balance,
+    )
 
 
 @main.route('/achievements')
