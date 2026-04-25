@@ -1,9 +1,9 @@
 /**
- * WealthPilot Offline Queue — IndexedDB + Background Sync
+ * MyWealthPilot Offline Queue — IndexedDB + Background Sync
  * Stores expenses/income entries when offline, syncs when back online.
  */
 
-const DB_NAME = 'wealthpilot_offline';
+const DB_NAME = 'mywealthpilot_offline';
 const DB_VERSION = 1;
 const STORE_NAME = 'pending_entries';
 

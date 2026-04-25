@@ -1,5 +1,5 @@
 """
-Gold Price Predictor for WealthPilot
+Gold Price Predictor for MyWealthPilot
 Analyzes IBJA, MCX & COMEX data to predict gold prices 12 hours ahead.
 Provides actionable buy timing advice for gold chit payments and investments.
 

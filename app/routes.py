@@ -1,5 +1,5 @@
 """
-WealthPilot - All Routes (Blueprint)
+MyWealthPilot - All Routes (Blueprint)
 """
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file
 from flask_login import login_user, logout_user, login_required, current_user
@@ -221,23 +221,23 @@ def send_otp_email(user_email, otp_code, purpose='registration'):
 
         templates = {
             'registration': {
-                'subject': 'WealthPilot - Complete Your Registration (OTP)',
+                'subject': 'MyWealthPilot - Complete Your Registration (OTP)',
                 'body': (
-                    f'Your OTP for new WealthPilot registration is: {otp_code}\n'
+                    f'Your OTP for new MyWealthPilot registration is: {otp_code}\n'
                     f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
                     'Do not share this code with anyone.'
                 ),
             },
             'login': {
-                'subject': 'WealthPilot - Login Verification OTP',
+                'subject': 'MyWealthPilot - Login Verification OTP',
                 'body': (
-                    f'Your OTP for WealthPilot login is: {otp_code}\n'
+                    f'Your OTP for MyWealthPilot login is: {otp_code}\n'
                     f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
                     'If this was not you, please reset your password immediately.'
                 ),
             },
             'password_change': {
-                'subject': 'WealthPilot - Confirm Password Change (OTP)',
+                'subject': 'MyWealthPilot - Confirm Password Change (OTP)',
                 'body': (
                     f'Your OTP to confirm password change is: {otp_code}\n'
                     f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
@@ -245,7 +245,7 @@ def send_otp_email(user_email, otp_code, purpose='registration'):
                 ),
             },
             'password_reset': {
-                'subject': 'WealthPilot - Password Reset OTP',
+                'subject': 'MyWealthPilot - Password Reset OTP',
                 'body': (
                     f'Your OTP for password reset is: {otp_code}\n'
                     f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
@@ -253,7 +253,7 @@ def send_otp_email(user_email, otp_code, purpose='registration'):
                 ),
             },
             'email_change': {
-                'subject': 'WealthPilot - Verify New Email Address (OTP)',
+                'subject': 'MyWealthPilot - Verify New Email Address (OTP)',
                 'body': (
                     f'Your OTP to verify this new email address is: {otp_code}\n'
                     f'This code expires in {Config.OTP_EXPIRY_MINUTES} minutes.\n'
@@ -857,8 +857,8 @@ def resend_login_otp():
 # ======================== BILLING & PAYMENTS ========================
 
 PLAN_PRICING = {
-    'pro_monthly': {'amount_paise': 9900, 'name': 'WealthPilot Pro (Monthly)'},
-    'family_monthly': {'amount_paise': 19900, 'name': 'WealthPilot Family (Monthly)'},
+    'pro_monthly': {'amount_paise': 9900, 'name': 'MyWealthPilot Pro (Monthly)'},
+    'family_monthly': {'amount_paise': 19900, 'name': 'MyWealthPilot Family (Monthly)'},
 }
 
 
@@ -1383,7 +1383,7 @@ def export_csv(data_type):
         output.getvalue(),
         mimetype='text/csv',
         headers={
-            'Content-Disposition': f'attachment; filename=wealthpilot_{data_type}_{date.today().isoformat()}.csv'
+            'Content-Disposition': f'attachment; filename=mywealthpilot_{data_type}_{date.today().isoformat()}.csv'
         }
     )
 
@@ -1438,7 +1438,7 @@ def download_all_data():
         zip_buffer,
         mimetype='application/zip',
         as_attachment=True,
-        download_name=f'wealthpilot_all_data_{date.today().isoformat()}.zip'
+        download_name=f'mywealthpilot_all_data_{date.today().isoformat()}.zip'
     )
 
 
@@ -3364,9 +3364,9 @@ def admin_test_mail():
     apply_mail_config(current_app._get_current_object())
     try:
         msg = Message(
-            subject='WealthPilot - Test Email',
+            subject='MyWealthPilot - Test Email',
             recipients=[test_email],
-            body='This is a test email from WealthPilot.\nYour SMTP settings are working correctly!'
+            body='This is a test email from MyWealthPilot.\nYour SMTP settings are working correctly!'
         )
         mail.send(msg)
         flash(f'Test email sent to {test_email} successfully!', 'success')
@@ -4478,7 +4478,7 @@ def api_land_rate_search():
         'rate_min': min_rate,
         'rate_max': max_rate,
         'rate_avg': avg_rate,
-        'source': 'WealthPilot reference ranges (market approximation)',
+        'source': 'MyWealthPilot reference ranges (market approximation)',
     }
     if area_sqft > 0:
         estimate.update({
@@ -5333,11 +5333,11 @@ def send_reminders():
 
     body = f"Hi {current_user.full_name or current_user.username},\n\nYou have {len(dues)} upcoming payment(s) in the next 7 days:\n\n"
     body += '\n'.join(f"  • {d}" for d in dues)
-    body += '\n\n— WealthPilot'
+    body += '\n\n— MyWealthPilot'
 
     try:
         msg = Message(
-            subject=f'[WealthPilot] {len(dues)} Payment Reminder(s)',
+            subject=f'[MyWealthPilot] {len(dues)} Payment Reminder(s)',
             recipients=[current_user.email],
             body=body
         )

@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#6C5CE7">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="WealthPilot">
+    <meta name="apple-mobile-web-app-title" content="MyWealthPilot">
     <meta name="description" content="AI-powered personal finance manager">
-    <title>{% block title %}WealthPilot{% endblock %}</title>
+    <title>{% block title %}MyWealthPilot{% endblock %}</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
@@ -31,7 +31,7 @@
     <!-- Sidebar Navigation -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <img src="{{ url_for('static', filename='favicon.svg') }}" alt="WealthPilot" class="brand-icon" style="width:32px;height:32px;border-radius:6px">
+            <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" class="brand-icon" style="width:32px;height:32px;border-radius:6px">
             <span class="brand-text">Wealth<span class="text-accent">Pilot</span></span>
         </div>
         <nav class="sidebar-nav">
@@ -316,7 +316,7 @@
         <!-- Footer -->
         <div class="container-fluid px-4 py-3 mt-4 border-top">
             <div class="d-flex justify-content-between align-items-center flex-wrap small text-muted">
-                <span>&copy; 2026 WealthPilot&trade;. All rights reserved. | <a href="https://mywealthpilot.in" class="text-muted text-decoration-none">mywealthpilot.in</a></span>
+                <span>&copy; 2026 MyWealthPilot&trade;. All rights reserved. | <a href="https://mywealthpilot.in" class="text-muted text-decoration-none">mywealthpilot.in</a></span>
                 <div class="d-flex gap-3">
                     <a href="{{ url_for('main.privacy_policy') }}" class="text-muted text-decoration-none">Privacy Policy</a>
                     <a href="{{ url_for('main.terms_of_service') }}" class="text-muted text-decoration-none">Terms of Service</a>
@@ -411,7 +411,7 @@
     });
     </script>
 
-    <!-- WealthPilot Toast & Confirm (replaces browser alert/confirm) -->
+    <!-- MyWealthPilot Toast & Confirm (replaces browser alert/confirm) -->
     <div id="wpToastContainer" style="position:fixed;top:16px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:420px;width:100%;"></div>
     <div id="wpConfirmOverlay" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.35);align-items:flex-start;justify-content:center;padding-top:80px;">
         <div id="wpConfirmBox" style="background:var(--bs-body-bg,#fff);border-radius:10px;padding:20px 24px 16px;box-shadow:0 6px 24px rgba(0,0,0,.3);max-width:400px;width:90%;animation:wpSlideIn .2s ease;">

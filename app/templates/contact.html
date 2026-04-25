@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Contact Us - WealthPilot{% endblock %}
+{% block title %}Contact Us - MyWealthPilot{% endblock %}
 {% block content %}
 <div class="container py-4" style="max-width: 900px;">
     <div class="text-center mb-4">
@@ -67,7 +67,7 @@
 </div>
 {% endblock %}
 {% extends 'base_public.html' if not current_user.is_authenticated else 'base.html' %}
-{% block title %}Contact Us - WealthPilot{% endblock %}
+{% block title %}Contact Us - MyWealthPilot{% endblock %}
 {% block public_content %}{% endblock %}
 {% block content %}{% endblock %}
 

@@ -16,9 +16,9 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: wealthpilot
-      POSTGRES_USER: wealthpilot
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-wealthpilot_secret}
+      POSTGRES_DB: mywealthpilot
+      POSTGRES_USER: mywealthpilot
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mywealthpilot_secret}
     ports:
       - "5432:5432"
     volumes:

@@ -253,7 +253,7 @@ def fetch_global_gold_rates():
 
         ua = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                          'AppleWebKit/537.36 WealthPilot/1.0'
+                          'AppleWebKit/537.36 MyWealthPilot/1.0'
         }
 
         # ── 1. Main page — spot prices + global tables ──

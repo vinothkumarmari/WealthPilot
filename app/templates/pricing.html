@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricing - WealthPilot</title>
+    <title>Pricing - MyWealthPilot</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -53,7 +53,7 @@
     <nav class="navbar navbar-dark py-3">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('main.index') }}">
-                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="WealthPilot" style="width:28px;height:28px;border-radius:6px;vertical-align:middle">
+                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" style="width:28px;height:28px;border-radius:6px;vertical-align:middle">
                 Wealth<span style="color: var(--accent-light)">Pilot</span>
             </a>
             <div>
@@ -78,12 +78,12 @@
             <p class="small mt-3 mb-0" style="color:#a29bfe;">
                 Current plan:
                 <strong>
-                    {% if current_plan_code == 'pro_monthly' %}WealthPilot Pro
-                    {% elif current_plan_code == 'family_monthly' %}WealthPilot Family
-                    {% else %}WealthPilot Starter{% endif %}
+                    {% if current_plan_code == 'pro_monthly' %}MyWealthPilot Pro
+                    {% elif current_plan_code == 'family_monthly' %}MyWealthPilot Family
+                    {% else %}MyWealthPilot Starter{% endif %}
                 </strong>
                 {% if suggested_plan_code %}
-                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}WealthPilot Family{% else %}WealthPilot Pro{% endif %}</strong></span>
+                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}MyWealthPilot Family{% else %}MyWealthPilot Pro{% endif %}</strong></span>
                 {% endif %}
             </p>
             {% endif %}
@@ -247,7 +247,7 @@
 
     <!-- Footer -->
     <footer class="text-center py-4" style="background: #0a0a1a; border-top: 1px solid #2a2a4a;">
-        <p class="text-secondary small mb-1">&copy; 2026 WealthPilot&trade;. All rights reserved. | <a href="https://mywealthpilot.in" class="back-link">mywealthpilot.in</a> &nbsp; <a href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('main.index') }}" class="back-link">&larr; {{ 'Back to Dashboard' if current_user.is_authenticated else 'Back to Home' }}</a></p>
+        <p class="text-secondary small mb-1">&copy; 2026 MyWealthPilot&trade;. All rights reserved. | <a href="https://mywealthpilot.in" class="back-link">mywealthpilot.in</a> &nbsp; <a href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('main.index') }}" class="back-link">&larr; {{ 'Back to Dashboard' if current_user.is_authenticated else 'Back to Home' }}</a></p>
         <p class="small mb-0">
             <a href="{{ url_for('main.privacy_policy') }}" class="back-link">Privacy Policy</a> &nbsp;|&nbsp;
             <a href="{{ url_for('main.terms_of_service') }}" class="back-link">Terms</a> &nbsp;|&nbsp;
@@ -294,7 +294,7 @@
                         key: orderResp.key,
                         amount: orderResp.amount,
                         currency: orderResp.currency,
-                        name: 'WealthPilot',
+                        name: 'MyWealthPilot',
                         description: orderResp.plan_name,
                         order_id: orderResp.order_id,
                         callback_url: window.location.origin + (orderResp.callback_path || '{{ url_for("main.pricing") }}'),

@@ -1,5 +1,5 @@
 """
-MCX & COMEX Gold Data Fetcher for WealthPilot
+MCX & COMEX Gold Data Fetcher for MyWealthPilot
 Fetches live gold data from Yahoo Finance API (COMEX GC=F, GOLDBEES.NS).
 Provides international price comparison, India premium, and crisis awareness.
 Caches results for 120 seconds.

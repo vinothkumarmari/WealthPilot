@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wealthpilot-v2';
+const CACHE_NAME = 'mywealthpilot-v3';
 
 // Static assets to cache for offline use
 const STATIC_ASSETS = [

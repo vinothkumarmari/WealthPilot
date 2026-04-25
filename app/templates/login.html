@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Login - WealthPilot{% endblock %}
+{% block title %}Login - MyWealthPilot{% endblock %}
 {% block public_content %}
 <style>
 .login-page {
@@ -331,7 +331,7 @@
         <section class="login-story">
             <div class="story-brand">
                 <span class="material-icons-outlined">auto_awesome</span>
-                <span>WealthPilot Daily Pulse</span>
+                <span>MyWealthPilot Daily Pulse</span>
             </div>
 
             <div id="pulse-content"></div>
@@ -341,28 +341,28 @@
                 var pulseData = [
                     {
                         headline: "Track your money, plan your future \u2014 all in one place.",
-                        sub: "WealthPilot helps you manage income, expenses, investments, insurance, and financial goals from a single dashboard.",
+                        sub: "MyWealthPilot helps you manage income, expenses, investments, insurance, and financial goals from a single dashboard.",
                         pills: ["Track income & expenses", "Set financial goals", "Monitor investments"],
                         card1: { title: "Goal Planning", text: "Set savings targets for retirement, education, or any milestone. Track progress with visual charts and stay on course.", icon: "trending_up", meta: "Feature" },
                         card2: { title: "Expense Tracking", text: "Categorize your spending, spot patterns, and make informed decisions about where your money goes each month.", icon: "notifications_active", meta: "Feature" }
                     },
                     {
                         headline: "Your personal finance command center, always ready.",
-                        sub: "From budgeting to insurance tracking, WealthPilot gives you a clear picture of your financial health.",
+                        sub: "From budgeting to insurance tracking, MyWealthPilot gives you a clear picture of your financial health.",
                         pills: ["Budget management", "Insurance tracker", "Loan & EMI overview"],
                         card1: { title: "Investment Dashboard", text: "View your mutual funds, stocks, gold, and other investments in one place. Understand your portfolio allocation at a glance.", icon: "show_chart", meta: "Feature" },
                         card2: { title: "EMI Manager", text: "Keep track of all your loan EMIs, due dates, and remaining tenures. Never miss a payment deadline.", icon: "account_balance", meta: "Feature" }
                     },
                     {
                         headline: "Smart money decisions start with clear data.",
-                        sub: "WealthPilot organizes your finances so you can focus on what matters \u2014 building wealth and staying secure.",
+                        sub: "MyWealthPilot organizes your finances so you can focus on what matters \u2014 building wealth and staying secure.",
                         pills: ["AI-powered insights", "Multi-language support", "Family plan available"],
                         card1: { title: "AI Budget Advisor", text: "Get personalized budget suggestions based on your actual spending patterns. The AI learns from your habits to offer useful tips.", icon: "savings", meta: "Feature" },
                         card2: { title: "Insurance Overview", text: "Track all your insurance policies \u2014 health, life, vehicle \u2014 with renewal dates and coverage details in one view.", icon: "health_and_safety", meta: "Feature" }
                     },
                     {
                         headline: "Plan for taxes, track your SIPs, manage it all here.",
-                        sub: "WealthPilot supports tax planning tools, SIP tracking, and comprehensive financial reporting.",
+                        sub: "MyWealthPilot supports tax planning tools, SIP tracking, and comprehensive financial reporting.",
                         pills: ["Tax planning tools", "SIP tracking", "Financial reports"],
                         card1: { title: "Tax Planner", text: "Organize your tax-saving investments under Section 80C, 80D, and other deductions. Plan ahead for each financial year.", icon: "receipt_long", meta: "Feature" },
                         card2: { title: "SIP Tracker", text: "Monitor all your Systematic Investment Plans in one place. Track monthly contributions and accumulated value over time.", icon: "autorenew", meta: "Feature" }
@@ -399,9 +399,9 @@
 
         <section class="login-card">
             <div class="login-head">
-                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="WealthPilot" style="width:48px;height:48px;border-radius:10px">
+                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" style="width:48px;height:48px;border-radius:10px">
                 <h3>{{ t('Welcome Back') }}</h3>
-                <p>{{ t('Login to WealthPilot') }}</p>
+                <p>{{ t('Login to MyWealthPilot') }}</p>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}

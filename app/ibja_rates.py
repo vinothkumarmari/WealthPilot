@@ -29,7 +29,7 @@ def fetch_ibja_rates():
         r = requests.get(
             'https://ibjarates.com/',
             timeout=10,
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WealthPilot/1.0'}
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) MyWealthPilot/1.0'}
         )
         r.raise_for_status()
         soup = BeautifulSoup(r.text, 'html.parser')

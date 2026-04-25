@@ -1,6 +1,6 @@
-# WealthPilot — AI-Powered Personal Finance Platform
+# MyWealthPilot — AI-Powered Personal Finance Platform
 
-WealthPilot is a comprehensive personal finance management application built with Flask. It helps users track income, expenses, investments, insurance, loans, and more — with AI-powered recommendations, live commodity rates, and multi-language support.
+MyWealthPilot is a comprehensive personal finance management application built with Flask. It helps users track income, expenses, investments, insurance, loans, and more — with AI-powered recommendations, live commodity rates, and multi-language support.
 
 ## Key Features
 
@@ -45,8 +45,8 @@ WealthPilot is a comprehensive personal finance management application built wit
 ## Local Setup
 
 ```bash
-git clone https://github.com/vinothkumarmari/WealthPilot.git
-cd WealthPilot
+git clone https://github.com/vinothkumarmari/MyWealthPilot.git
+cd MyWealthPilot
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 # source .venv/bin/activate   # Linux/Mac
@@ -100,4 +100,4 @@ app/
 
 ## License
 
-All rights reserved. © 2026 WealthPilot.
+All rights reserved. © 2026 MyWealthPilot.

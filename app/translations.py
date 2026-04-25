@@ -1,5 +1,5 @@
 """
-WealthPilot - Multi-language Translation Support
+MyWealthPilot - Multi-language Translation Support
 Supported: English (en), Tamil (ta), Hindi (hi), Telugu (te)
 """
 
@@ -444,7 +444,7 @@ TRANSLATIONS = {
     'unread notification': {'ta': 'படிக்காத அறிவிப்பு', 'hi': 'अपठित सूचना', 'te': 'చదవని నోటిఫికేషన్'},
     'Mark All Read': {'ta': 'அனைத்தையும் படித்ததாக குறி', 'hi': 'सभी पढ़े गए के रूप में चिह्नित करें', 'te': 'అన్నీ చదివినట్లు గుర్తించు'},
     'About Notifications': {'ta': 'அறிவிப்புகள் பற்றி', 'hi': 'सूचनाओं के बारे में', 'te': 'నోటిఫికేషన్ల గురించి'},
-    'WealthPilot automatically alerts you about:': {'ta': 'WealthPilot தானாக உங்களை எச்சரிக்கிறது:', 'hi': 'WealthPilot स्वचालित रूप से आपको सूचित करता है:', 'te': 'WealthPilot స్వయంచాలకంగా మిమ్మల్ని హెచ్చరిస్తుంది:'},
+    'MyWealthPilot automatically alerts you about:': {'ta': 'MyWealthPilot தானாக உங்களை எச்சரிக்கிறது:', 'hi': 'MyWealthPilot स्वचालित रूप से आपको सूचित करता है:', 'te': 'MyWealthPilot స్వయంచాలకంగా మిమ్మల్ని హెచ్చరిస్తుంది:'},
     'Policy premiums': {'ta': 'பாலிசி பிரீமியங்கள்', 'hi': 'पॉलिसी प्रीमियम', 'te': 'పాలసీ ప్రీమియంలు'},
     'Loan EMIs': {'ta': 'கடன் EMIகள்', 'hi': 'ऋण EMI', 'te': 'రుణ EMIలు'},
     'Goal deadlines': {'ta': 'இலக்கு காலக்கெடுகள்', 'hi': 'लक्ष्य समय सीमा', 'te': 'లక్ష్య గడువులు'},

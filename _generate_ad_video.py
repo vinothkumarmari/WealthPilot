@@ -1,5 +1,5 @@
 """
-WealthPilot - Promotional Video Generator
+MyWealthPilot - Promotional Video Generator
 Generates an MP4 ad video for social media (1080x1920 portrait / 1080x1080 square)
 """
 
@@ -10,7 +10,7 @@ import os
 import math
 
 # --- Config ---
-OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "wealthpilot_ad.mp4")
+OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "mywealthpilot_ad.mp4")
 WIDTH, HEIGHT = 1080, 1920  # Instagram Story / Reel format
 FPS = 30
 DURATION_PER_SLIDE = 4  # seconds
@@ -280,7 +280,7 @@ def create_slide_cta():
 
     # Brand
     font_brand = get_font(36, bold=True)
-    draw_centered_text(draw, 1350, "WealthPilot", font_brand, ACCENT_LIGHT)
+    draw_centered_text(draw, 1350, "MyWealthPilot", font_brand, ACCENT_LIGHT)
 
     return np.array(img)
 
@@ -292,7 +292,7 @@ def add_fade_transition(clip, fade_duration=0.5):
     ])
 
 def generate_video():
-    print("🎬 Generating WealthPilot promo video...")
+    print("🎬 Generating MyWealthPilot promo video...")
 
     slides = [
         ("Intro", create_slide_intro),

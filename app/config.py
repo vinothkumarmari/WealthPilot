@@ -49,7 +49,7 @@ class Config:
     # Admin Configuration (MUST be set via env vars in production)
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', secrets.token_urlsafe(24))
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@wealthpilot.com')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@mywealthpilot.com')
     ADMIN_FULL_NAME = os.environ.get('ADMIN_FULL_NAME', 'Vinoth - Founder & CEO')
     
     # Email / SMTP Configuration for OTP
@@ -58,7 +58,7 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@wealthpilot.com')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@mywealthpilot.com')
 
     # Payments (Razorpay)
     RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', '')

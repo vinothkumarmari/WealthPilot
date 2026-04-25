@@ -1,5 +1,5 @@
 """
-WealthPilot - AI-Powered Financial Management Application
+MyWealthPilot - AI-Powered Financial Management Application
 Flask Application Package
 """
 import os
@@ -53,7 +53,7 @@ def create_app():
         datefmt='%Y-%m-%d %H:%M:%S',
     )
     app.logger.setLevel(log_level)
-    app.logger.info('WealthPilot starting up...')
+    app.logger.info('MyWealthPilot starting up...')
 
     # Load saved mail config before initializing Flask-Mail
     # Priority: JSON file (with valid username) > environment variables > config.py defaults
@@ -155,10 +155,10 @@ def create_app():
                         current_plan = 'Admin (Full Access)'
                     elif latest_paid and latest_paid.plan_code == 'pro_monthly':
                         user_plan_code = 'pro_monthly'
-                        current_plan = 'WealthPilot Pro'
+                        current_plan = 'MyWealthPilot Pro'
                     elif latest_paid and latest_paid.plan_code == 'family_monthly':
                         user_plan_code = 'family_monthly'
-                        current_plan = 'WealthPilot Family'
+                        current_plan = 'MyWealthPilot Family'
                     elif latest_paid:
                         current_plan = latest_paid.plan_code
 
@@ -168,14 +168,14 @@ def create_app():
                 if user_plan_code == 'starter':
                     suggestion = {
                         'plan_code': 'pro_monthly',
-                        'plan_name': 'WealthPilot Pro',
+                        'plan_name': 'MyWealthPilot Pro',
                         'price': '₹99/month',
                         'reason': 'unlock premium analytics and faster wealth insights',
                     }
                 elif user_plan_code == 'pro_monthly':
                     suggestion = {
                         'plan_code': 'family_monthly',
-                        'plan_name': 'WealthPilot Family',
+                        'plan_name': 'MyWealthPilot Family',
                         'price': '₹199/month',
                         'reason': 'add family members and shared financial dashboards',
                     }
