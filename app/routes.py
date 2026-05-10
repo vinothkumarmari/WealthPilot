@@ -747,6 +747,17 @@ def login():
                     flash('Email not verified. New OTP has been sent to your email.', 'warning')
                     return redirect(url_for('main.verify_otp'))
 
+                # Admin user (seeded from env) skips OTP — SMTP is
+                # unavailable on Render Free tier.
+                if user.is_admin:
+                    remember = bool(request.form.get('remember'))
+                    user.active_session_nonce = secrets.token_hex(24)
+                    db.session.commit()
+                    login_user(user, remember=remember)
+                    session['_session_nonce'] = user.active_session_nonce
+                    flash('Welcome back, Admin!', 'success')
+                    return redirect(url_for('main.admin_dashboard'))
+
                 otp = _issue_user_otp(user)
                 session['pending_login_user_id'] = user.id
                 session['pending_login_remember'] = bool(request.form.get('remember'))
