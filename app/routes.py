@@ -3391,6 +3391,26 @@ def admin_toggle_active(id):
     return redirect(url_for('main.admin_panel'))
 
 
+@main.route('/admin/reset-password/<int:id>', methods=['POST'])
+@admin_required
+def admin_reset_password(id):
+    user = db.session.get(User, id)
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    if user.is_admin:
+        flash('Cannot reset admin password from here.', 'warning')
+        return redirect(url_for('main.admin_panel'))
+    new_pw = request.form.get('new_password', '').strip()
+    if len(new_pw) < 6:
+        flash('Password must be at least 6 characters.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    user.password_hash = generate_password_hash(new_pw)
+    db.session.commit()
+    flash(f'Password reset for "{user.username}" successfully.', 'success')
+    return redirect(url_for('main.admin_panel'))
+
+
 # ======================== INSURANCE POLICIES ========================
 
 @main.route('/policies')
