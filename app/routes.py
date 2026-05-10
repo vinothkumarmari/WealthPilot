@@ -596,11 +596,8 @@ def register():
                 existing.risk_appetite = request.form.get('risk_appetite', 'moderate')
                 otp = _issue_user_otp(existing)
                 session['pending_user_id'] = existing.id
-                email_sent = send_otp_email(email, otp, purpose='registration')
-                if email_sent:
-                    flash('Account already registered but not verified. OTP has been sent to your email.', 'info')
-                else:
-                    flash('Could not send OTP email right now. Please try again later or contact admin to verify SMTP/network settings.', 'danger')
+                queue_otp_email(current_app._get_current_object(), email, otp, purpose='registration')
+                flash('Account already registered but not verified. OTP has been sent to your email.', 'info')
                 return redirect(url_for('main.verify_otp'))
             else:
                 flash('Username or email already registered. Please login with your credentials.', 'danger')
@@ -625,12 +622,9 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        email_sent = send_otp_email(email, otp, purpose='registration')
         session['pending_user_id'] = user.id
-        if email_sent:
-            flash(f'OTP sent to {email}. Please verify your email.', 'info')
-        else:
-            flash('OTP generated but email could not be sent due to SMTP/network issue. Please retry after fixing mail connectivity.', 'danger')
+        queue_otp_email(current_app._get_current_object(), email, otp, purpose='registration')
+        flash(f'OTP sent to {email}. Please verify your email.', 'info')
 
         return redirect(url_for('main.verify_otp'))
     return render_template('register.html')
@@ -694,12 +688,8 @@ def resend_otp():
         return redirect(url_for('main.register'))
 
     otp = _issue_user_otp(user)
-
-    email_sent = send_otp_email(user.email, otp, purpose='registration')
-    if email_sent:
-        flash(f'New OTP sent to {user.email}.', 'info')
-    else:
-        flash('Could not resend OTP due to SMTP/network issue. Please try again later.', 'danger')
+    queue_otp_email(current_app._get_current_object(), user.email, otp, purpose='registration')
+    flash(f'New OTP sent to {user.email}.', 'info')
 
     return redirect(url_for('main.verify_otp'))
 
@@ -743,26 +733,16 @@ def login():
                 if not user.is_verified:
                     otp = _issue_user_otp(user)
                     session['pending_user_id'] = user.id
-                    email_sent = send_otp_email(user.email, otp, purpose='registration')
-                    if email_sent:
-                        flash('Email not verified. New OTP has been sent to your email.', 'warning')
-                    else:
-                        flash('Email not verified, but OTP email could not be sent due to SMTP/network issue.', 'danger')
+                    queue_otp_email(current_app._get_current_object(), user.email, otp, purpose='registration')
+                    flash('Email not verified. New OTP has been sent to your email.', 'warning')
                     return redirect(url_for('main.verify_otp'))
 
                 otp = _issue_user_otp(user)
                 session['pending_login_user_id'] = user.id
                 session['pending_login_remember'] = bool(request.form.get('remember'))
                 session['pending_login_force_logout'] = bool(user.active_session_nonce)
-                email_sent = send_otp_email(user.email, otp, purpose='login')
-                if email_sent:
-                    flash('OTP sent to your email. Please verify to complete login.', 'info')
-                else:
-                    flash('OTP could not be sent due to SMTP/network issue. Please try again later.', 'danger')
-                    session.pop('pending_login_user_id', None)
-                    session.pop('pending_login_remember', None)
-                    session.pop('pending_login_force_logout', None)
-                    return render_template('login.html')
+                queue_otp_email(current_app._get_current_object(), user.email, otp, purpose='login')
+                flash('OTP sent to your email. Please verify to complete login.', 'info')
                 return redirect(url_for('main.verify_login_otp'))
             else:
                 # Increment failed login count
@@ -846,11 +826,8 @@ def resend_login_otp():
         return redirect(url_for('main.login'))
 
     otp = _issue_user_otp(user)
-    email_sent = send_otp_email(user.email, otp, purpose='login')
-    if email_sent:
-        flash(f'New login OTP sent to {user.email}.', 'info')
-    else:
-        flash('Could not resend login OTP due to SMTP/network issue. Please try again later.', 'danger')
+    queue_otp_email(current_app._get_current_object(), user.email, otp, purpose='login')
+    flash(f'New login OTP sent to {user.email}.', 'info')
     return redirect(url_for('main.verify_login_otp'))
 
 
@@ -1055,13 +1032,8 @@ def forgot_password():
 
         otp = _issue_user_otp(user)
         session['reset_user_id'] = user.id
-
-        email_sent = send_otp_email(email, otp, purpose='password_reset')
-
-        if email_sent:
-            flash(f'OTP sent to {email}. Please check your inbox.', 'info')
-        else:
-            flash('OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+        queue_otp_email(current_app._get_current_object(), email, otp, purpose='password_reset')
+        flash(f'OTP sent to {email}. Please check your inbox.', 'info')
         return redirect(url_for('main.reset_password'))
     return render_template('forgot_password.html', prefill_email=prefill_email)
 
@@ -1158,12 +1130,8 @@ def resend_reset_otp():
         return redirect(url_for('main.forgot_password'))
 
     otp = _issue_user_otp(user)
-
-    email_sent = send_otp_email(user.email, otp, purpose='password_reset')
-    if email_sent:
-        flash(f'New OTP sent to {user.email}.', 'info')
-    else:
-        flash('OTP generated but email could not be sent. Please ask admin to configure SMTP settings.', 'danger')
+    queue_otp_email(current_app._get_current_object(), user.email, otp, purpose='password_reset')
+    flash(f'New OTP sent to {user.email}.', 'info')
 
     session.pop('reset_otp_verified', None)
     return redirect(url_for('main.reset_password'))
@@ -1217,14 +1185,8 @@ def change_password():
         otp = _issue_user_otp(current_user)
         session['pending_change_password_user_id'] = current_user.id
         session['pending_change_password_new_pw'] = new_pw
-        email_sent = send_otp_email(current_user.email, otp, purpose='password_change')
-        if email_sent:
-            flash('OTP sent to your email. Verify OTP to complete password change.', 'info')
-        else:
-            flash('OTP could not be sent due to SMTP/network issue. Password is not changed.', 'danger')
-            session.pop('pending_change_password_user_id', None)
-            session.pop('pending_change_password_new_pw', None)
-            return render_template('change_password.html')
+        queue_otp_email(current_app._get_current_object(), current_user.email, otp, purpose='password_change')
+        flash('OTP sent to your email. Verify OTP to complete password change.', 'info')
         return redirect(url_for('main.verify_change_password_otp'))
     return render_template('change_password.html')
 
@@ -1276,11 +1238,8 @@ def resend_change_password_otp():
         return redirect(url_for('main.change_password'))
 
     otp = _issue_user_otp(current_user)
-    email_sent = send_otp_email(current_user.email, otp, purpose='password_change')
-    if email_sent:
-        flash(f'New OTP sent to {current_user.email}.', 'info')
-    else:
-        flash('Could not resend OTP due to SMTP/network issue. Please try again later.', 'danger')
+    queue_otp_email(current_app._get_current_object(), current_user.email, otp, purpose='password_change')
+    flash(f'New OTP sent to {current_user.email}.', 'info')
     return redirect(url_for('main.verify_change_password_otp'))
 
 
@@ -2001,11 +1960,8 @@ def profile():
 
         if current_user.pending_email:
             session['pending_email_change_user_id'] = current_user.id
-            email_sent = send_otp_email(current_user.pending_email, otp, purpose='email_change')
-            if email_sent:
-                flash(f'Profile updated. OTP sent to {current_user.pending_email} to verify your new email.', 'info')
-            else:
-                flash('Profile updated, but OTP email could not be sent due to SMTP/network issue. Email is not changed until OTP verification succeeds.', 'danger')
+            queue_otp_email(current_app._get_current_object(), current_user.pending_email, otp, purpose='email_change')
+            flash(f'Profile updated. OTP sent to {current_user.pending_email} to verify your new email.', 'info')
             return redirect(url_for('main.verify_email_change_otp'))
 
         flash('Profile updated!', 'success')
@@ -2118,11 +2074,8 @@ def resend_email_change_otp():
         return redirect(url_for('main.profile'))
 
     otp = _issue_user_otp(current_user)
-    email_sent = send_otp_email(current_user.pending_email, otp, purpose='email_change')
-    if email_sent:
-        flash(f'New OTP sent to {current_user.pending_email}.', 'info')
-    else:
-        flash('Could not resend OTP due to SMTP/network issue. Please try again later.', 'danger')
+    queue_otp_email(current_app._get_current_object(), current_user.pending_email, otp, purpose='email_change')
+    flash(f'New OTP sent to {current_user.pending_email}.', 'info')
     return redirect(url_for('main.verify_email_change_otp'))
 
 
