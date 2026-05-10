@@ -3398,6 +3398,27 @@ def admin_panel():
         if txn.user_id not in latest_paid_by_user:
             latest_paid_by_user[txn.user_id] = txn.plan_code
 
+    # Parse database connection info
+    db_url = str(db.engine.url)
+    db_info = {'host': '', 'name': '', 'provider': 'Unknown'}
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(db_url)
+        db_info['host'] = parsed.hostname or ''
+        db_info['name'] = (parsed.path or '').lstrip('/')
+        if 'neon.tech' in db_info['host']:
+            db_info['provider'] = 'Neon'
+        elif 'render.com' in db_info['host']:
+            db_info['provider'] = 'Render'
+        elif 'supabase' in db_info['host']:
+            db_info['provider'] = 'Supabase'
+        elif 'localhost' in db_info['host'] or '127.0.0.1' in db_info['host']:
+            db_info['provider'] = 'Local'
+        else:
+            db_info['provider'] = 'PostgreSQL'
+    except Exception:
+        pass
+
     return render_template('admin_panel.html',
         users=users,
         total_users=total_users,
@@ -3411,6 +3432,7 @@ def admin_panel():
         avg_rating=round(float(avg_rating), 1),
         user_plan_map=latest_paid_by_user,
         plan_pricing=PLAN_PRICING,
+        db_info=db_info,
     )
 
 
