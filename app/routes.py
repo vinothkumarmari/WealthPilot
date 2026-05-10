@@ -3299,9 +3299,18 @@ def admin_delete_user(id):
     if user.is_admin:
         flash('Cannot delete admin account.', 'danger')
         return redirect(url_for('main.admin_panel'))
-    db.session.delete(user)
-    db.session.commit()
-    flash(f'User "{user.username}" deleted.', 'info')
+    username = user.username
+    try:
+        from .models import PaymentTransaction
+        # Delete records without cascade relationship
+        GoldPriceAlert.query.filter_by(user_id=id).delete()
+        PaymentTransaction.query.filter_by(user_id=id).delete()
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'User "{username}" and all their data deleted.', 'info')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {str(e)}', 'danger')
     return redirect(url_for('main.admin_panel'))
 
 

@@ -67,6 +67,8 @@ class User(UserMixin, db.Model):
     provident_funds = db.relationship('ProvidentFund', backref='user', lazy=True, cascade='all, delete-orphan')
     feedbacks = db.relationship('Feedback', backref='user', lazy=True, cascade='all, delete-orphan')
     notifications = db.relationship('Notification', backref='user', lazy=True, cascade='all, delete-orphan')
+    gold_alerts = db.relationship('GoldPriceAlert', backref='user', lazy=True, cascade='all, delete-orphan')
+    payment_transactions = db.relationship('PaymentTransaction', backref='user', lazy=True, cascade='all, delete-orphan')
 
 
 class Income(db.Model):
