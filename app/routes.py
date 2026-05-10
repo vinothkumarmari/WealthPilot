@@ -3313,7 +3313,9 @@ def admin_migrate_to_neon():
                     tgt_cur = tgt.cursor()
             tgt.commit()
 
-            # Copy data
+            # Copy data (disable FK checks during insert)
+            tgt_cur.execute("SET session_replication_role = 'replica';")
+            tgt.commit()
             total_rows = 0
             for table in tables:
                 result = src_conn.execute(text(f'SELECT * FROM "{table}"'))
@@ -3328,6 +3330,10 @@ def admin_migrate_to_neon():
                     tgt_cur.execute(insert_sql, list(row))
                 tgt.commit()
                 total_rows += len(rows)
+
+            # Re-enable FK checks
+            tgt_cur.execute("SET session_replication_role = 'origin';")
+            tgt.commit()
 
             # Reset sequences
             for table in tables:
