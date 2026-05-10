@@ -3181,6 +3181,170 @@ def reports():
 
 # ======================== ADMIN PANEL ========================
 
+# --- TEMPORARY: One-time DB migration endpoint (remove after use) ---
+@main.route('/admin/migrate-to-neon', methods=['POST'])
+@admin_required
+def admin_migrate_to_neon():
+    """Migrate all data from current (Render) DB to Neon. One-time use."""
+    import psycopg
+
+    neon_url = request.form.get('neon_url', '').strip()
+    if not neon_url:
+        flash('Neon DB URL is required.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+
+    try:
+        # Connect to Neon
+        tgt = psycopg.connect(neon_url, autocommit=False)
+        tgt_cur = tgt.cursor()
+
+        # Get source tables from current Render DB
+        src_engine = db.engine
+        from sqlalchemy import text, inspect
+        inspector = inspect(src_engine)
+        tables = inspector.get_table_names()
+
+        # Drop existing tables in Neon
+        tgt_cur.execute("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+        existing = [r[0] for r in tgt_cur.fetchall()]
+        if existing:
+            tgt_cur.execute('DROP TABLE IF EXISTS ' + ', '.join(f'"{t}"' for t in existing) + ' CASCADE;')
+        tgt.commit()
+
+        # Recreate schema: read DDL from source
+        with src_engine.connect() as src_conn:
+            # Get all CREATE TABLE DDL
+            for table in tables:
+                cols = []
+                result = src_conn.execute(text("""
+                    SELECT column_name, udt_name, is_nullable, column_default,
+                           character_maximum_length, numeric_precision, numeric_scale
+                    FROM information_schema.columns
+                    WHERE table_schema = 'public' AND table_name = :tbl
+                    ORDER BY ordinal_position
+                """), {'tbl': table})
+
+                for col_name, udt_name, nullable, default, max_len, num_prec, num_scale in result:
+                    type_map = {
+                        'int4': 'INTEGER', 'int8': 'BIGINT', 'int2': 'SMALLINT',
+                        'float8': 'DOUBLE PRECISION', 'float4': 'REAL',
+                        'bool': 'BOOLEAN', 'text': 'TEXT', 'date': 'DATE',
+                        'timestamp': 'TIMESTAMP', 'timestamptz': 'TIMESTAMPTZ',
+                        'json': 'JSON', 'jsonb': 'JSONB', 'uuid': 'UUID',
+                    }
+                    if udt_name == 'varchar':
+                        col_type = f'VARCHAR({max_len})' if max_len else 'VARCHAR'
+                    elif udt_name == 'numeric':
+                        col_type = f'NUMERIC({num_prec},{num_scale})' if num_prec else 'NUMERIC'
+                    else:
+                        col_type = type_map.get(udt_name, udt_name.upper())
+
+                    parts = [f'"{col_name}" {col_type}']
+                    if default:
+                        parts.append(f'DEFAULT {default}')
+                    if nullable == 'NO':
+                        parts.append('NOT NULL')
+                    cols.append(' '.join(parts))
+
+                if cols:
+                    ddl = f'CREATE TABLE "{table}" (\n  ' + ',\n  '.join(cols) + '\n);'
+                    tgt_cur.execute(ddl)
+
+            tgt.commit()
+
+            # Add primary keys
+            pk_result = src_conn.execute(text("""
+                SELECT tc.table_name, kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_schema = 'public'
+                ORDER BY tc.table_name
+            """))
+            pk_map = {}
+            for tname, cname in pk_result:
+                pk_map.setdefault(tname, []).append(cname)
+            for tname, pk_cols in pk_map.items():
+                cols_str = ', '.join(f'"{c}"' for c in pk_cols)
+                try:
+                    tgt_cur.execute(f'ALTER TABLE "{tname}" ADD PRIMARY KEY ({cols_str});')
+                except Exception:
+                    tgt.rollback()
+                    tgt_cur = tgt.cursor()
+            tgt.commit()
+
+            # Add foreign keys
+            fk_result = src_conn.execute(text("""
+                SELECT conrelid::regclass::text, pg_get_constraintdef(oid), conname
+                FROM pg_constraint
+                WHERE connamespace = 'public'::regnamespace AND contype = 'f'
+            """))
+            for tname, condef, conname in fk_result:
+                try:
+                    tgt_cur.execute(f'ALTER TABLE {tname} ADD CONSTRAINT "{conname}" {condef};')
+                except Exception:
+                    tgt.rollback()
+                    tgt_cur = tgt.cursor()
+            tgt.commit()
+
+            # Add indexes
+            idx_result = src_conn.execute(text("""
+                SELECT indexdef FROM pg_indexes
+                WHERE schemaname = 'public' AND indexname NOT LIKE '%_pkey'
+            """))
+            for (indexdef,) in idx_result:
+                try:
+                    tgt_cur.execute(indexdef)
+                except Exception:
+                    tgt.rollback()
+                    tgt_cur = tgt.cursor()
+            tgt.commit()
+
+            # Copy data
+            total_rows = 0
+            for table in tables:
+                result = src_conn.execute(text(f'SELECT * FROM "{table}"'))
+                rows = result.fetchall()
+                if not rows:
+                    continue
+                col_names = list(result.keys())
+                cols_quoted = ', '.join(f'"{c}"' for c in col_names)
+                placeholders = ', '.join(['%s'] * len(col_names))
+                insert_sql = f'INSERT INTO "{table}" ({cols_quoted}) VALUES ({placeholders})'
+                for row in rows:
+                    tgt_cur.execute(insert_sql, list(row))
+                tgt.commit()
+                total_rows += len(rows)
+
+            # Reset sequences
+            for table in tables:
+                try:
+                    seq_result = src_conn.execute(text("""
+                        SELECT column_name, column_default
+                        FROM information_schema.columns
+                        WHERE table_schema = 'public' AND table_name = :tbl
+                          AND column_default LIKE 'nextval%%'
+                    """), {'tbl': table})
+                    for col_name, col_default in seq_result:
+                        seq_name = col_default.split("'")[1]
+                        tgt_cur.execute(f"""
+                            SELECT setval('{seq_name}',
+                                COALESCE((SELECT MAX("{col_name}") FROM "{table}"), 1))
+                        """)
+                except Exception:
+                    tgt.rollback()
+                    tgt_cur = tgt.cursor()
+            tgt.commit()
+
+        tgt.close()
+        flash(f'Migration successful! {len(tables)} tables, {total_rows} rows copied to Neon. Now update DATABASE_URL in Render env vars.', 'success')
+    except Exception as e:
+        flash(f'Migration failed: {e}', 'danger')
+
+    return redirect(url_for('main.admin_panel'))
+
+
 @main.route('/admin')
 @admin_required
 def admin_panel():

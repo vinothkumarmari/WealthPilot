@@ -89,6 +89,21 @@
 <!-- User Management Table -->
 <div class="card mb-4">
 
+<!-- DB Migration (temporary) -->
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0"><span class="material-icons-outlined">storage</span> Database Migration</h5></div>
+    <div class="card-body">
+        <form action="{{ url_for('main.admin_migrate_to_neon') }}" method="POST" onsubmit="return confirm('This will copy ALL data to Neon. Continue?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="input-group">
+                <input type="text" name="neon_url" class="form-control form-control-sm" placeholder="postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require" required>
+                <button class="btn btn-sm btn-primary" type="submit">Migrate to Neon</button>
+            </div>
+            <small class="text-muted">Paste your Neon connection string and click Migrate. One-time operation.</small>
+        </form>
+    </div>
+</div>
+
 <!-- Mail / SMTP Configuration -->
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
