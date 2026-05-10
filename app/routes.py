@@ -3225,6 +3225,18 @@ def admin_migrate_to_neon():
                 """), {'tbl': table})
 
                 for col_name, udt_name, nullable, default, max_len, num_prec, num_scale in result:
+                    # If column has nextval default, use SERIAL/BIGSERIAL
+                    if default and 'nextval(' in str(default):
+                        if udt_name == 'int8':
+                            col_type = 'BIGSERIAL'
+                        else:
+                            col_type = 'SERIAL'
+                        parts = [f'"{col_name}" {col_type}']
+                        if nullable == 'NO':
+                            parts.append('NOT NULL')
+                        cols.append(' '.join(parts))
+                        continue
+
                     type_map = {
                         'int4': 'INTEGER', 'int8': 'BIGINT', 'int2': 'SMALLINT',
                         'float8': 'DOUBLE PRECISION', 'float4': 'REAL',
