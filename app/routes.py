@@ -23,7 +23,17 @@ import secrets
 import hmac
 import hashlib
 import requests
+import socket
 from werkzeug.utils import secure_filename
+
+# Force IPv4 — Render containers lack IPv6, causing "[Errno 101] Network is
+# unreachable" when smtp.gmail.com resolves to an IPv6 address.
+_orig_getaddrinfo = socket.getaddrinfo
+
+def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
+socket.getaddrinfo = _ipv4_only_getaddrinfo
 
 main = Blueprint('main', __name__)
 advisor = FinancialAdvisor()
