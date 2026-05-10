@@ -31,6 +31,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     is_verified = db.Column(db.Boolean, default=False)
     is_active_user = db.Column(db.Boolean, default=True)  # Admin can disable login
+    skip_otp = db.Column(db.Boolean, default=False)  # Admin can skip OTP for this user
 
     @property
     def is_active(self):

@@ -276,6 +276,13 @@
                                     onclick="openResetPwModal({{ user.id }}, '{{ user.username }}')">
                                 <span class="material-icons-outlined" style="font-size: 16px;">lock_reset</span>
                             </button>
+                            <form method="POST" action="{{ url_for('main.admin_toggle_user_otp', id=user.id) }}" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-{{ 'success' if user.skip_otp else 'secondary' }}"
+                                        title="{{ 'OTP Skipped — click to require OTP' if user.skip_otp else 'OTP Required — click to skip OTP' }}">
+                                    <span class="material-icons-outlined" style="font-size: 16px;">{{ 'no_encryption' if user.skip_otp else 'enhanced_encryption' }}</span>
+                                </button>
+                            </form>
                             <form method="POST" action="{{ url_for('main.admin_update_subscription', id=user.id) }}" style="display:inline" class="ms-1">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <select name="plan_code" class="form-select form-select-sm d-inline-block" style="width:130px; min-width:130px;">

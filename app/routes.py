@@ -745,7 +745,7 @@ def login():
                 # Admin/trusted users skip OTP — SMTP is
                 # unavailable on Render Free tier.
                 OTP_SKIP_USERNAMES = {'vinoth', 'sritharan'}
-                _skip_otp = (not EMAIL_OTP_ENABLED) or user.is_admin or user.username.lower() in OTP_SKIP_USERNAMES
+                _skip_otp = (not EMAIL_OTP_ENABLED) or user.is_admin or user.skip_otp or user.username.lower() in OTP_SKIP_USERNAMES
 
                 if not user.is_verified and _skip_otp:
                     user.is_verified = True
@@ -3638,6 +3638,25 @@ def admin_toggle_otp():
     EMAIL_OTP_ENABLED = not EMAIL_OTP_ENABLED
     status = 'enabled' if EMAIL_OTP_ENABLED else 'disabled'
     flash(f'Email OTP verification {status} for all users.', 'success')
+    return redirect(url_for('main.admin_panel'))
+
+
+@main.route('/admin/toggle-user-otp/<int:id>', methods=['POST'])
+@admin_required
+def admin_toggle_user_otp(id):
+    user = db.session.get(User, id)
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    try:
+        user.skip_otp = not user.skip_otp
+        db.session.commit()
+        status = 'skipped' if user.skip_otp else 'required'
+        flash(f'OTP for "{user.username}" is now {status}.', 'success')
+    except Exception:
+        db.session.rollback()
+        # Column may not exist yet — run migration
+        flash('OTP toggle failed. Please run "flask db upgrade" to add the skip_otp column.', 'danger')
     return redirect(url_for('main.admin_panel'))
 
 
