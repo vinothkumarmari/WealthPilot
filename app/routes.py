@@ -757,7 +757,7 @@ def login():
                     login_user(user, remember=remember)
                     session['_session_nonce'] = user.active_session_nonce
                     flash('Welcome back, Admin!', 'success')
-                    return redirect(url_for('main.admin_dashboard') if user.is_admin else url_for('main.dashboard'))
+                    return redirect(url_for('main.admin_panel') if user.is_admin else url_for('main.dashboard'))
 
                 otp = _issue_user_otp(user)
                 session['pending_login_user_id'] = user.id
