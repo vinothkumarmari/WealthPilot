@@ -38,6 +38,8 @@ socket.getaddrinfo = _ipv4_only_getaddrinfo
 main = Blueprint('main', __name__)
 advisor = FinancialAdvisor()
 OTP_HARDENING_ENABLED = True
+# Global toggle: when False, all users skip email OTP during login/register
+EMAIL_OTP_ENABLED = os.environ.get('EMAIL_OTP_ENABLED', 'true').lower() == 'true'
 
 
 # ======================== PWA SERVICE WORKER ========================
@@ -740,6 +742,15 @@ def login():
                     flash('Your account has been disabled by the administrator. Please contact support.', 'danger')
                     return render_template('login.html')
                 
+                # Admin/trusted users skip OTP — SMTP is
+                # unavailable on Render Free tier.
+                OTP_SKIP_USERNAMES = {'vinoth', 'sritharan'}
+                _skip_otp = (not EMAIL_OTP_ENABLED) or user.is_admin or user.username.lower() in OTP_SKIP_USERNAMES
+
+                if not user.is_verified and _skip_otp:
+                    user.is_verified = True
+                    db.session.commit()
+
                 if not user.is_verified:
                     otp = _issue_user_otp(user)
                     session['pending_user_id'] = user.id
@@ -747,10 +758,7 @@ def login():
                     flash('Email not verified. New OTP has been sent to your email.', 'warning')
                     return redirect(url_for('main.verify_otp'))
 
-                # Admin user (seeded from env) skips OTP — SMTP is
-                # unavailable on Render Free tier.
-                OTP_SKIP_USERNAMES = {'vinoth', 'sritharan'}
-                if user.is_admin or user.username.lower() in OTP_SKIP_USERNAMES:
+                if _skip_otp:
                     remember = bool(request.form.get('remember'))
                     user.active_session_nonce = secrets.token_hex(24)
                     db.session.commit()
@@ -3433,6 +3441,7 @@ def admin_panel():
         user_plan_map=latest_paid_by_user,
         plan_pricing=PLAN_PRICING,
         db_info=db_info,
+        email_otp_enabled=EMAIL_OTP_ENABLED,
     )
 
 
@@ -3619,6 +3628,16 @@ def admin_reset_password(id):
     user.password_hash = generate_password_hash(new_pw)
     db.session.commit()
     flash(f'Password reset for "{user.username}" successfully.', 'success')
+    return redirect(url_for('main.admin_panel'))
+
+
+@main.route('/admin/toggle-otp', methods=['POST'])
+@admin_required
+def admin_toggle_otp():
+    global EMAIL_OTP_ENABLED
+    EMAIL_OTP_ENABLED = not EMAIL_OTP_ENABLED
+    status = 'enabled' if EMAIL_OTP_ENABLED else 'disabled'
+    flash(f'Email OTP verification {status} for all users.', 'success')
     return redirect(url_for('main.admin_panel'))
 
 

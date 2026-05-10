@@ -89,6 +89,19 @@
                 <p><strong>Mail Server:</strong> {{ config.MAIL_SERVER }}:{{ config.MAIL_PORT }}</p>
             </div>
         </div>
+        <hr class="my-2">
+        <div class="d-flex align-items-center gap-3">
+            <strong>Email OTP Verification:</strong>
+            <span class="badge bg-{{ 'success' if email_otp_enabled else 'danger' }}">{{ 'Enabled' if email_otp_enabled else 'Disabled' }}</span>
+            <form method="POST" action="{{ url_for('main.admin_toggle_otp') }}" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-{{ 'danger' if email_otp_enabled else 'success' }}">
+                    <span class="material-icons-outlined" style="font-size: 16px;">{{ 'toggle_on' if email_otp_enabled else 'toggle_off' }}</span>
+                    {{ 'Disable' if email_otp_enabled else 'Enable' }}
+                </button>
+            </form>
+            <small class="text-muted">When disabled, all users login with password only (no OTP email required)</small>
+        </div>
     </div>
 </div>
 
