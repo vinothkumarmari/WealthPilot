@@ -3286,21 +3286,9 @@ def admin_migrate_to_neon():
                     tgt_cur = tgt.cursor()
             tgt.commit()
 
-            # Add foreign keys
-            fk_result = src_conn.execute(text("""
-                SELECT conrelid::regclass::text, pg_get_constraintdef(oid), conname
-                FROM pg_constraint
-                WHERE connamespace = 'public'::regnamespace AND contype = 'f'
-            """))
-            for tname, condef, conname in fk_result:
-                try:
-                    tgt_cur.execute(f'ALTER TABLE {tname} ADD CONSTRAINT "{conname}" {condef};')
-                except Exception:
-                    tgt.rollback()
-                    tgt_cur = tgt.cursor()
             tgt.commit()
 
-            # Add indexes
+            # Add indexes (FKs will be added after data copy)
             idx_result = src_conn.execute(text("""
                 SELECT indexdef FROM pg_indexes
                 WHERE schemaname = 'public' AND indexname NOT LIKE '%_pkey'
@@ -3313,9 +3301,18 @@ def admin_migrate_to_neon():
                     tgt_cur = tgt.cursor()
             tgt.commit()
 
-            # Copy data (disable FK checks during insert)
-            tgt_cur.execute("SET session_replication_role = 'replica';")
+            # Drop all FK constraints in target before data copy
+            tgt_cur.execute("""
+                SELECT conrelid::regclass::text AS tbl, conname
+                FROM pg_constraint
+                WHERE connamespace = 'public'::regnamespace AND contype = 'f'
+            """)
+            fk_list = list(tgt_cur.fetchall())
+            for tbl, conname in fk_list:
+                tgt_cur.execute(f'ALTER TABLE {tbl} DROP CONSTRAINT "{conname}";')
             tgt.commit()
+
+            # Copy data
             total_rows = 0
             for table in tables:
                 result = src_conn.execute(text(f'SELECT * FROM "{table}"'))
@@ -3331,8 +3328,18 @@ def admin_migrate_to_neon():
                 tgt.commit()
                 total_rows += len(rows)
 
-            # Re-enable FK checks
-            tgt_cur.execute("SET session_replication_role = 'origin';")
+            # Re-add FK constraints from source
+            fk_result = src_conn.execute(text("""
+                SELECT conrelid::regclass::text, pg_get_constraintdef(oid), conname
+                FROM pg_constraint
+                WHERE connamespace = 'public'::regnamespace AND contype = 'f'
+            """))
+            for tname, condef, conname in fk_result:
+                try:
+                    tgt_cur.execute(f'ALTER TABLE {tname} ADD CONSTRAINT "{conname}" {condef};')
+                except Exception:
+                    tgt.rollback()
+                    tgt_cur = tgt.cursor()
             tgt.commit()
 
             # Reset sequences
