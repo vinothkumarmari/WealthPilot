@@ -177,6 +177,9 @@
                             <td class="text-danger fw-bold">₹{{ "{:,.0f}".format(exp.amount) }}</td>
                             <td>{% if exp.is_recurring %}<span class="badge bg-info">Yes</span>{% else %}-{% endif %}</td>
                             <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="openEditExpense({{ exp.id }}, '{{ exp.category }}', {{ exp.amount }}, '{{ exp.date.strftime('%Y-%m-%d') }}', '{{ exp.description|e }}', {{ 'true' if exp.is_recurring else 'false' }})" title="Edit">
+                                    <span class="material-icons-outlined" style="font-size:16px">edit</span>
+                                </button>
                                 <form method="POST" action="{{ url_for('main.delete_expense', id=exp.id) }}" style="display:inline" onsubmit="return wpConfirmSync(this, 'Delete?')">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -246,10 +249,71 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Expense Modal -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><span class="material-icons-outlined">edit</span> {{ t('Edit Expense') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editExpenseForm" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ t('Category') }}</label>
+                            <select name="category" id="editExpCat" class="form-select" required>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Amount (&#8377;)</label>
+                            <input type="number" name="amount" id="editExpAmt" class="form-control" min="0" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" id="editExpDate" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_recurring" id="editExpRecurring">
+                                <label class="form-check-label" for="editExpRecurring">{{ t('Recurring Expense') }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="description" id="editExpDesc" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    function openEditExpense(id, category, amount, dateStr, description, isRecurring) {
+        document.getElementById('editExpenseForm').action = '/expenses/edit/' + id;
+        document.getElementById('editExpCat').value = category;
+        document.getElementById('editExpAmt').value = amount;
+        document.getElementById('editExpDate').value = dateStr;
+        document.getElementById('editExpDesc').value = description;
+        document.getElementById('editExpRecurring').checked = isRecurring;
+        new bootstrap.Modal(document.getElementById('editExpenseModal')).show();
+    }
+
     const catData = {{ expense_by_cat|safe }};
     if (catData.length > 0) {
         new Chart(document.getElementById('expCatChart'), {
@@ -283,7 +347,8 @@
         'Entertainment':    ['entertainment','movie','netflix','cinema','game','party','outing','திரைப்படம்','சினிமா','फिल्म','मूवी','पार्टी','సినిమా','పార్టీ'],
         'Shopping':         ['shopping','clothes','dress','shirt','amazon','flipkart','online','ஷாப்பிங்','ஆடை','शॉपिंग','कपड़े','షాపింగ్','బట్టలు'],
         'Personal Care':    ['salon','haircut','spa','cosmetic','beauty','சலூன்','அழகு','सैलून','ब్యూటీ','సెలూన్'],
-        'Debt Payments':    ['emi','loan','debt','கடன்','ईएमआई','कर्ज','అప్పు','EMI'],
+        'Loan':             ['loan','personal loan','home loan','car loan','bike loan','gold loan','கடன்','लोन','ऋण','రుణం','లోన్'],
+        'Debt Payments':    ['emi','debt','கடன் தவணை','ईएमआई','कर्ज','అప్పు','EMI'],
         'Savings':          ['savings','deposit','சேமிப்பு','बचत','పొదుపు'],
         'Investments':      ['invest','mutual fund','sip','stock','share','முதலீடு','निवेश','పెట్టుబడి'],
         'Charity':          ['charity','donate','donation','temple','church','mosque','நன்கொடை','கோவில்','दान','मंदिर','విరాళం','గుడి'],

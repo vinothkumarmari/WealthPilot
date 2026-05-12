@@ -570,7 +570,8 @@
                 const bg = n.is_read ? '' : 'background:rgba(108,92,231,0.05);';
                 const dot = n.is_read ? '' : '<span style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;"></span>';
                 const link = n.link ? n.link : '/notifications';
-                html += '<a href="' + link + '" class="d-flex align-items-start gap-2 px-3 py-2 border-bottom text-decoration-none" style="' + bg + 'transition:background 0.15s;" onmouseover="this.style.background=\'rgba(108,92,231,0.08)\'" onmouseout="this.style.background=\'' + (n.is_read ? '' : 'rgba(108,92,231,0.05)') + '\'">'
+                const clickHandler = n.is_read ? '' : ' onclick="markNotifRead(event,' + n.id + ',\'' + link + '\')"';
+                html += '<a href="' + link + '" class="d-flex align-items-start gap-2 px-3 py-2 border-bottom text-decoration-none" style="' + bg + 'transition:background 0.15s;" onmouseover="this.style.background=\'rgba(108,92,231,0.08)\'" onmouseout="this.style.background=\'' + (n.is_read ? '' : 'rgba(108,92,231,0.05)') + '"' + clickHandler + '>'
                     + '<span class="material-icons-outlined mt-1" style="font-size:20px;color:var(--accent);flex-shrink:0;">' + (n.icon || 'notifications') + '</span>'
                     + '<div style="flex:1;min-width:0;">'
                     + '<div style="font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + n.title + '</div>'
@@ -581,11 +582,29 @@
                     + '</a>';
             });
             if (data.unread > 0) {
-                html += '<div class="text-center py-2 border-top"><a href="/notifications/read-all" class="small text-decoration-none" onclick="fetch(\'/notifications/read-all\',{method:\'POST\',headers:{\'X-CSRFToken\':document.querySelector(\'meta[name=csrf-token]\').content}});return false;">Mark all as read</a></div>';
+                html += '<div class="text-center py-2 border-top"><a href="#" class="small text-decoration-none" onclick="markAllNotifRead(event)">Mark all as read</a></div>';
             }
             body.innerHTML = html;
         }).catch(() => {
             body.innerHTML = '<div class="text-center text-muted py-4"><small>Failed to load</small></div>';
+        });
+    }
+
+    function markNotifRead(e, id, link) {
+        e.preventDefault();
+        const csrf = document.querySelector('meta[name=csrf-token]');
+        fetch('/notifications/read/' + id, {method:'POST', headers:{'X-CSRFToken': csrf ? csrf.content : ''}}).then(() => {
+            updateNotifBadge();
+            window.location.href = link;
+        }).catch(() => { window.location.href = link; });
+    }
+
+    function markAllNotifRead(e) {
+        e.preventDefault();
+        const csrf = document.querySelector('meta[name=csrf-token]');
+        fetch('/notifications/read-all', {method:'POST', headers:{'X-CSRFToken': csrf ? csrf.content : ''}}).then(() => {
+            updateNotifBadge();
+            loadNotifDropdown();
         });
     }
 

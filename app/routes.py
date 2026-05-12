@@ -2303,6 +2303,27 @@ def delete_expense(id):
     return redirect(url_for('main.expenses'))
 
 
+@main.route('/expenses/edit/<int:id>', methods=['POST'])
+@login_required
+def edit_expense(id):
+    exp = Expense.query.get_or_404(id)
+    if exp.user_id != current_user.id:
+        flash('Unauthorized.', 'danger')
+        return redirect(url_for('main.expenses'))
+    try:
+        exp.amount = _parse_float_form('amount', min_value=0.01)
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('main.expenses'))
+    exp.category = request.form['category']
+    exp.date = datetime.strptime(request.form['date'], '%Y-%m-%d').date() if request.form.get('date') else exp.date
+    exp.description = request.form.get('description', '')
+    exp.is_recurring = bool(request.form.get('is_recurring'))
+    db.session.commit()
+    flash('Expense updated!', 'success')
+    return redirect(url_for('main.expenses'))
+
+
 # ======================== INVESTMENTS ========================
 
 @main.route('/investments')

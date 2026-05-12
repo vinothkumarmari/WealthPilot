@@ -97,7 +97,7 @@ class Config:
     EXPENSE_CATEGORIES = [
         'Housing', 'Food & Groceries', 'Transportation', 'Utilities',
         'Healthcare', 'Insurance', 'Education', 'Entertainment',
-        'Shopping', 'Personal Care', 'Debt Payments', 'Savings',
+        'Shopping', 'Personal Care', 'Loan', 'Debt Payments', 'Savings',
         'Investments', 'Charity', 'Miscellaneous'
     ]
     
