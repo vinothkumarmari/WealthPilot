@@ -535,6 +535,89 @@
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/offline.js') }}"></script>
+
+    <!-- Global Keyboard Shortcuts -->
+    <script>
+    (function(){
+        document.addEventListener('keydown', function(e) {
+            // Skip if user is typing in an input/textarea/select
+            var tag = (e.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+
+            // Alt + key shortcuts
+            if (e.altKey && !e.ctrlKey && !e.metaKey) {
+                var routes = {
+                    'd': '/dashboard',
+                    'i': '/income',
+                    'e': '/expenses',
+                    'b': '/budget',
+                    'l': '/loans',
+                    'v': '/investments',
+                    'g': '/goals',
+                    's': '/bank-statement',
+                    'p': '/profile',
+                    'h': '/help',
+                    'n': '/notifications',
+                    'a': '/achievements',
+                    'w': '/wealthcard',
+                    'c': '/calculators',
+                    't': '/tax-planning',
+                    'r': '/reports',
+                };
+                var key = e.key.toLowerCase();
+                if (routes[key]) {
+                    e.preventDefault();
+                    window.location.href = routes[key];
+                }
+                // Alt+? = show shortcut help
+                if (e.key === '/' || e.key === '?') {
+                    e.preventDefault();
+                    var m = document.getElementById('shortcutModal');
+                    if (m) {
+                        var bsModal = bootstrap.Modal.getOrCreateInstance(m);
+                        bsModal.toggle();
+                    }
+                }
+            }
+        });
+    })();
+    </script>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="modal fade" id="shortcutModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background:linear-gradient(135deg,#6C5CE7,#8E2DE2);color:#fff;">
+                    <h6 class="modal-title"><span class="material-icons-outlined me-1">keyboard</span> Keyboard Shortcuts</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-sm table-borderless mb-0 small">
+                        <tbody>
+                            <tr><td><kbd>Alt</kbd>+<kbd>D</kbd></td><td>Dashboard</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>I</kbd></td><td>Income & Salary</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>E</kbd></td><td>Expenses</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>S</kbd></td><td>Bank Statement</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>B</kbd></td><td>Budget Planner</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>L</kbd></td><td>Loans</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>V</kbd></td><td>Investments</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>G</kbd></td><td>Goals</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>C</kbd></td><td>Calculators</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>T</kbd></td><td>Tax Planning</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>R</kbd></td><td>Reports</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>W</kbd></td><td>WealthCard</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>A</kbd></td><td>Achievements</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>N</kbd></td><td>Notifications</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>P</kbd></td><td>Profile</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>H</kbd></td><td>Help & Guide</td></tr>
+                            <tr><td><kbd>Alt</kbd>+<kbd>?</kbd></td><td>Toggle this panel</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% block scripts %}{% endblock %}
 
     <!-- PWA Service Worker Registration -->

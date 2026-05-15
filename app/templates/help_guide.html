@@ -15,6 +15,7 @@
             <a href="#dashboard" class="btn btn-sm btn-outline-primary">Dashboard</a>
             <a href="#income" class="btn btn-sm btn-outline-primary">Income & Salary</a>
             <a href="#expenses" class="btn btn-sm btn-outline-primary">Expenses</a>
+            <a href="#bankstatement" class="btn btn-sm btn-outline-primary">Bank Statement</a>
             <a href="#investments" class="btn btn-sm btn-outline-primary">Investments</a>
             <a href="#policies" class="btn btn-sm btn-outline-primary">Policies</a>
             <a href="#schemes" class="btn btn-sm btn-outline-primary">Schemes & Bonds</a>
@@ -54,6 +55,8 @@
             <a href="#offlinemode" class="btn btn-sm btn-outline-success">Offline Mode</a>
             <a href="#whatifsimulator" class="btn btn-sm btn-outline-success">What-If Simulator</a>
             <a href="#achievements" class="btn btn-sm btn-outline-success">Achievements</a>
+            <a href="#wealthcard" class="btn btn-sm btn-outline-success">WealthCard</a>
+            <a href="#shortcuts" class="btn btn-sm btn-outline-success">Keyboard Shortcuts</a>
             <a href="#profile" class="btn btn-sm btn-outline-primary">Profile</a>
             <a href="#feedback" class="btn btn-sm btn-outline-primary">Feedback</a>
             <a href="#forgotpassword" class="btn btn-sm btn-outline-primary">Forgot Password</a>
@@ -176,7 +179,7 @@
         <p>Track spending with automatic budget analysis.</p>
         <ul class="small">
             <li><strong>Add Expense:</strong> Enter amount, category (Housing, Food, Transport, Entertainment, etc.), date, and description.</li>
-            <li><strong>15 Categories:</strong> Housing, Food & Groceries, Transportation, Utilities, Healthcare, Insurance, Education, Entertainment, Shopping, Personal Care, Debt Payments, Savings, Investments, Charity, Miscellaneous.</li>
+            <li><strong>16 Categories:</strong> Housing, Food & Groceries, Transportation, Utilities, Healthcare, Insurance, Education, Entertainment, Shopping, Personal Care, Loan, Debt Payments, Savings, Investments, Charity, Miscellaneous.</li>
             <li><strong>Budget Analysis (50/30/20 Rule):</strong> Your expenses are auto-categorized into Needs, Wants, and Savings. The system compares your actual spending against the 50/30/20 benchmark.</li>
             <li><strong>Warning Alerts:</strong> Red alerts appear when Needs exceeds 50%, Wants exceeds 30%, or Savings drops below 20% of income.</li>
             <li><strong>Custom Ratios:</strong> Adjust the 50/30/20 ratios to match your personal budget style.</li>
@@ -188,6 +191,32 @@
         <div class="alert alert-warning small mb-0">
             <span class="material-icons-outlined me-1" style="font-size:16px">warning</span>
             <strong>Note:</strong> Categories are auto-mapped: Housing/Food/Transport/Utilities/Healthcare = Needs, Entertainment/Shopping/Personal Care = Wants, Savings/Investments/Debt Payments = Savings.
+        </div>
+    </div>
+</div>
+
+<!-- Bank Statement Import -->
+<div class="card mb-3" id="bankstatement">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">account_balance</span>Bank Statement Import <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Upload your bank statement (CSV or PDF) to auto-import expenses for a specific month.</p>
+        <ul class="small">
+            <li><strong>Supported Formats:</strong> CSV files downloaded from net banking, and PDF e-statements from banks.</li>
+            <li><strong>Bank Selection:</strong> Choose your bank (SBI, HDFC, ICICI, Axis, Kotak, and 13 more) for optimal parsing.</li>
+            <li><strong>Month Filter:</strong> Select the specific month to import — only debit transactions for that month are extracted.</li>
+            <li><strong>Auto Column Detection:</strong> Automatically detects Date, Description/Narration, Debit/Withdrawal columns from various bank formats.</li>
+            <li><strong>Smart Auto-Categorization:</strong> Each transaction is auto-categorized into 16 expense categories using keyword matching (e.g., Swiggy → Food, Uber → Transport, Netflix → Entertainment, EMI → Loan).</li>
+            <li><strong>Review Before Import:</strong> See all extracted transactions in a table. Edit categories, uncheck items you don't want, or remove entries before importing.</li>
+            <li><strong>Bulk Import:</strong> Select all or specific transactions and import them as expenses in one click.</li>
+            <li><strong>10+ Date Formats:</strong> Handles DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, DD MMM YYYY, and more.</li>
+            <li><strong>Privacy:</strong> Files are processed in memory and immediately deleted. We never store your bank statements.</li>
+            <li><strong>Free Feature:</strong> Available on all plans including Starter (free).</li>
+        </ul>
+        <div class="alert alert-info small mb-0">
+            <span class="material-icons-outlined me-1" style="font-size:16px">tips_and_updates</span>
+            <strong>Tip:</strong> Download CSV format from your net banking for best results. Password-protected PDFs are not supported.
         </div>
     </div>
 </div>
@@ -912,6 +941,70 @@
     </div>
 </div>
 
+<!-- WealthCard -->
+<div class="card mb-3" id="wealthcard">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">credit_card</span>WealthCard <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Your financial identity card — a visual trust score based on 6 financial dimensions.</p>
+        <ul class="small">
+            <li><strong>Trust Score (0-1000):</strong> A composite score calculated from Savings (200), Debt Management (200), Investments (200), Insurance (150), Emergency Fund (100), and Financial Discipline (150).</li>
+            <li><strong>Grades:</strong> AAA (900+), AA (800+), A (700+), BBB (600+), BB (500+), B (400+), CCC (300+), CC (200+), C (below 200).</li>
+            <li><strong>Financial Personality:</strong> Auto-assigned personality type like "Wealth Builder", "Steady Saver", "Balanced Planner", etc. based on your strongest dimensions.</li>
+            <li><strong>Radar Chart:</strong> Visual 6-axis radar chart showing your strengths and improvement areas.</li>
+            <li><strong>Score Breakdown:</strong> Detailed breakdown of each dimension with progress bars and scores.</li>
+            <li><strong>Share & Verify:</strong> Make your WealthCard public and share a unique verification link. Anyone with the link can verify your financial trust score.</li>
+            <li><strong>QR Code:</strong> Generate a QR code for easy sharing of your verification link.</li>
+            <li><strong>Free Feature:</strong> Available on all plans including Starter (free).</li>
+        </ul>
+    </div>
+</div>
+
+<!-- Keyboard Shortcuts -->
+<div class="card mb-3" id="shortcuts">
+    <div class="card-header" style="background: linear-gradient(135deg, #6C5CE7, #8E2DE2); color: white;">
+        <h6 class="mb-0"><span class="material-icons-outlined me-2">keyboard</span>Keyboard Shortcuts <span class="badge bg-light text-dark ms-1">New</span></h6>
+    </div>
+    <div class="card-body">
+        <p>Navigate faster with keyboard shortcuts. Press <kbd>Alt</kbd>+<kbd>?</kbd> anywhere to see the full list.</p>
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-sm small mb-0">
+                    <tbody>
+                        <tr><td><kbd>Alt</kbd>+<kbd>D</kbd></td><td>Dashboard</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>I</kbd></td><td>Income & Salary</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>E</kbd></td><td>Expenses</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>S</kbd></td><td>Bank Statement</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>B</kbd></td><td>Budget Planner</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>L</kbd></td><td>Loans</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>V</kbd></td><td>Investments</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>G</kbd></td><td>Goals</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm small mb-0">
+                    <tbody>
+                        <tr><td><kbd>Alt</kbd>+<kbd>C</kbd></td><td>Calculators</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>T</kbd></td><td>Tax Planning</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>R</kbd></td><td>Reports</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>W</kbd></td><td>WealthCard</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>A</kbd></td><td>Achievements</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>N</kbd></td><td>Notifications</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>P</kbd></td><td>Profile</td></tr>
+                        <tr><td><kbd>Alt</kbd>+<kbd>H</kbd></td><td>Help & Guide</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="alert alert-light border small mt-3 mb-0">
+            <span class="material-icons-outlined me-1" style="font-size:16px">info</span>
+            Shortcuts are disabled when typing in input fields. Press <kbd>Alt</kbd>+<kbd>?</kbd> on any page to see the shortcuts panel.
+        </div>
+    </div>
+</div>
+
 <!-- Profile -->
 <div class="card mb-3" id="profile">
     <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined me-2">person</span>Profile Settings</h6></div>
@@ -1110,7 +1203,7 @@
 
 <!-- Version Info -->
 <div class="text-center text-muted small mb-4">
-    <p>MyWealthPilot&trade; v2.0 &nbsp;|&nbsp; Built with ❤ in India &nbsp;|&nbsp; &copy; 2026 MyWealthPilot&trade;. All rights reserved. &nbsp;|&nbsp; <a href="https://mywealthpilot.in" class="text-muted text-decoration-none">mywealthpilot.in</a></p>
+    <p>MyWealthPilot&trade; v2.1 &nbsp;|&nbsp; Built with ❤ in India &nbsp;|&nbsp; &copy; 2026 MyWealthPilot&trade;. All rights reserved. &nbsp;|&nbsp; <a href="https://mywealthpilot.in" class="text-muted text-decoration-none">mywealthpilot.in</a></p>
 </div>
 
 {% endblock %}
