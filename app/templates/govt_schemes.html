@@ -979,7 +979,12 @@ function filterSchemes() {
     const search = document.getElementById('searchScheme').value.toLowerCase();
     const stateSelect = document.getElementById('stateFilter');
 
-    stateSelect.disabled = (type !== 'state' && type !== 'subsidies');
+    if (type !== 'state' && type !== 'subsidies') {
+        stateSelect.disabled = true;
+        stateSelect.value = 'all';
+    } else {
+        stateSelect.disabled = false;
+    }
 
     document.querySelectorAll('.scheme-card').forEach(card => {
         const cardType = card.dataset.type;
