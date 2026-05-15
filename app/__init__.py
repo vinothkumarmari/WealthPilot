@@ -426,6 +426,28 @@ def _ensure_user_columns(app):
                 if 'skip_otp' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN skip_otp BOOLEAN DEFAULT 0"))
                     app.logger.info('Added column: user.skip_otp')
+                # MFA columns
+                if 'mfa_method' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN mfa_method VARCHAR(10)"))
+                    app.logger.info('Added column: user.mfa_method')
+                if 'totp_secret' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN totp_secret VARCHAR(64)"))
+                    app.logger.info('Added column: user.totp_secret')
+                if 'totp_confirmed' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN totp_confirmed BOOLEAN DEFAULT 0"))
+                    app.logger.info('Added column: user.totp_confirmed')
+                if 'webauthn_credential_id' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN webauthn_credential_id TEXT"))
+                    app.logger.info('Added column: user.webauthn_credential_id')
+                if 'webauthn_public_key' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN webauthn_public_key TEXT"))
+                    app.logger.info('Added column: user.webauthn_public_key')
+                if 'webauthn_sign_count' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN webauthn_sign_count INTEGER DEFAULT 0"))
+                    app.logger.info('Added column: user.webauthn_sign_count')
+                if 'mfa_recovery_codes' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN mfa_recovery_codes TEXT"))
+                    app.logger.info('Added column: user.mfa_recovery_codes')
                 # Add member column to expense and financial_goal tables
                 exp_cols = {r[1] for r in conn.execute(text("PRAGMA table_info(expense)")).fetchall()}
                 if 'member' not in exp_cols:
@@ -493,6 +515,28 @@ def _ensure_user_columns(app):
                 if 'skip_otp' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN skip_otp BOOLEAN DEFAULT FALSE"))
                     app.logger.info('Added column: user.skip_otp')
+                # MFA columns
+                if 'mfa_method' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN mfa_method VARCHAR(10)"))
+                    app.logger.info('Added column: user.mfa_method')
+                if 'totp_secret' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN totp_secret VARCHAR(64)"))
+                    app.logger.info('Added column: user.totp_secret')
+                if 'totp_confirmed' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN totp_confirmed BOOLEAN DEFAULT FALSE"))
+                    app.logger.info('Added column: user.totp_confirmed')
+                if 'webauthn_credential_id' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN webauthn_credential_id TEXT"))
+                    app.logger.info('Added column: user.webauthn_credential_id')
+                if 'webauthn_public_key' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN webauthn_public_key TEXT"))
+                    app.logger.info('Added column: user.webauthn_public_key')
+                if 'webauthn_sign_count' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN webauthn_sign_count INTEGER DEFAULT 0"))
+                    app.logger.info('Added column: user.webauthn_sign_count')
+                if 'mfa_recovery_codes' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN mfa_recovery_codes TEXT"))
+                    app.logger.info('Added column: user.mfa_recovery_codes')
                 # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
                 try:
                     conn.execute(text("SAVEPOINT sp_otp"))

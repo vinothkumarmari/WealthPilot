@@ -133,6 +133,10 @@
                     <a href="{{ url_for('main.change_password') }}" class="btn btn-outline-secondary ms-2">
                         <span class="material-icons-outlined">lock_reset</span> {{ t('Change Password') }}
                     </a>
+                    <a href="{{ url_for('main.mfa_setup') }}" class="btn btn-outline-{{ 'success' if current_user.mfa_method else 'primary' }} ms-2">
+                        <span class="material-icons-outlined">{{ 'verified_user' if current_user.mfa_method else 'security' }}</span>
+                        {% if current_user.mfa_method %}{{ t('2FA Enabled') }}{% else %}{{ t('Setup 2FA') }}{% endif %}
+                    </a>
                 </form>
             </div>
         </div>

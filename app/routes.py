@@ -761,12 +761,17 @@ def login():
                     return redirect(url_for('main.verify_otp'))
 
                 if _skip_otp:
+                    # Check MFA for non-admin users
+                    if _user_needs_mfa(user):
+                        session['pending_mfa_user_id'] = user.id
+                        session['pending_mfa_remember'] = bool(request.form.get('remember'))
+                        return redirect(url_for('main.mfa_verify'))
                     remember = bool(request.form.get('remember'))
                     user.active_session_nonce = secrets.token_hex(24)
                     db.session.commit()
                     login_user(user, remember=remember)
                     session['_session_nonce'] = user.active_session_nonce
-                    flash('Welcome back, Admin!', 'success')
+                    flash('Welcome back!', 'success')
                     return redirect(url_for('main.admin_panel') if user.is_admin else url_for('main.dashboard'))
 
                 otp = _issue_user_otp(user)
@@ -828,6 +833,12 @@ def verify_login_otp():
         session.pop('pending_login_remember', None)
         session.pop('pending_login_force_logout', None)
 
+        # Check MFA after OTP verification
+        if _user_needs_mfa(user):
+            session['pending_mfa_user_id'] = user.id
+            session['pending_mfa_remember'] = remember
+            return redirect(url_for('main.mfa_verify'))
+
         login_user(user, remember=remember)
         session['_session_nonce'] = user.active_session_nonce
         session['_last_activity'] = datetime.now(timezone.utc).isoformat()
@@ -864,6 +875,291 @@ def resend_login_otp():
 
 
 # ======================== BILLING & PAYMENTS ========================
+
+# ======================== MFA (TOTP + WebAuthn) ========================
+
+MFA_SKIP_USERNAMES = {'vinoth', 'dharan'}
+
+
+def _user_needs_mfa(user):
+    """Return True if user has MFA enabled and is not an admin bypass user."""
+    if user.is_admin or user.username.lower() in MFA_SKIP_USERNAMES:
+        return False
+    return bool(user.mfa_method and (user.totp_confirmed or user.webauthn_credential_id))
+
+
+def _generate_recovery_codes(n=8):
+    """Generate n recovery codes and return (plain_list, hashed_json)."""
+    import hashlib as _hl
+    codes = [secrets.token_hex(4).upper() for _ in range(n)]
+    hashed = [_hl.sha256(c.encode()).hexdigest() for c in codes]
+    return codes, json.dumps(hashed)
+
+
+@main.route('/mfa/setup')
+@login_required
+def mfa_setup():
+    return render_template('mfa_setup.html')
+
+
+@main.route('/mfa/totp/enable', methods=['POST'])
+@login_required
+def mfa_totp_enable():
+    """Generate TOTP secret and QR code for user to scan."""
+    import pyotp
+    import qrcode
+    import base64
+
+    secret = pyotp.random_base32()
+    current_user.totp_secret = secret
+    current_user.totp_confirmed = False
+    db.session.commit()
+
+    totp = pyotp.TOTP(secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=current_user.email,
+        issuer_name='MyWealthPilot'
+    )
+
+    img = qrcode.make(provisioning_uri)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    qr_b64 = base64.b64encode(buf.getvalue()).decode()
+
+    return jsonify(success=True, secret=secret, qr_code=qr_b64)
+
+
+@main.route('/mfa/totp/confirm', methods=['POST'])
+@login_required
+def mfa_totp_confirm():
+    """Verify the TOTP code from user's authenticator app and enable MFA."""
+    import pyotp
+
+    code = request.form.get('code', '').strip()
+    if not current_user.totp_secret:
+        flash('No TOTP setup in progress.', 'danger')
+        return redirect(url_for('main.mfa_setup'))
+
+    totp = pyotp.TOTP(current_user.totp_secret)
+    if not totp.verify(code, valid_window=1):
+        return jsonify(success=False, error='Invalid code. Please try again.')
+
+    codes, hashed_json = _generate_recovery_codes()
+    current_user.totp_confirmed = True
+    current_user.mfa_method = 'totp'
+    current_user.mfa_recovery_codes = hashed_json
+    db.session.commit()
+
+    return jsonify(success=True, recovery_codes=codes)
+
+
+@main.route('/mfa/webauthn/register-options', methods=['POST'])
+@login_required
+def mfa_webauthn_register_options():
+    """Generate WebAuthn registration options."""
+    from webauthn import generate_registration_options, options_to_json
+    from webauthn.helpers.structs import AuthenticatorSelectionCriteria, ResidentKeyRequirement, UserVerificationRequirement
+
+    rp_id = request.host.split(':')[0]
+    options = generate_registration_options(
+        rp_id=rp_id,
+        rp_name='MyWealthPilot',
+        user_id=str(current_user.id).encode(),
+        user_name=current_user.username,
+        user_display_name=current_user.full_name or current_user.username,
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            resident_key=ResidentKeyRequirement.PREFERRED,
+            user_verification=UserVerificationRequirement.PREFERRED,
+        ),
+    )
+
+    session['webauthn_reg_challenge'] = options.challenge
+    return options_to_json(options), 200, {'Content-Type': 'application/json'}
+
+
+@main.route('/mfa/webauthn/register-complete', methods=['POST'])
+@login_required
+def mfa_webauthn_register_complete():
+    """Complete WebAuthn registration."""
+    from webauthn import verify_registration_response
+    from webauthn.helpers import bytes_to_base64url
+    import base64
+
+    challenge = session.pop('webauthn_reg_challenge', None)
+    if not challenge:
+        return jsonify(success=False, error='No registration in progress.')
+
+    rp_id = request.host.split(':')[0]
+    body = request.get_json()
+
+    try:
+        verification = verify_registration_response(
+            credential=body,
+            expected_challenge=challenge,
+            expected_rp_id=rp_id,
+            expected_origin=request.host_url.rstrip('/'),
+        )
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
+
+    codes, hashed_json = _generate_recovery_codes()
+    current_user.webauthn_credential_id = bytes_to_base64url(verification.credential_id)
+    current_user.webauthn_public_key = base64.b64encode(verification.credential_public_key).decode()
+    current_user.webauthn_sign_count = verification.sign_count
+    current_user.mfa_method = 'webauthn'
+    current_user.mfa_recovery_codes = hashed_json
+    db.session.commit()
+
+    return jsonify(success=True, recovery_codes=codes)
+
+
+@main.route('/mfa/verify', methods=['GET', 'POST'])
+def mfa_verify():
+    """MFA verification page shown after password login."""
+    user_id = session.get('pending_mfa_user_id')
+    if not user_id:
+        return redirect(url_for('main.login'))
+
+    user = db.session.get(User, user_id)
+    if not user:
+        session.pop('pending_mfa_user_id', None)
+        return redirect(url_for('main.login'))
+
+    if request.method == 'POST':
+        code = request.form.get('code', '').strip()
+        if not code:
+            flash('Please enter a code.', 'danger')
+            return render_template('mfa_verify.html', method=user.mfa_method, user_id=user_id)
+
+        # Check recovery code first
+        if user.mfa_recovery_codes:
+            import hashlib as _hl
+            code_hash = _hl.sha256(code.upper().encode()).hexdigest()
+            stored = json.loads(user.mfa_recovery_codes)
+            if code_hash in stored:
+                stored.remove(code_hash)
+                user.mfa_recovery_codes = json.dumps(stored)
+                _complete_mfa_login(user)
+                flash('Login successful (recovery code used). You have ' + str(len(stored)) + ' recovery codes remaining.', 'warning')
+                return redirect(url_for('main.dashboard'))
+
+        if user.mfa_method == 'totp':
+            import pyotp
+            totp = pyotp.TOTP(user.totp_secret)
+            if totp.verify(code, valid_window=1):
+                _complete_mfa_login(user)
+                flash('Login successful!', 'success')
+                return redirect(url_for('main.dashboard'))
+            else:
+                flash('Invalid code. Please try again.', 'danger')
+        else:
+            flash('Please use the passkey button to verify.', 'info')
+
+        return render_template('mfa_verify.html', method=user.mfa_method, user_id=user_id)
+
+    return render_template('mfa_verify.html', method=user.mfa_method, user_id=user_id)
+
+
+@main.route('/mfa/webauthn/auth-options', methods=['POST'])
+def mfa_webauthn_auth_options():
+    """Generate WebAuthn authentication options."""
+    from webauthn import generate_authentication_options, options_to_json
+    from webauthn.helpers.structs import PublicKeyCredentialDescriptor, UserVerificationRequirement
+    from webauthn.helpers import base64url_to_bytes
+
+    user_id = session.get('pending_mfa_user_id')
+    if not user_id:
+        return jsonify(success=False, error='No pending login.'), 403
+
+    user = db.session.get(User, user_id)
+    if not user or not user.webauthn_credential_id:
+        return jsonify(success=False, error='No passkey registered.'), 400
+
+    rp_id = request.host.split(':')[0]
+    options = generate_authentication_options(
+        rp_id=rp_id,
+        allow_credentials=[PublicKeyCredentialDescriptor(
+            id=base64url_to_bytes(user.webauthn_credential_id),
+        )],
+        user_verification=UserVerificationRequirement.PREFERRED,
+    )
+
+    session['webauthn_auth_challenge'] = options.challenge
+    return options_to_json(options), 200, {'Content-Type': 'application/json'}
+
+
+@main.route('/mfa/webauthn/auth-complete', methods=['POST'])
+def mfa_webauthn_auth_complete():
+    """Complete WebAuthn authentication."""
+    from webauthn import verify_authentication_response
+    from webauthn.helpers import base64url_to_bytes
+    import base64
+
+    user_id = session.get('pending_mfa_user_id')
+    challenge = session.pop('webauthn_auth_challenge', None)
+    if not user_id or not challenge:
+        return jsonify(success=False, error='No pending login.'), 403
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify(success=False, error='User not found.'), 404
+
+    rp_id = request.host.split(':')[0]
+    body = request.get_json()
+
+    try:
+        verification = verify_authentication_response(
+            credential=body,
+            expected_challenge=challenge,
+            expected_rp_id=rp_id,
+            expected_origin=request.host_url.rstrip('/'),
+            credential_public_key=base64.b64decode(user.webauthn_public_key),
+            credential_current_sign_count=user.webauthn_sign_count or 0,
+        )
+    except Exception as e:
+        return jsonify(success=False, error=str(e))
+
+    user.webauthn_sign_count = verification.new_sign_count
+    db.session.commit()
+
+    _complete_mfa_login(user)
+    return jsonify(success=True)
+
+
+@main.route('/mfa/disable', methods=['POST'])
+@login_required
+def mfa_disable():
+    """Disable MFA for current user."""
+    password = request.form.get('password', '')
+    if not check_password_hash(current_user.password_hash, password):
+        flash('Incorrect password.', 'danger')
+        return redirect(url_for('main.mfa_setup'))
+
+    current_user.mfa_method = None
+    current_user.totp_secret = None
+    current_user.totp_confirmed = False
+    current_user.webauthn_credential_id = None
+    current_user.webauthn_public_key = None
+    current_user.webauthn_sign_count = 0
+    current_user.mfa_recovery_codes = None
+    db.session.commit()
+    flash('Two-factor authentication has been disabled.', 'info')
+    return redirect(url_for('main.profile'))
+
+
+def _complete_mfa_login(user):
+    """Finalize login after MFA verification."""
+    remember = bool(session.get('pending_mfa_remember'))
+    user.active_session_nonce = secrets.token_hex(24)
+    user.active_session_updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+    session.pop('pending_mfa_user_id', None)
+    session.pop('pending_mfa_remember', None)
+    login_user(user, remember=remember)
+    session['_session_nonce'] = user.active_session_nonce
+    session['_last_activity'] = datetime.now(timezone.utc).isoformat()
+
 
 PLAN_PRICING = {
     'pro_monthly': {'amount_paise': 9900, 'name': 'MyWealthPilot Pro (Monthly)'},

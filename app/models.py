@@ -51,6 +51,14 @@ class User(UserMixin, db.Model):
     failed_login_count = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime)
     last_activity = db.Column(db.DateTime)
+    # MFA fields
+    mfa_method = db.Column(db.String(10))  # None, 'totp', 'webauthn'
+    totp_secret = db.Column(db.String(64))
+    totp_confirmed = db.Column(db.Boolean, default=False)
+    webauthn_credential_id = db.Column(db.Text)
+    webauthn_public_key = db.Column(db.Text)
+    webauthn_sign_count = db.Column(db.Integer, default=0)
+    mfa_recovery_codes = db.Column(db.Text)  # JSON list of hashed codes
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships

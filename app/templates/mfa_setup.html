@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% block title %}Two-Factor Authentication - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header mb-3">
+    <h4><span class="material-icons-outlined">security</span> {{ t('Two-Factor Authentication') }}</h4>
+    <p class="text-muted mb-0">{{ t('Add an extra layer of security to your account.') }}</p>
+</div>
+
+{% if current_user.mfa_method %}
+<!-- MFA Enabled -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <span class="material-icons-outlined text-success me-2" style="font-size:36px">verified_user</span>
+            <div>
+                <h5 class="mb-0">{{ t('2FA is Enabled') }}</h5>
+                <span class="text-muted">
+                    {{ t('Method:') }}
+                    {% if current_user.mfa_method == 'totp' %}
+                    <span class="badge bg-primary">{{ t('Authenticator App (TOTP)') }}</span>
+                    {% else %}
+                    <span class="badge bg-success">{{ t('Passkey / Biometric (WebAuthn)') }}</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <form method="POST" action="{{ url_for('main.mfa_disable') }}" onsubmit="return confirm('Are you sure you want to disable 2FA?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3" style="max-width:300px">
+                <label class="form-label">{{ t('Enter your password to disable') }}</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-outline-danger">
+                <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">lock_open</span>{{ t('Disable 2FA') }}
+            </button>
+        </form>
+    </div>
+</div>
+{% else %}
+<!-- Choose MFA Method -->
+<div class="row">
+    <!-- TOTP Card -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <span class="material-icons-outlined mb-3" style="font-size:56px;color:#6C5CE7">phonelink_lock</span>
+                <h5>{{ t('Authenticator App') }}</h5>
+                <p class="text-muted small">{{ t('Use Google Authenticator, Microsoft Authenticator, or Authy to generate 6-digit codes.') }}</p>
+                <ul class="text-start small text-muted">
+                    <li>{{ t('Works offline') }}</li>
+                    <li>{{ t('Free, no phone number needed') }}</li>
+                    <li>{{ t('30-second rotating codes') }}</li>
+                </ul>
+                <button class="btn btn-primary w-100" onclick="setupTOTP()">
+                    <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">qr_code_2</span>{{ t('Setup Authenticator') }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WebAuthn Card -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <span class="material-icons-outlined mb-3" style="font-size:56px;color:#8E2DE2">fingerprint</span>
+                <h5>{{ t('Passkey / Biometric') }}</h5>
+                <p class="text-muted small">{{ t('Use fingerprint, Face ID, or a hardware security key (YubiKey) for instant login.') }}</p>
+                <ul class="text-start small text-muted">
+                    <li>{{ t('One-tap verification') }}</li>
+                    <li>{{ t('Phishing-resistant') }}</li>
+                    <li>{{ t('Supports fingerprint, Face ID, PIN') }}</li>
+                </ul>
+                <button class="btn btn-outline-primary w-100" onclick="setupWebAuthn()" id="webauthnBtn">
+                    <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">fingerprint</span>{{ t('Setup Passkey') }}
+                </button>
+                <small class="text-muted d-block mt-2" id="webauthnSupport"></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOTP Setup Modal -->
+<div class="modal fade" id="totpModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#6C5CE7,#8E2DE2);color:#fff;">
+                <h6 class="modal-title"><span class="material-icons-outlined me-1">qr_code_2</span> {{ t('Setup Authenticator App') }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="totpStep1">
+                    <p class="small">{{ t('1. Install Google Authenticator or Authy on your phone.') }}</p>
+                    <p class="small">{{ t('2. Scan this QR code with the app:') }}</p>
+                    <div class="text-center my-3">
+                        <img id="totpQR" src="" alt="QR Code" style="width:200px;height:200px;">
+                    </div>
+                    <p class="small text-muted">{{ t('Or manually enter this key:') }}</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control form-control-sm font-monospace" id="totpSecret" readonly>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('totpSecret').value)">
+                            <span class="material-icons-outlined" style="font-size:16px">content_copy</span>
+                        </button>
+                    </div>
+                    <p class="small">{{ t('3. Enter the 6-digit code shown in the app:') }}</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="totpCode" maxlength="6" placeholder="000000" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+                        <button class="btn btn-primary" onclick="confirmTOTP()">{{ t('Verify & Enable') }}</button>
+                    </div>
+                    <div id="totpError" class="text-danger small mt-2 d-none"></div>
+                </div>
+                <div id="totpStep2" class="d-none">
+                    <div class="text-center mb-3">
+                        <span class="material-icons-outlined text-success" style="font-size:48px">check_circle</span>
+                        <h5 class="mt-2">{{ t('2FA Enabled!') }}</h5>
+                    </div>
+                    <div class="alert alert-warning small">
+                        <strong>{{ t('Save your recovery codes!') }}</strong>
+                        {{ t('These codes can be used to login if you lose your authenticator device. Each code can only be used once.') }}
+                    </div>
+                    <div id="recoveryCodes" class="bg-light p-3 rounded font-monospace small mb-3"></div>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="copyRecoveryCodes()">
+                        <span class="material-icons-outlined me-1" style="font-size:16px">content_copy</span>{{ t('Copy Codes') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WebAuthn Recovery Codes Modal -->
+<div class="modal fade" id="webauthnSuccessModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#6C5CE7,#8E2DE2);color:#fff;">
+                <h6 class="modal-title"><span class="material-icons-outlined me-1">fingerprint</span> {{ t('Passkey Registered!') }}</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <span class="material-icons-outlined text-success" style="font-size:48px">check_circle</span>
+                    <h5 class="mt-2">{{ t('2FA Enabled!') }}</h5>
+                </div>
+                <div class="alert alert-warning small">
+                    <strong>{{ t('Save your recovery codes!') }}</strong>
+                    {{ t('These codes can be used to login if your passkey device is unavailable. Each code can only be used once.') }}
+                </div>
+                <div id="webauthnRecoveryCodes" class="bg-light p-3 rounded font-monospace small mb-3"></div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="copyWebauthnCodes()">
+                    <span class="material-icons-outlined me-1" style="font-size:16px">content_copy</span>{{ t('Copy Codes') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Check WebAuthn support
+document.addEventListener('DOMContentLoaded', function() {
+    if (!window.PublicKeyCredential) {
+        var btn = document.getElementById('webauthnBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Not supported in this browser';
+        }
+        var sup = document.getElementById('webauthnSupport');
+        if (sup) sup.textContent = 'WebAuthn requires Chrome, Edge, Safari, or Firefox.';
+    }
+});
+
+const csrfToken = document.querySelector('meta[name=csrf-token]')?.content || '';
+
+async function setupTOTP() {
+    try {
+        const resp = await fetch("{{ url_for('main.mfa_totp_enable') }}", {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken}
+        });
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('totpQR').src = 'data:image/png;base64,' + data.qr_code;
+            document.getElementById('totpSecret').value = data.secret;
+            document.getElementById('totpStep1').classList.remove('d-none');
+            document.getElementById('totpStep2').classList.add('d-none');
+            document.getElementById('totpError').classList.add('d-none');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('totpModal')).show();
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function confirmTOTP() {
+    const code = document.getElementById('totpCode').value.trim();
+    if (code.length !== 6) {
+        document.getElementById('totpError').textContent = 'Enter a 6-digit code.';
+        document.getElementById('totpError').classList.remove('d-none');
+        return;
+    }
+    const form = new FormData();
+    form.append('code', code);
+    const resp = await fetch("{{ url_for('main.mfa_totp_confirm') }}", {
+        method: 'POST', body: form,
+        headers: {'X-CSRFToken': csrfToken}
+    });
+    const data = await resp.json();
+    if (data.success) {
+        document.getElementById('totpStep1').classList.add('d-none');
+        document.getElementById('totpStep2').classList.remove('d-none');
+        document.getElementById('recoveryCodes').innerHTML = data.recovery_codes.map(c => '<div>' + c + '</div>').join('');
+    } else {
+        document.getElementById('totpError').textContent = data.error;
+        document.getElementById('totpError').classList.remove('d-none');
+    }
+}
+
+function copyRecoveryCodes() {
+    const codes = Array.from(document.querySelectorAll('#recoveryCodes div')).map(d => d.textContent).join('\n');
+    navigator.clipboard.writeText(codes);
+    alert('Recovery codes copied!');
+}
+
+function copyWebauthnCodes() {
+    const codes = Array.from(document.querySelectorAll('#webauthnRecoveryCodes div')).map(d => d.textContent).join('\n');
+    navigator.clipboard.writeText(codes);
+    alert('Recovery codes copied!');
+}
+
+async function setupWebAuthn() {
+    try {
+        // 1. Get registration options
+        const optResp = await fetch("{{ url_for('main.mfa_webauthn_register_options') }}", {
+            method: 'POST',
+            headers: {'X-CSRFToken': csrfToken}
+        });
+        const options = await optResp.json();
+
+        // Decode challenge and user.id from base64url
+        options.challenge = _b64urlToBuffer(options.challenge);
+        options.user.id = _b64urlToBuffer(options.user.id);
+        if (options.excludeCredentials) {
+            options.excludeCredentials = options.excludeCredentials.map(c => ({
+                ...c, id: _b64urlToBuffer(c.id)
+            }));
+        }
+
+        // 2. Create credential
+        const credential = await navigator.credentials.create({publicKey: options});
+
+        // 3. Send to server
+        const body = {
+            id: credential.id,
+            rawId: _bufferToB64url(credential.rawId),
+            type: credential.type,
+            response: {
+                attestationObject: _bufferToB64url(credential.response.attestationObject),
+                clientDataJSON: _bufferToB64url(credential.response.clientDataJSON),
+            }
+        };
+        if (credential.response.getTransports) {
+            body.response.transports = credential.response.getTransports();
+        }
+
+        const compResp = await fetch("{{ url_for('main.mfa_webauthn_register_complete') }}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            body: JSON.stringify(body)
+        });
+        const result = await compResp.json();
+        if (result.success) {
+            document.getElementById('webauthnRecoveryCodes').innerHTML = result.recovery_codes.map(c => '<div>' + c + '</div>').join('');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('webauthnSuccessModal')).show();
+        } else {
+            alert('Registration failed: ' + (result.error || 'Unknown error'));
+        }
+    } catch (e) {
+        if (e.name === 'NotAllowedError') {
+            alert('Passkey registration was cancelled.');
+        } else {
+            alert('Error: ' + e.message);
+        }
+    }
+}
+
+function _b64urlToBuffer(b64url) {
+    const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4 === 0 ? '' : '='.repeat(4 - b64.length % 4);
+    const bin = atob(b64 + pad);
+    return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
+}
+
+function _bufferToB64url(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+</script>
+{% endblock %}
