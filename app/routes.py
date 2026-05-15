@@ -6943,14 +6943,15 @@ def _calculate_trust_score(user):
     monthly_salary = float(user.monthly_salary or 0)
     annual_income = monthly_salary * 12
 
+    _is_sqlite = db.engine.dialect.name == 'sqlite'
+
     # ---------- 1. Savings Discipline (0-200) ----------
+    _date_expr = db.func.strftime('%Y-%m', Expense.date) if _is_sqlite else db.func.to_char(Expense.date, 'YYYY-MM')
     months_data = db.session.query(
-        db.func.strftime('%Y-%m', Expense.date) if db.engine.dialect.name == 'sqlite'
-        else db.func.to_char(Expense.date, 'YYYY-MM'),
+        _date_expr,
         db.func.sum(Expense.amount)
     ).filter_by(user_id=user.id).group_by(
-        db.func.strftime('%Y-%m', Expense.date) if db.engine.dialect.name == 'sqlite'
-        else db.func.to_char(Expense.date, 'YYYY-MM')
+        _date_expr
     ).all()
 
     if monthly_salary > 0 and months_data:
@@ -7155,36 +7156,35 @@ def wealthcard():
 def wealthcard_calculate():
     try:
         result = _calculate_trust_score(current_user)
+        card = WealthCard.query.filter_by(user_id=current_user.id).first()
+        if not card:
+            card_id = 'WP-' + secrets.token_hex(4).upper()[:6]
+            token = hmac.new(
+                (current_user.username + str(current_user.id)).encode(),
+                card_id.encode(), hashlib.sha256
+            ).hexdigest()[:32]
+            card = WealthCard(
+                user_id=current_user.id, card_id=card_id,
+                verification_token=token
+            )
+            db.session.add(card)
+        card.trust_score = result['trust_score']
+        card.grade = result['grade']
+        card.personality = result['personality']
+        card.savings_score = result['savings_score']
+        card.debt_score = result['debt_score']
+        card.investment_score = result['investment_score']
+        card.insurance_score = result['insurance_score']
+        card.emergency_score = result['emergency_score']
+        card.discipline_score = result['discipline_score']
+        card.last_calculated = datetime.now(timezone.utc)
+        db.session.commit()
+        flash('WealthCard updated!', 'success')
     except Exception as e:
         import traceback
         db.session.rollback()
         current_app.logger.error('WealthCard calculate error: %s\n%s', e, traceback.format_exc())
         flash(f'Error calculating score: {e}', 'danger')
-        return redirect(url_for('main.wealthcard'))
-    card = WealthCard.query.filter_by(user_id=current_user.id).first()
-    if not card:
-        card_id = 'WP-' + secrets.token_hex(4).upper()[:6]
-        token = hmac.new(
-            (current_user.username + str(current_user.id)).encode(),
-            card_id.encode(), hashlib.sha256
-        ).hexdigest()[:32]
-        card = WealthCard(
-            user_id=current_user.id, card_id=card_id,
-            verification_token=token
-        )
-        db.session.add(card)
-    card.trust_score = result['trust_score']
-    card.grade = result['grade']
-    card.personality = result['personality']
-    card.savings_score = result['savings_score']
-    card.debt_score = result['debt_score']
-    card.investment_score = result['investment_score']
-    card.insurance_score = result['insurance_score']
-    card.emergency_score = result['emergency_score']
-    card.discipline_score = result['discipline_score']
-    card.last_calculated = datetime.now(timezone.utc)
-    db.session.commit()
-    flash('WealthCard updated!', 'success')
     return redirect(url_for('main.wealthcard'))
 
 
