@@ -439,3 +439,27 @@ class UserBadge(db.Model):
     category = db.Column(db.String(30), default='general')   # tracking, saving, investing, streak
     earned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     owner = db.relationship('User', backref=db.backref('badges', lazy=True, cascade='all, delete-orphan'))
+
+
+class WealthCard(db.Model):
+    """Financial Trust Score card - shareable, verifiable financial identity."""
+    __table_args__ = (
+        db.Index('ix_wealthcard_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    card_id = db.Column(db.String(20), unique=True, nullable=False)
+    trust_score = db.Column(db.Integer, default=0)
+    grade = db.Column(db.String(5), default='D')
+    personality = db.Column(db.String(30), default='Starter')
+    savings_score = db.Column(db.Integer, default=0)
+    debt_score = db.Column(db.Integer, default=0)
+    investment_score = db.Column(db.Integer, default=0)
+    insurance_score = db.Column(db.Integer, default=0)
+    emergency_score = db.Column(db.Integer, default=0)
+    discipline_score = db.Column(db.Integer, default=0)
+    is_public = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(64), unique=True)
+    last_calculated = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('wealth_card', uselist=False, lazy=True, cascade='all, delete-orphan'))

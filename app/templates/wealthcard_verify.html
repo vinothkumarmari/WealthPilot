@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WealthCard Verification - MyWealthPilot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 20px; color: #fff;
+        }
+        .verify-badge {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 24px; padding: 10px 20px;
+            background: rgba(255,255,255,0.08); border-radius: 30px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .verify-badge .material-icons-outlined { color: #4CAF50; font-size: 20px; }
+        .verify-badge span { font-size: 13px; letter-spacing: 1px; opacity: 0.8; }
+        .verify-badge.invalid .material-icons-outlined { color: #f44336; }
+
+        .wealth-card {
+            width: 100%; max-width: 460px; min-height: 280px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+            color: #fff; padding: 28px 24px;
+            position: relative; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 50px rgba(108,92,231,0.15);
+        }
+        .wealth-card::before {
+            content: '';
+            position: absolute; top: -40%; right: -20%;
+            width: 280px; height: 280px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(108,92,231,0.15) 0%, transparent 70%);
+        }
+        .wc-brand { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; position: relative; z-index: 1; }
+        .wc-brand-name { font-size: 13px; letter-spacing: 2px; opacity: 0.6; text-transform: uppercase; }
+        .wc-card-id { font-family: 'Courier New', monospace; font-size: 11px; opacity: 0.4; }
+        .wc-name { font-size: 18px; font-weight: 700; margin-bottom: 2px; position: relative; z-index: 1; }
+        .wc-personality { font-size: 12px; color: #a29bfe; font-style: italic; margin-bottom: 16px; position: relative; z-index: 1; }
+        .wc-score-row { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 16px; position: relative; z-index: 1; }
+        .wc-score-big {
+            font-size: 56px; font-weight: 800; line-height: 1;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .grade-gold { background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; }
+        .grade-green { background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; background-clip: text; }
+        .grade-orange { background: linear-gradient(135deg, #FF9800, #FFC107); -webkit-background-clip: text; background-clip: text; }
+        .grade-red { background: linear-gradient(135deg, #f44336, #FF5722); -webkit-background-clip: text; background-clip: text; }
+        .wc-grade-badge { display: inline-block; padding: 3px 12px; border-radius: 6px; font-weight: 800; font-size: 16px; letter-spacing: 1px; }
+        .wc-label { font-size: 10px; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px; }
+        .wc-dims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; position: relative; z-index: 1; }
+        .wc-dim-label { font-size: 9px; opacity: 0.5; text-transform: uppercase; text-align: center; }
+        .wc-dim-bar-bg { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
+        .wc-dim-bar { height: 100%; border-radius: 3px; }
+        .bar-savings { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+        .bar-debt { background: linear-gradient(90deg, #2196F3, #03A9F4); }
+        .bar-invest { background: linear-gradient(90deg, #9C27B0, #E040FB); }
+        .bar-insurance { background: linear-gradient(90deg, #FF9800, #FFC107); }
+        .bar-emergency { background: linear-gradient(90deg, #00BCD4, #26C6DA); }
+        .bar-discipline { background: linear-gradient(90deg, #FFD700, #FFA000); }
+        .wc-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 14px; padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            position: relative; z-index: 1;
+        }
+        .wc-footer small { opacity: 0.35; font-size: 10px; }
+
+        .verify-info {
+            max-width: 460px; width: 100%;
+            margin-top: 24px; padding: 20px;
+            background: rgba(255,255,255,0.05); border-radius: 14px;
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08);
+            text-align: center;
+        }
+        .verify-info p { font-size: 13px; opacity: 0.7; margin-bottom: 6px; }
+        .verify-info .updated { font-size: 11px; opacity: 0.4; }
+        .footer-link { margin-top: 30px; font-size: 12px; opacity: 0.4; }
+        .footer-link a { color: #a29bfe; text-decoration: none; }
+
+        .invalid-card {
+            text-align: center; padding: 60px 20px;
+            max-width: 400px;
+        }
+        .invalid-card .material-icons-outlined { font-size: 64px; color: #f44336; opacity: 0.5; }
+        .invalid-card h3 { margin: 16px 0 8px; }
+        .invalid-card p { opacity: 0.6; font-size: 14px; }
+
+        @media (max-width: 480px) {
+            .wealth-card { padding: 20px 16px; }
+            .wc-score-big { font-size: 44px; }
+            .wc-dims { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+{% if card %}
+    <div class="verify-badge">
+        <span class="material-icons-outlined">verified</span>
+        <span>VERIFIED BY MYWEALTHPILOT</span>
+    </div>
+
+    {% if card.grade in ['AAA', 'AA'] %}
+        {% set color_class = 'grade-gold' %}
+        {% set badge_bg = 'rgba(255,215,0,0.2)' %}
+        {% set badge_color = '#FFD700' %}
+    {% elif card.grade in ['A'] %}
+        {% set color_class = 'grade-green' %}
+        {% set badge_bg = 'rgba(76,175,80,0.2)' %}
+        {% set badge_color = '#4CAF50' %}
+    {% elif card.grade in ['BBB', 'BB'] %}
+        {% set color_class = 'grade-orange' %}
+        {% set badge_bg = 'rgba(255,152,0,0.2)' %}
+        {% set badge_color = '#FF9800' %}
+    {% else %}
+        {% set color_class = 'grade-red' %}
+        {% set badge_bg = 'rgba(244,67,54,0.2)' %}
+        {% set badge_color = '#f44336' %}
+    {% endif %}
+
+    <div class="wealth-card">
+        <div class="wc-brand">
+            <span class="wc-brand-name">WealthCard</span>
+            <span class="wc-card-id">{{ card.card_id }}</span>
+        </div>
+        <div class="wc-name">{{ user.full_name or user.username }}</div>
+        <div class="wc-personality">{{ card.personality }}</div>
+        <div class="wc-score-row">
+            <div>
+                <div class="wc-score-big {{ color_class }}">{{ card.trust_score }}</div>
+                <div class="wc-label">Trust Score</div>
+            </div>
+            <div>
+                <span class="wc-grade-badge" style="background:{{ badge_bg }};color:{{ badge_color }}">{{ card.grade }}</span>
+                <div class="wc-label">Grade</div>
+            </div>
+            <div style="flex:1;text-align:right;">
+                <div class="wc-label" style="margin-bottom:3px">out of 1000</div>
+                <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
+                    <div style="height:100%;width:{{ (card.trust_score / 10)|round(1) }}%;background:linear-gradient(90deg,#6C5CE7,#a29bfe);border-radius:3px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="wc-dims">
+            <div><div class="wc-dim-label">Savings</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar bar-savings" style="width:{{ (card.savings_score / 2)|round(1) }}%"></div></div></div>
+            <div><div class="wc-dim-label">Debt</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar bar-debt" style="width:{{ (card.debt_score / 2)|round(1) }}%"></div></div></div>
+            <div><div class="wc-dim-label">Invest</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar bar-invest" style="width:{{ (card.investment_score / 2)|round(1) }}%"></div></div></div>
+            <div><div class="wc-dim-label">Insurance</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar bar-insurance" style="width:{{ (card.insurance_score / 1.5)|round(1) }}%"></div></div></div>
+            <div><div class="wc-dim-label">Emergency</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar bar-emergency" style="width:{{ card.emergency_score }}%"></div></div></div>
+            <div><div class="wc-dim-label">Discipline</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar bar-discipline" style="width:{{ (card.discipline_score / 1.5)|round(1) }}%"></div></div></div>
+        </div>
+        <div class="wc-footer">
+            <small>Member since {{ user.created_at.strftime('%b %Y') if user.created_at else 'N/A' }}</small>
+            <small>{{ card.last_calculated.strftime('%d %b %Y') if card.last_calculated else '' }}</small>
+            <small>myWealthPilot</small>
+        </div>
+    </div>
+
+    <div class="verify-info">
+        <p><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;color:#4CAF50">check_circle</span> This WealthCard is authentic and verified.</p>
+        <p>This person actively tracks their finances on myWealthPilot.</p>
+        <p>No exact financial amounts are disclosed - only grades and percentages.</p>
+        <div class="updated">Last updated: {{ card.last_calculated.strftime('%d %B %Y, %I:%M %p') if card.last_calculated else 'N/A' }}</div>
+    </div>
+
+{% else %}
+    <div class="verify-badge invalid">
+        <span class="material-icons-outlined">error_outline</span>
+        <span>VERIFICATION FAILED</span>
+    </div>
+    <div class="invalid-card">
+        <span class="material-icons-outlined">credit_card_off</span>
+        <h3>Card Not Found</h3>
+        <p>This WealthCard is either invalid, has been made private by the owner, or does not exist.</p>
+    </div>
+{% endif %}
+
+<div class="footer-link">
+    <a href="/">myWealthPilot</a> - Your Financial Trust Score
+</div>
+
+</body>
+</html>

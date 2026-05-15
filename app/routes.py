@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge, WealthCard
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -415,6 +415,7 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.pricing': 'starter',
     'main.help_guide': 'starter',
     'main.achievements': 'starter',
+    'main.wealthcard': 'starter',
     'main.what_if_simulator': 'starter',
     'main.gold_silver': 'starter',
     'main.global_gold_prices': 'starter',
@@ -6351,3 +6352,269 @@ def insurance_analyzer():
 
     family_score = round(sum(a['score'] for a in analysis) / len(analysis)) if analysis else 0
     return render_template('insurance_analyzer.html', analysis=analysis, family_score=family_score)
+
+
+# ======================== WEALTHCARD - FINANCIAL TRUST SCORE ========================
+
+def _calculate_trust_score(user):
+    """Calculate comprehensive financial trust score (0-1000) from user's real data."""
+    today = date.today()
+    monthly_salary = float(user.monthly_salary or 0)
+    annual_income = monthly_salary * 12
+
+    # ---------- 1. Savings Discipline (0-200) ----------
+    months_data = db.session.query(
+        db.func.strftime('%Y-%m', Expense.date) if db.engine.dialect.name == 'sqlite'
+        else db.func.to_char(Expense.date, 'YYYY-MM'),
+        db.func.sum(Expense.amount)
+    ).filter_by(user_id=user.id).group_by(
+        db.func.strftime('%Y-%m', Expense.date) if db.engine.dialect.name == 'sqlite'
+        else db.func.to_char(Expense.date, 'YYYY-MM')
+    ).all()
+
+    if monthly_salary > 0 and months_data:
+        avg_expense = sum(float(m[1]) for m in months_data) / len(months_data)
+        savings_rate = max(0, (monthly_salary - avg_expense) / monthly_salary)
+        positive_months = sum(1 for m in months_data if float(m[1]) < monthly_salary)
+        consistency = positive_months / len(months_data) if months_data else 0
+        if savings_rate > 0.40: base = 180
+        elif savings_rate > 0.30: base = 155
+        elif savings_rate > 0.20: base = 130
+        elif savings_rate > 0.10: base = 100
+        elif savings_rate > 0: base = 60
+        else: base = 20
+        savings_score = min(200, int(base * (0.6 + 0.4 * consistency)))
+    elif monthly_salary > 0:
+        savings_score = 40
+    else:
+        savings_score = 0
+
+    # ---------- 2. Debt Health (0-200) ----------
+    loans = Loan.query.filter_by(user_id=user.id).all()
+    asset_loans = db.session.query(db.func.sum(Asset.loan_amount)).filter(
+        Asset.user_id == user.id, Asset.loan_amount > 0).scalar() or 0
+    total_debt = sum(float(l.outstanding_balance or 0) for l in loans) + float(asset_loans)
+    total_emi = sum(float(l.emi_amount or 0) for l in loans)
+
+    if monthly_salary > 0:
+        dti = total_emi / monthly_salary
+        if total_debt == 0: debt_score = 200
+        elif dti < 0.20: debt_score = 180
+        elif dti < 0.30: debt_score = 150
+        elif dti < 0.40: debt_score = 120
+        elif dti < 0.50: debt_score = 80
+        else: debt_score = 40
+    elif total_debt == 0:
+        debt_score = 150
+    else:
+        debt_score = 30
+
+    # ---------- 3. Investment Maturity (0-200) ----------
+    investments = Investment.query.filter_by(user_id=user.id, is_active=True).all()
+    sips = SIP.query.filter_by(user_id=user.id).all()
+    pf = ProvidentFund.query.filter_by(user_id=user.id).all()
+    total_invested = sum(float(i.amount_invested or 0) for i in investments) + \
+                     sum(float(s.total_invested or 0) for s in sips) + \
+                     sum(float(p.total_balance or 0) for p in pf)
+
+    inv_types = set()
+    for i in investments: inv_types.add(i.investment_type)
+    for s in sips: inv_types.add('SIP')
+    for p in pf: inv_types.add('PF')
+
+    if annual_income > 0:
+        inv_rate = total_invested / annual_income
+        if inv_rate > 0.30: base = 160
+        elif inv_rate > 0.20: base = 140
+        elif inv_rate > 0.15: base = 120
+        elif inv_rate > 0.10: base = 90
+        elif inv_rate > 0.05: base = 60
+        elif inv_rate > 0: base = 30
+        else: base = 0
+        diversity_bonus = min(40, len(inv_types) * 8)
+        investment_score = min(200, base + diversity_bonus)
+    elif total_invested > 0:
+        investment_score = 60 + min(40, len(inv_types) * 8)
+    else:
+        investment_score = 0
+
+    # ---------- 4. Insurance Coverage (0-150) ----------
+    policies = InsurancePolicy.query.filter_by(user_id=user.id, status='active').all()
+    total_cover = sum(float(p.sum_assured or 0) for p in policies)
+    has_health = any(p.policy_type and 'health' in p.policy_type.lower() for p in policies)
+    has_term = any(p.policy_type and ('term' in p.policy_type.lower() or 'life' in p.policy_type.lower()) for p in policies)
+
+    if annual_income > 0:
+        cover_ratio = total_cover / annual_income
+        if cover_ratio > 10: base = 100
+        elif cover_ratio > 7: base = 85
+        elif cover_ratio > 5: base = 70
+        elif cover_ratio > 3: base = 50
+        elif cover_ratio > 1: base = 30
+        elif cover_ratio > 0: base = 15
+        else: base = 0
+        insurance_score = min(150, base + (25 if has_health else 0) + (25 if has_term else 0))
+    elif total_cover > 0:
+        insurance_score = 50 + (25 if has_health else 0) + (25 if has_term else 0)
+    else:
+        insurance_score = 0
+
+    # ---------- 5. Emergency Fund (0-100) ----------
+    bank_balance = db.session.query(db.func.sum(BankAccount.balance)).filter_by(
+        user_id=user.id).scalar() or 0
+    avg_monthly_expense = sum(float(m[1]) for m in months_data) / len(months_data) if months_data else (monthly_salary * 0.5 if monthly_salary else 1)
+
+    if avg_monthly_expense > 0:
+        months_covered = float(bank_balance) / avg_monthly_expense
+        if months_covered >= 12: emergency_score = 100
+        elif months_covered >= 6: emergency_score = 80
+        elif months_covered >= 3: emergency_score = 55
+        elif months_covered >= 1: emergency_score = 30
+        else: emergency_score = 10
+    elif bank_balance > 0:
+        emergency_score = 30
+    else:
+        emergency_score = 0
+
+    # ---------- 6. Financial Discipline (0-150) ----------
+    first_entry = db.session.query(db.func.min(Expense.date)).filter_by(user_id=user.id).scalar()
+    if first_entry:
+        months_active = max(1, (today.year - first_entry.year) * 12 + today.month - first_entry.month)
+    else:
+        months_active = 0
+
+    if months_active >= 24: tenure_pts = 50
+    elif months_active >= 12: tenure_pts = 40
+    elif months_active >= 6: tenure_pts = 30
+    elif months_active >= 3: tenure_pts = 20
+    elif months_active >= 1: tenure_pts = 10
+    else: tenure_pts = 0
+
+    modules_used = 0
+    if Expense.query.filter_by(user_id=user.id).first(): modules_used += 1
+    if Income.query.filter_by(user_id=user.id).first(): modules_used += 1
+    if investments: modules_used += 1
+    if loans: modules_used += 1
+    if policies: modules_used += 1
+    if BankAccount.query.filter_by(user_id=user.id).first(): modules_used += 1
+    if sips: modules_used += 1
+    if FinancialGoal.query.filter_by(user_id=user.id).first(): modules_used += 1
+    if Scheme.query.filter_by(user_id=user.id).first(): modules_used += 1
+    if Asset.query.filter_by(user_id=user.id).first(): modules_used += 1
+
+    if modules_used >= 8: data_pts = 50
+    elif modules_used >= 6: data_pts = 40
+    elif modules_used >= 4: data_pts = 30
+    elif modules_used >= 2: data_pts = 20
+    else: data_pts = 5
+
+    streak = UserStreak.query.filter_by(user_id=user.id).first()
+    streak_pts = 0
+    if streak:
+        s = streak.expense_streak or 0
+        if s >= 30: streak_pts = 50
+        elif s >= 14: streak_pts = 40
+        elif s >= 7: streak_pts = 30
+        elif s >= 3: streak_pts = 15
+
+    discipline_score = min(150, tenure_pts + data_pts + streak_pts)
+
+    # ---------- Total Score & Grade ----------
+    trust_score = savings_score + debt_score + investment_score + insurance_score + emergency_score + discipline_score
+    trust_score = min(1000, max(0, trust_score))
+
+    if trust_score >= 850: grade = 'AAA'
+    elif trust_score >= 750: grade = 'AA'
+    elif trust_score >= 650: grade = 'A'
+    elif trust_score >= 550: grade = 'BBB'
+    elif trust_score >= 450: grade = 'BB'
+    elif trust_score >= 350: grade = 'B'
+    elif trust_score >= 200: grade = 'C'
+    else: grade = 'D'
+
+    # ---------- Money Personality ----------
+    scores = {
+        'savings': savings_score, 'debt': debt_score, 'investment': investment_score,
+        'insurance': insurance_score, 'emergency': emergency_score, 'discipline': discipline_score
+    }
+    top = max(scores, key=scores.get)
+    if savings_score >= 160 and investment_score < 100:
+        personality = 'The Saver'
+    elif investment_score >= 160:
+        personality = 'The Investor'
+    elif insurance_score >= 120 and emergency_score >= 70:
+        personality = 'The Guardian'
+    elif discipline_score >= 120 and modules_used >= 6:
+        personality = 'The Strategist'
+    elif debt_score <= 80 and savings_score <= 80:
+        personality = 'The Spender'
+    elif all(v >= 60 for v in [savings_score, debt_score, investment_score]):
+        personality = 'The Builder'
+    else:
+        personality = 'The Explorer'
+
+    return {
+        'trust_score': trust_score, 'grade': grade, 'personality': personality,
+        'savings_score': savings_score, 'debt_score': debt_score,
+        'investment_score': investment_score, 'insurance_score': insurance_score,
+        'emergency_score': emergency_score, 'discipline_score': discipline_score,
+        'months_active': months_active, 'modules_used': modules_used,
+    }
+
+
+@main.route('/wealthcard')
+@login_required
+def wealthcard():
+    card = WealthCard.query.filter_by(user_id=current_user.id).first()
+    return render_template('wealthcard.html', card=card)
+
+
+@main.route('/wealthcard/calculate', methods=['POST'])
+@login_required
+def wealthcard_calculate():
+    result = _calculate_trust_score(current_user)
+    card = WealthCard.query.filter_by(user_id=current_user.id).first()
+    if not card:
+        card_id = 'WP-' + secrets.token_hex(4).upper()[:6]
+        token = hmac.new(
+            (current_user.username + str(current_user.id)).encode(),
+            card_id.encode(), hashlib.sha256
+        ).hexdigest()[:32]
+        card = WealthCard(
+            user_id=current_user.id, card_id=card_id,
+            verification_token=token
+        )
+        db.session.add(card)
+    card.trust_score = result['trust_score']
+    card.grade = result['grade']
+    card.personality = result['personality']
+    card.savings_score = result['savings_score']
+    card.debt_score = result['debt_score']
+    card.investment_score = result['investment_score']
+    card.insurance_score = result['insurance_score']
+    card.emergency_score = result['emergency_score']
+    card.discipline_score = result['discipline_score']
+    card.last_calculated = datetime.now(timezone.utc)
+    db.session.commit()
+    flash('WealthCard updated!', 'success')
+    return redirect(url_for('main.wealthcard'))
+
+
+@main.route('/wealthcard/toggle-public', methods=['POST'])
+@login_required
+def wealthcard_toggle_public():
+    card = WealthCard.query.filter_by(user_id=current_user.id).first()
+    if card:
+        card.is_public = not card.is_public
+        db.session.commit()
+        flash('WealthCard visibility updated.', 'success')
+    return redirect(url_for('main.wealthcard'))
+
+
+@main.route('/wealthcard/verify/<token>')
+def wealthcard_verify(token):
+    card = WealthCard.query.filter_by(verification_token=token).first()
+    if not card or not card.is_public:
+        return render_template('wealthcard_verify.html', card=None)
+    user = User.query.get(card.user_id)
+    return render_template('wealthcard_verify.html', card=card, user=user)

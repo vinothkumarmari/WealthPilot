@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+{% block title %}WealthCard - MyWealthPilot{% endblock %}
+{% block content %}
+<style>
+    .wc-hero { text-align:center; padding: 20px 0 10px; }
+    .wc-hero h4 { font-weight:700; }
+    .wc-hero p { color:var(--text-secondary); font-size:14px; max-width:600px; margin:0 auto; }
+
+    /* The Card */
+    .wealth-card {
+        width: 100%; max-width: 480px; min-height: 300px;
+        margin: 0 auto;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+        color: #fff;
+        padding: 30px 28px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(108,92,231,0.15);
+    }
+    .wealth-card::before {
+        content: '';
+        position: absolute;
+        top: -40%; right: -20%;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(108,92,231,0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .wealth-card::after {
+        content: '';
+        position: absolute;
+        bottom: -30%; left: -10%;
+        width: 250px; height: 250px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(74,0,224,0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .wc-brand {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 20px; position: relative; z-index: 1;
+    }
+    .wc-brand-name { font-size: 14px; letter-spacing: 2px; opacity: 0.7; text-transform: uppercase; }
+    .wc-card-id { font-family: 'Courier New', monospace; font-size: 12px; opacity: 0.5; }
+    .wc-name { font-size: 20px; font-weight: 700; margin-bottom: 2px; position: relative; z-index: 1; }
+    .wc-personality {
+        font-size: 13px; color: #a29bfe; font-style: italic;
+        margin-bottom: 18px; position: relative; z-index: 1;
+    }
+    .wc-score-row {
+        display: flex; align-items: flex-end; gap: 16px;
+        margin-bottom: 20px; position: relative; z-index: 1;
+    }
+    .wc-score-big {
+        font-size: 64px; font-weight: 800; line-height: 1;
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6347 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .wc-score-big.grade-aaa, .wc-score-big.grade-aa { background: linear-gradient(135deg, #FFD700, #FFC107); -webkit-background-clip: text; background-clip: text; }
+    .wc-score-big.grade-a { background: linear-gradient(135deg, #4CAF50, #8BC34A); -webkit-background-clip: text; background-clip: text; }
+    .wc-score-big.grade-bbb, .wc-score-big.grade-bb { background: linear-gradient(135deg, #FF9800, #FFC107); -webkit-background-clip: text; background-clip: text; }
+    .wc-score-big.grade-b, .wc-score-big.grade-c, .wc-score-big.grade-d { background: linear-gradient(135deg, #f44336, #FF5722); -webkit-background-clip: text; background-clip: text; }
+    .wc-grade-badge {
+        display: inline-block; padding: 4px 14px; border-radius: 8px;
+        font-weight: 800; font-size: 18px; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .grade-aaa .wc-grade-badge, .grade-aa .wc-grade-badge { background: rgba(255,215,0,0.2); color: #FFD700; }
+    .grade-a .wc-grade-badge { background: rgba(76,175,80,0.2); color: #4CAF50; }
+    .grade-bbb .wc-grade-badge, .grade-bb .wc-grade-badge { background: rgba(255,152,0,0.2); color: #FF9800; }
+    .grade-b .wc-grade-badge, .grade-c .wc-grade-badge, .grade-d .wc-grade-badge { background: rgba(244,67,54,0.2); color: #f44336; }
+    .wc-label { font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+    .wc-dims {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+        position: relative; z-index: 1;
+    }
+    .wc-dim-item { text-align: center; }
+    .wc-dim-label { font-size: 10px; opacity: 0.5; margin-bottom: 4px; text-transform: uppercase; }
+    .wc-dim-bar-bg {
+        height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;
+    }
+    .wc-dim-bar {
+        height: 100%; border-radius: 3px;
+        transition: width 1.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .wc-dim-bar.savings { background: linear-gradient(90deg, #4CAF50, #8BC34A); }
+    .wc-dim-bar.debt { background: linear-gradient(90deg, #2196F3, #03A9F4); }
+    .wc-dim-bar.invest { background: linear-gradient(90deg, #9C27B0, #E040FB); }
+    .wc-dim-bar.insurance { background: linear-gradient(90deg, #FF9800, #FFC107); }
+    .wc-dim-bar.emergency { background: linear-gradient(90deg, #00BCD4, #26C6DA); }
+    .wc-dim-bar.discipline { background: linear-gradient(90deg, #FFD700, #FFA000); }
+    .wc-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 16px; padding-top: 12px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        position: relative; z-index: 1;
+    }
+    .wc-footer small { opacity: 0.4; font-size: 11px; }
+
+    /* Stat cards */
+    .wc-stat-card { text-align: center; padding: 16px; }
+    .wc-stat-card .material-icons-outlined { font-size: 28px; color: var(--accent); }
+    .wc-stat-val { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+    .wc-stat-label { font-size: 12px; color: var(--text-secondary); }
+
+    /* Personality badge */
+    .wc-personality-card {
+        background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(142,45,226,0.05));
+        border-radius: 16px; padding: 20px; text-align: center;
+        border: 1px solid rgba(108,92,231,0.15);
+    }
+    .personality-icon { font-size: 48px; margin-bottom: 8px; }
+
+    /* Grade descriptions */
+    .grade-desc { font-size: 13px; color: var(--text-secondary); }
+
+    /* Empty state */
+    .wc-empty {
+        text-align: center; padding: 60px 20px;
+        background: linear-gradient(135deg, rgba(108,92,231,0.05), rgba(142,45,226,0.03));
+        border-radius: 20px; border: 2px dashed rgba(108,92,231,0.2);
+    }
+    .wc-empty .material-icons-outlined { font-size: 64px; color: var(--accent); opacity: 0.4; }
+
+    @media (max-width: 576px) {
+        .wealth-card { padding: 22px 18px; }
+        .wc-score-big { font-size: 48px; }
+        .wc-dims { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+
+<div class="wc-hero">
+    <h4><span class="material-icons-outlined" style="color:var(--accent);vertical-align:middle">verified</span> {{ t('WealthCard') }}</h4>
+    <p>{{ t('Your Financial Trust Score - a comprehensive, verifiable measure of your financial health. Share it with confidence.') }}</p>
+</div>
+
+{% if card and card.trust_score > 0 %}
+<!-- The Card -->
+<div class="mb-4" id="wealthCardContainer">
+    <div class="wealth-card grade-{{ card.grade|lower }}" id="wealthCardVisual">
+        <div class="wc-brand">
+            <span class="wc-brand-name">WealthCard</span>
+            <span class="wc-card-id">{{ card.card_id }}</span>
+        </div>
+        <div class="wc-name">{{ current_user.full_name or current_user.username }}</div>
+        <div class="wc-personality">{{ card.personality }}</div>
+        <div class="wc-score-row">
+            <div>
+                <div class="wc-score-big grade-{{ card.grade|lower }}">{{ card.trust_score }}</div>
+                <div class="wc-label">Trust Score</div>
+            </div>
+            <div>
+                <span class="wc-grade-badge">{{ card.grade }}</span>
+                <div class="wc-label">Grade</div>
+            </div>
+            <div style="flex:1;text-align:right;">
+                <div class="wc-label" style="margin-bottom:4px">out of 1000</div>
+                <div style="height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;">
+                    <div style="height:100%;width:{{ (card.trust_score / 10)|round(1) }}%;background:linear-gradient(90deg,#6C5CE7,#a29bfe);border-radius:3px;transition:width 2s;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="wc-dims">
+            <div class="wc-dim-item"><div class="wc-dim-label">Savings</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar savings" style="width:{{ (card.savings_score / 2)|round(1) }}%"></div></div></div>
+            <div class="wc-dim-item"><div class="wc-dim-label">Debt</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar debt" style="width:{{ (card.debt_score / 2)|round(1) }}%"></div></div></div>
+            <div class="wc-dim-item"><div class="wc-dim-label">Invest</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar invest" style="width:{{ (card.investment_score / 2)|round(1) }}%"></div></div></div>
+            <div class="wc-dim-item"><div class="wc-dim-label">Insurance</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar insurance" style="width:{{ (card.insurance_score / 1.5)|round(1) }}%"></div></div></div>
+            <div class="wc-dim-item"><div class="wc-dim-label">Emergency</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar emergency" style="width:{{ card.emergency_score }}%"></div></div></div>
+            <div class="wc-dim-item"><div class="wc-dim-label">Discipline</div><div class="wc-dim-bar-bg"><div class="wc-dim-bar discipline" style="width:{{ (card.discipline_score / 1.5)|round(1) }}%"></div></div></div>
+        </div>
+        <div class="wc-footer">
+            <small>Member since {{ current_user.created_at.strftime('%b %Y') if current_user.created_at else 'N/A' }}</small>
+            <small>Updated {{ card.last_calculated.strftime('%d %b %Y') if card.last_calculated else 'N/A' }}</small>
+            <small>myWealthPilot</small>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="text-center mb-4 d-flex justify-content-center gap-2 flex-wrap">
+    <form method="POST" action="{{ url_for('main.wealthcard_calculate') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-accent"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">refresh</span> Recalculate</button>
+    </form>
+    <form method="POST" action="{{ url_for('main.wealthcard_toggle_public') }}" style="display:inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline-primary">
+            <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">{{ 'visibility_off' if card.is_public else 'visibility' }}</span>
+            {{ 'Make Private' if card.is_public else 'Make Public' }}
+        </button>
+    </form>
+    {% if card.is_public %}
+    <button class="btn btn-outline-success" onclick="copyVerifyLink()">
+        <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">share</span> Copy Share Link
+    </button>
+    {% endif %}
+</div>
+
+{% if card.is_public %}
+<div class="text-center mb-4">
+    <div class="d-inline-block p-3 rounded-3" style="background:var(--card-bg);border:1px solid var(--border-color);">
+        <div class="fw-semibold mb-2" style="font-size:13px;color:var(--text-secondary);">
+            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">qr_code_2</span> Verification Link
+        </div>
+        <div id="verifyUrl" class="text-break" style="font-size:12px;font-family:monospace;color:var(--accent);">
+            {{ request.host_url }}wealthcard/verify/{{ card.verification_token }}
+        </div>
+        <canvas id="qrCanvas" style="margin-top:10px;"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<!-- Score Breakdown -->
+<div class="row mb-4">
+    <div class="col-12"><h5 class="mb-3"><span class="material-icons-outlined" style="color:var(--accent);vertical-align:middle">analytics</span> Score Breakdown</h5></div>
+    {% set dims = [
+        ('Savings Discipline', card.savings_score, 200, 'savings', 'How well you save each month', 'savings'),
+        ('Debt Health', card.debt_score, 200, 'account_balance', 'Low debt-to-income ratio = higher score', 'debt'),
+        ('Investment Maturity', card.investment_score, 200, 'trending_up', 'Diversified investments relative to income', 'invest'),
+        ('Insurance Coverage', card.insurance_score, 150, 'shield', 'Life + Health cover relative to annual income', 'insurance'),
+        ('Emergency Fund', card.emergency_score, 100, 'health_and_safety', 'Bank balance covering months of expenses', 'emergency'),
+        ('Financial Discipline', card.discipline_score, 150, 'verified', 'Tracking tenure, data completeness, streaks', 'discipline')
+    ] %}
+    {% for name, score, max_val, icon, desc, cls in dims %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <span class="material-icons-outlined" style="font-size:20px;color:var(--accent);vertical-align:middle">{{ icon }}</span>
+                        <strong style="font-size:14px">{{ name }}</strong>
+                    </div>
+                    <span class="fw-bold" style="font-size:18px">{{ score }}<small class="text-muted">/{{ max_val }}</small></span>
+                </div>
+                <div class="wc-dim-bar-bg" style="height:8px;border-radius:4px;background:var(--border-color);">
+                    <div class="wc-dim-bar {{ cls }}" style="width:{{ (score / max_val * 100)|round(1) }}%;height:100%;border-radius:4px;"></div>
+                </div>
+                <small class="text-muted d-block mt-1">{{ desc }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Personality + Radar Chart -->
+<div class="row mb-4">
+    <div class="col-lg-5 mb-3">
+        <div class="wc-personality-card h-100">
+            {% set pdata = {
+                'The Saver': ('savings', 'You prioritize building reserves. Strong savings habit.', '#4CAF50'),
+                'The Investor': ('trending_up', 'You grow wealth actively through diversified investments.', '#9C27B0'),
+                'The Guardian': ('shield', 'You protect your family with insurance & emergency funds.', '#FF9800'),
+                'The Strategist': ('psychology', 'Balanced across all dimensions. Data-driven decisions.', '#2196F3'),
+                'The Builder': ('construction', 'Steady, goal-oriented. Building wealth brick by brick.', '#00BCD4'),
+                'The Spender': ('shopping_cart', 'You enjoy the present. Consider boosting savings & investments.', '#f44336'),
+                'The Explorer': ('explore', 'Getting started on your financial journey. Great potential!', '#6C5CE7')
+            } %}
+            {% set pinfo = pdata.get(card.personality, ('explore', 'Building your financial profile.', '#6C5CE7')) %}
+            <div class="personality-icon"><span class="material-icons-outlined" style="font-size:56px;color:{{ pinfo[2] }}">{{ pinfo[0] }}</span></div>
+            <h5 class="mb-1">{{ card.personality }}</h5>
+            <p class="text-muted mb-0" style="font-size:14px">{{ pinfo[1] }}</p>
+        </div>
+    </div>
+    <div class="col-lg-7 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">radar</span> Dimension Radar</h6></div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="radarChart" style="max-height:280px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Grade scale -->
+<div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0"><span class="material-icons-outlined">leaderboard</span> Trust Score Scale</h6></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead><tr><th>Grade</th><th>Score Range</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    {% set grades = [
+                        ('AAA', '850 - 1000', 'Exceptional financial health', '#FFD700'),
+                        ('AA', '750 - 849', 'Excellent financial management', '#FFC107'),
+                        ('A', '650 - 749', 'Very good financial standing', '#4CAF50'),
+                        ('BBB', '550 - 649', 'Good, room for improvement', '#8BC34A'),
+                        ('BB', '450 - 549', 'Fair financial position', '#FF9800'),
+                        ('B', '350 - 449', 'Below average, needs attention', '#FF5722'),
+                        ('C', '200 - 349', 'Poor financial health', '#f44336'),
+                        ('D', '0 - 199', 'Very poor, start tracking today', '#9E9E9E')
+                    ] %}
+                    {% for g, range, meaning, color in grades %}
+                    <tr {% if card.grade == g %}style="background:rgba(108,92,231,0.08);font-weight:600"{% endif %}>
+                        <td><span class="badge" style="background:{{ color }};color:#fff;font-size:13px">{{ g }}</span></td>
+                        <td>{{ range }}</td>
+                        <td>{{ meaning }} {% if card.grade == g %}<span class="material-icons-outlined" style="font-size:14px;color:var(--accent)">arrow_back</span> <small class="text-accent">You are here</small>{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="wc-empty">
+    <span class="material-icons-outlined">credit_card</span>
+    <h5 class="mt-3">Generate Your WealthCard</h5>
+    <p class="text-muted" style="max-width:400px;margin:8px auto 20px;">Calculate your Financial Trust Score based on your savings, investments, debts, insurance, and financial discipline.</p>
+    <form method="POST" action="{{ url_for('main.wealthcard_calculate') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-accent btn-lg">
+            <span class="material-icons-outlined" style="vertical-align:middle">auto_awesome</span> Generate WealthCard
+        </button>
+    </form>
+    <div class="mt-4 text-start d-inline-block" style="max-width:400px;">
+        <small class="text-muted d-block mb-2"><strong>Score is calculated from:</strong></small>
+        <small class="text-muted d-flex align-items-center gap-1 mb-1"><span class="material-icons-outlined" style="font-size:14px;color:#4CAF50">check_circle</span> Savings rate & consistency</small>
+        <small class="text-muted d-flex align-items-center gap-1 mb-1"><span class="material-icons-outlined" style="font-size:14px;color:#2196F3">check_circle</span> Debt-to-income ratio</small>
+        <small class="text-muted d-flex align-items-center gap-1 mb-1"><span class="material-icons-outlined" style="font-size:14px;color:#9C27B0">check_circle</span> Investment diversity & amount</small>
+        <small class="text-muted d-flex align-items-center gap-1 mb-1"><span class="material-icons-outlined" style="font-size:14px;color:#FF9800">check_circle</span> Insurance coverage adequacy</small>
+        <small class="text-muted d-flex align-items-center gap-1 mb-1"><span class="material-icons-outlined" style="font-size:14px;color:#00BCD4">check_circle</span> Emergency fund months covered</small>
+        <small class="text-muted d-flex align-items-center gap-1"><span class="material-icons-outlined" style="font-size:14px;color:#FFD700">check_circle</span> Tracking tenure, data completeness & streaks</small>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if card and card.trust_score > 0 %}
+<script>
+    // Radar chart
+    new Chart(document.getElementById('radarChart'), {
+        type: 'radar',
+        data: {
+            labels: ['Savings', 'Debt Health', 'Investments', 'Insurance', 'Emergency', 'Discipline'],
+            datasets: [{
+                label: 'Your Score',
+                data: [
+                    {{ (card.savings_score / 2)|round(1) }},
+                    {{ (card.debt_score / 2)|round(1) }},
+                    {{ (card.investment_score / 2)|round(1) }},
+                    {{ (card.insurance_score / 1.5)|round(1) }},
+                    {{ card.emergency_score }},
+                    {{ (card.discipline_score / 1.5)|round(1) }}
+                ],
+                backgroundColor: 'rgba(108,92,231,0.15)',
+                borderColor: '#6C5CE7',
+                borderWidth: 2,
+                pointBackgroundColor: '#6C5CE7',
+                pointRadius: 4,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { r: { beginAtZero: true, max: 100, ticks: { display: false }, grid: { color: 'rgba(128,128,128,0.15)' }, pointLabels: { font: { size: 11 } } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Copy verification link
+    function copyVerifyLink() {
+        const url = document.getElementById('verifyUrl').textContent.trim();
+        navigator.clipboard.writeText(url).then(() => {
+            wpAlert('Share link copied to clipboard!', 'success');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = url; document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+            wpAlert('Share link copied!', 'success');
+        });
+    }
+
+    // Simple QR code generation using canvas (minimal, no external library)
+    (function() {
+        const canvas = document.getElementById('qrCanvas');
+        if (!canvas) return;
+        const url = (document.getElementById('verifyUrl') || {}).textContent;
+        if (!url) return;
+        // Use a tiny QR approach: render URL as a styled box instead of full QR
+        // For real QR, we'll use an img from a free API
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(url.trim());
+        img.onload = function() {
+            canvas.width = 120; canvas.height = 120;
+            canvas.getContext('2d').drawImage(img, 0, 0, 120, 120);
+        };
+        img.onerror = function() { canvas.style.display = 'none'; };
+    })();
+</script>
+{% endif %}
+{% endblock %}
