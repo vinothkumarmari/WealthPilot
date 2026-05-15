@@ -223,27 +223,6 @@ body {
     display: block;
 }
 
-/* Keyboard shortcut key badges in sidebar */
-.sidebar-key {
-    font-size: 9px;
-    font-family: inherit;
-    font-weight: 600;
-    background: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.7);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 3px;
-    padding: 1px 5px;
-    margin-left: auto;
-    line-height: 1.2;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-.sidebar.expanded .sidebar-key { opacity: 1; }
-.sidebar:not(.expanded) .sidebar-key { display: none; }
-.nav-link:hover .sidebar-key {
-    background: rgba(255,255,255,0.25);
-    color: #fff;
-}
 
 .sidebar-footer .nav-link .material-icons-outlined {
     flex-shrink: 0;

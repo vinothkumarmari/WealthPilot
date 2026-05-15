@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
@@ -38,41 +38,34 @@
             <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
                 <span class="material-icons-outlined">dashboard</span>
                 <span>{{ t('Dashboard') }}</span>
-                <kbd class="sidebar-key">D</kbd>
             </a>
 
             <div class="sidebar-divider"><small>{{ t('FINANCE') }}</small></div>
             <a href="{{ url_for('main.income') }}" class="nav-link {% if request.endpoint == 'main.income' %}active{% endif %}">
                 <span class="material-icons-outlined">payments</span>
                 <span>{{ t('Income & Salary') }}</span>
-                <kbd class="sidebar-key">I</kbd>
             </a>
             <a href="{{ url_for('main.expenses') }}" class="nav-link {% if request.endpoint == 'main.expenses' %}active{% endif %}">
                 <span class="material-icons-outlined">receipt_long</span>
                 <span>{{ t('Expenses') }}</span>
-                <kbd class="sidebar-key">E</kbd>
             </a>
             <a href="{{ url_for('main.bank_statement') }}" class="nav-link {% if request.endpoint == 'main.bank_statement' %}active{% endif %}">
                 <span class="material-icons-outlined">account_balance</span>
                 <span>{{ t('Bank Statement') }}</span>
-                <kbd class="sidebar-key">S</kbd>
             </a>
             <a href="{{ url_for('main.budget') }}" class="nav-link {% if request.endpoint == 'main.budget' %}active{% endif %}">
                 <span class="material-icons-outlined">account_balance_wallet</span>
                 <span>{{ t('Budget Planner') }}</span>
-                <kbd class="sidebar-key">B</kbd>
             </a>
             <a href="{{ url_for('main.loans') }}" class="nav-link {% if request.endpoint == 'main.loans' %}active{% endif %}">
                 <span class="material-icons-outlined">credit_score</span>
                 <span>{{ t('Loans') }}</span>
-                <kbd class="sidebar-key">L</kbd>
             </a>
 
             <div class="sidebar-divider"><small>{{ t('INVESTMENTS') }}</small></div>
             <a href="{{ url_for('main.investments') }}" class="nav-link {% if request.endpoint == 'main.investments' %}active{% endif %}">
                 <span class="material-icons-outlined">trending_up</span>
                 <span>{{ t('Investments') }}</span>
-                <kbd class="sidebar-key">V</kbd>
             </a>
             <a href="{{ url_for('main.policies') }}" class="nav-link {% if request.endpoint == 'main.policies' %}active{% endif %}">
                 <span class="material-icons-outlined">shield</span>
@@ -110,14 +103,12 @@
             <a href="{{ url_for('main.goals') }}" class="nav-link {% if request.endpoint == 'main.goals' %}active{% endif %}">
                 <span class="material-icons-outlined">flag</span>
                 <span>{{ t('Goals') }}</span>
-                <kbd class="sidebar-key">G</kbd>
             </a>
 
             <div class="sidebar-divider"><small>{{ t('TOOLS & INFO') }}</small></div>
             <a href="{{ url_for('main.tax_planning') }}" class="nav-link {% if request.endpoint == 'main.tax_planning' %}active{% endif %}">
                 <span class="material-icons-outlined">receipt</span>
                 <span>{{ t('Tax Planning') }}</span>
-                <kbd class="sidebar-key">T</kbd>
                 {% if not has_access('main.tax_planning') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.itr_guide') }}" class="nav-link {% if request.endpoint == 'main.itr_guide' %}active{% endif %}">
@@ -128,7 +119,6 @@
             <a href="{{ url_for('main.calculators') }}" class="nav-link {% if request.endpoint == 'main.calculators' %}active{% endif %}">
                 <span class="material-icons-outlined">calculate</span>
                 <span>{{ t('Calculators') }}</span>
-                <kbd class="sidebar-key">C</kbd>
             </a>
             <a href="{{ url_for('main.price_tracker') }}" class="nav-link {% if request.endpoint == 'main.price_tracker' %}active{% endif %}">
                 <span class="material-icons-outlined">price_check</span>
@@ -157,7 +147,6 @@
             <a href="{{ url_for('main.reports') }}" class="nav-link {% if request.endpoint == 'main.reports' %}active{% endif %}">
                 <span class="material-icons-outlined">assessment</span>
                 <span>{{ t('Reports') }}</span>
-                <kbd class="sidebar-key">R</kbd>
                 {% if not has_access('main.reports') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.rate_monitor') }}" class="nav-link {% if request.endpoint == 'main.rate_monitor' %}active{% endif %}">
@@ -177,12 +166,10 @@
             <a href="{{ url_for('main.achievements') }}" class="nav-link {% if request.endpoint == 'main.achievements' %}active{% endif %}">
                 <span class="material-icons-outlined">emoji_events</span>
                 <span>{{ t('Achievements') }}</span>
-                <kbd class="sidebar-key">A</kbd>
             </a>
             <a href="{{ url_for('main.wealthcard') }}" class="nav-link {% if request.endpoint == 'main.wealthcard' %}active{% endif %}">
                 <span class="material-icons-outlined">verified</span>
                 <span>{{ t('WealthCard') }}</span>
-                <kbd class="sidebar-key">W</kbd>
             </a>
             <a href="{{ url_for('main.what_if_simulator') }}" class="nav-link {% if request.endpoint == 'main.what_if_simulator' %}active{% endif %}">
                 <span class="material-icons-outlined">science</span>
@@ -420,7 +407,7 @@
                             searchPlaceholder: 'Search...',
                             lengthMenu: 'Show _MENU_',
                             info: 'Showing _START_-_END_ of _TOTAL_',
-                            paginate: { previous: '‹', next: '›' }
+                            paginate: { previous: 'â€¹', next: 'â€º' }
                         },
                         dom: "<'row mb-2'<'col-sm-6'l><'col-sm-6'f>>" +
                              "<'row'<'col-sm-12'tr>>" +
@@ -459,7 +446,7 @@
             success:'check_circle', error:'error', warning:'warning', info:'info'
         };
 
-        /* wpAlert — shows a toast notification (top-right, auto-dismiss) */
+        /* wpAlert â€” shows a toast notification (top-right, auto-dismiss) */
         window.wpAlert = function(msg, type) {
             type = type || 'info';
             return new Promise(function(resolve) {
@@ -490,7 +477,7 @@
             return d.innerHTML;
         }
 
-        /* wpConfirm — shows a centered confirm dialog with backdrop */
+        /* wpConfirm â€” shows a centered confirm dialog with backdrop */
         window.wpConfirm = function(msg, type) {
             type = type || 'warning';
             return new Promise(function(resolve) {
@@ -519,7 +506,7 @@
             });
         };
 
-        /* wpConfirmSync — for onsubmit="return wpConfirmSync(this, 'msg')" */
+        /* wpConfirmSync â€” for onsubmit="return wpConfirmSync(this, 'msg')" */
         window.wpConfirmSync = function(form, msg, type) {
             if (form.dataset.wpConfirmed === '1') {
                 form.dataset.wpConfirmed = '';
