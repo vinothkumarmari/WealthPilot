@@ -121,6 +121,21 @@
         border-radius: 20px; border: 2px dashed rgba(108,92,231,0.2);
     }
     .wc-empty .material-icons-outlined { font-size: 64px; color: var(--accent); opacity: 0.4; }
+    .wc-generate-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        padding: 16px 48px; font-size: 18px; font-weight: 700; letter-spacing: 0.5px;
+        border: none; border-radius: 14px; color: #fff; cursor: pointer;
+        background: linear-gradient(135deg, #4A00E0 0%, #6C5CE7 50%, #8E2DE2 100%);
+        box-shadow: 0 8px 32px rgba(108,92,231,0.35);
+        transition: all 0.3s ease;
+    }
+    .wc-generate-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(108,92,231,0.45);
+        color: #fff;
+    }
+    .wc-generate-btn:active { transform: translateY(0); }
+    .wc-generate-btn .material-icons-outlined { font-size: 24px; }
 
     @media (max-width: 576px) {
         .wealth-card { padding: 22px 18px; }
@@ -310,8 +325,8 @@
     <p class="text-muted" style="max-width:400px;margin:8px auto 20px;">Calculate your Financial Trust Score based on your savings, investments, debts, insurance, and financial discipline.</p>
     <form method="POST" action="{{ url_for('main.wealthcard_calculate') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-accent btn-lg">
-            <span class="material-icons-outlined" style="vertical-align:middle">auto_awesome</span> Generate WealthCard
+        <button type="submit" class="wc-generate-btn">
+            <span class="material-icons-outlined">auto_awesome</span> Generate WealthCard
         </button>
     </form>
     <div class="mt-4 text-start d-inline-block" style="max-width:400px;">

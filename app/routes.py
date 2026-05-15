@@ -7153,7 +7153,14 @@ def wealthcard():
 @main.route('/wealthcard/calculate', methods=['POST'])
 @login_required
 def wealthcard_calculate():
-    result = _calculate_trust_score(current_user)
+    try:
+        result = _calculate_trust_score(current_user)
+    except Exception as e:
+        import traceback
+        db.session.rollback()
+        current_app.logger.error('WealthCard calculate error: %s\n%s', e, traceback.format_exc())
+        flash(f'Error calculating score: {e}', 'danger')
+        return redirect(url_for('main.wealthcard'))
     card = WealthCard.query.filter_by(user_id=current_user.id).first()
     if not card:
         card_id = 'WP-' + secrets.token_hex(4).upper()[:6]
