@@ -49,6 +49,10 @@
                 <span class="material-icons-outlined">receipt_long</span>
                 <span>{{ t('Expenses') }}</span>
             </a>
+            <a href="{{ url_for('main.bank_statement') }}" class="nav-link {% if request.endpoint == 'main.bank_statement' %}active{% endif %}">
+                <span class="material-icons-outlined">account_balance</span>
+                <span>{{ t('Bank Statement') }}</span>
+            </a>
             <a href="{{ url_for('main.budget') }}" class="nav-link {% if request.endpoint == 'main.budget' %}active{% endif %}">
                 <span class="material-icons-outlined">account_balance_wallet</span>
                 <span>{{ t('Budget Planner') }}</span>

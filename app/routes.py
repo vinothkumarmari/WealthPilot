@@ -416,6 +416,7 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.help_guide': 'starter',
     'main.achievements': 'starter',
     'main.wealthcard': 'starter',
+    'main.bank_statement': 'starter',
     'main.what_if_simulator': 'starter',
     'main.gold_silver': 'starter',
     'main.global_gold_prices': 'starter',
@@ -2323,6 +2324,290 @@ def edit_expense(id):
     db.session.commit()
     flash('Expense updated!', 'success')
     return redirect(url_for('main.expenses'))
+
+
+# ======================== BANK STATEMENT IMPORT ========================
+
+_BANK_KEYWORDS = {
+    'Housing': ['rent', 'house', 'apartment', 'flat', 'society', 'maintenance', 'property'],
+    'Food & Groceries': ['swiggy', 'zomato', 'bigbasket', 'blinkit', 'grofers', 'dmart', 'zepto',
+                         'grocery', 'supermarket', 'restaurant', 'food', 'dining', 'cafe', 'hotel',
+                         'bakery', 'meat', 'milk', 'vegetables', 'dunzo', 'instamart'],
+    'Transportation': ['uber', 'ola', 'rapido', 'metro', 'petrol', 'diesel', 'fuel', 'parking',
+                       'toll', 'fastag', 'irctc', 'railway', 'bus', 'redbus', 'cab', 'auto',
+                       'vehicle', 'car wash', 'service station'],
+    'Utilities': ['electricity', 'water', 'gas', 'internet', 'broadband', 'wifi', 'mobile',
+                  'recharge', 'jio', 'airtel', 'vi ', 'bsnl', 'postpaid', 'prepaid', 'dth',
+                  'tata play', 'dish tv'],
+    'Healthcare': ['hospital', 'clinic', 'doctor', 'pharmacy', 'medical', 'medicine', 'apollo',
+                   'medplus', 'pharmeasy', 'netmeds', '1mg', 'diagnostic', 'lab test', 'dental',
+                   'eye care', 'health'],
+    'Insurance': ['lic ', 'insurance', 'premium', 'hdfc life', 'icici pru', 'star health',
+                  'max life', 'policy', 'bajaj allianz'],
+    'Education': ['school', 'college', 'university', 'tuition', 'coaching', 'course', 'udemy',
+                  'coursera', 'unacademy', 'byju', 'exam', 'fee', 'book', 'stationery'],
+    'Entertainment': ['netflix', 'prime video', 'hotstar', 'disney', 'spotify', 'youtube',
+                      'movie', 'cinema', 'pvr', 'inox', 'game', 'gaming', 'playstation',
+                      'bookmyshow', 'concert', 'event', 'park', 'subscription'],
+    'Shopping': ['amazon', 'flipkart', 'myntra', 'meesho', 'ajio', 'nykaa', 'snapdeal',
+                 'shopping', 'mall', 'clothes', 'fashion', 'electronics', 'furniture',
+                 'decathlon', 'croma', 'reliance digital', 'tatacliq'],
+    'Personal Care': ['salon', 'spa', 'parlour', 'haircut', 'grooming', 'beauty', 'gym',
+                      'fitness', 'yoga', 'laundry', 'dry clean'],
+    'Loan': ['emi', 'loan', 'lending', 'credit card', 'repayment', 'instalment'],
+    'Debt Payments': ['debt', 'outstanding', 'overdue', 'settlement', 'recovery'],
+    'Savings': ['ppf', 'nsc', 'fd ', 'fixed deposit', 'rd ', 'recurring deposit', 'savings'],
+    'Investments': ['mutual fund', 'sip ', 'zerodha', 'groww', 'upstox', 'kuvera', 'mf ',
+                    'stock', 'share', 'demat', 'nps', 'gold bond', 'sgb'],
+    'Charity': ['donation', 'charity', 'ngo', 'temple', 'church', 'mosque', 'trust fund',
+                'relief', 'gurudwara'],
+}
+
+
+def _categorize_transaction(description):
+    """Match a bank transaction description to an expense category."""
+    desc = (description or '').lower()
+    for category, keywords in _BANK_KEYWORDS.items():
+        for kw in keywords:
+            if kw in desc:
+                return category
+    return 'Miscellaneous'
+
+
+def _parse_bank_csv(file_stream):
+    """Parse CSV bank statement. Returns list of dicts with date, description, amount."""
+    import csv as csvmod
+    content = file_stream.read().decode('utf-8', errors='replace')
+    lines = content.strip().splitlines()
+    if not lines:
+        return []
+
+    reader = csvmod.reader(lines)
+    rows = list(reader)
+    if not rows:
+        return []
+
+    # Find header row (look for date/amount/description-like columns)
+    header_idx = 0
+    header = []
+    for i, row in enumerate(rows):
+        lower_row = [c.lower().strip() for c in row]
+        if any(h in ' '.join(lower_row) for h in ['date', 'txn', 'transaction', 'value']):
+            header = lower_row
+            header_idx = i
+            break
+    else:
+        header = [c.lower().strip() for c in rows[0]]
+        header_idx = 0
+
+    # Map columns
+    date_col = desc_col = debit_col = credit_col = amount_col = None
+    for j, h in enumerate(header):
+        hl = h.lower()
+        if date_col is None and any(k in hl for k in ['date', 'txn date', 'transaction date', 'value date', 'post date']):
+            date_col = j
+        elif desc_col is None and any(k in hl for k in ['description', 'narration', 'particular', 'detail', 'remark', 'transaction detail']):
+            desc_col = j
+        elif debit_col is None and any(k in hl for k in ['debit', 'withdrawal', 'dr']):
+            debit_col = j
+        elif credit_col is None and any(k in hl for k in ['credit', 'deposit', 'cr']):
+            credit_col = j
+        elif amount_col is None and 'amount' in hl:
+            amount_col = j
+
+    if date_col is None:
+        return []
+
+    transactions = []
+    date_formats = ['%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d', '%d/%m/%y', '%d-%m-%y',
+                    '%m/%d/%Y', '%d %b %Y', '%d-%b-%Y', '%d %b %y', '%Y/%m/%d']
+
+    for row in rows[header_idx + 1:]:
+        if len(row) <= max(c for c in [date_col, desc_col or 0, debit_col or 0, credit_col or 0, amount_col or 0] if c is not None):
+            continue
+
+        # Parse date
+        raw_date = row[date_col].strip()
+        if not raw_date:
+            continue
+        parsed_date = None
+        for fmt in date_formats:
+            try:
+                parsed_date = datetime.strptime(raw_date, fmt).date()
+                break
+            except ValueError:
+                continue
+        if not parsed_date:
+            continue
+
+        # Parse amount (debit = expense)
+        amt = 0.0
+        if debit_col is not None and debit_col < len(row):
+            raw = row[debit_col].strip().replace(',', '').replace('"', '')
+            try:
+                amt = abs(float(raw)) if raw else 0.0
+            except ValueError:
+                amt = 0.0
+        elif amount_col is not None and amount_col < len(row):
+            raw = row[amount_col].strip().replace(',', '').replace('"', '')
+            try:
+                val = float(raw)
+                amt = abs(val) if val < 0 else 0.0  # negative = debit
+            except ValueError:
+                amt = 0.0
+
+        if amt <= 0:
+            continue
+
+        desc = row[desc_col].strip() if desc_col is not None and desc_col < len(row) else ''
+        transactions.append({'date': parsed_date, 'description': desc, 'amount': amt})
+
+    return transactions
+
+
+def _parse_bank_pdf(file_path):
+    """Parse PDF bank statement using pdfplumber. Returns list of dicts."""
+    import pdfplumber
+    transactions = []
+    date_formats = ['%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d', '%d/%m/%y', '%d-%m-%y',
+                    '%d %b %Y', '%d-%b-%Y', '%d %b %y']
+    date_pattern = re.compile(r'\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4}|\d{1,2}\s+\w{3}\s+\d{2,4}')
+    amount_pattern = re.compile(r'[\d,]+\.\d{2}')
+
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            for page in pdf.pages:
+                tables = page.extract_tables()
+                for table in tables:
+                    if not table:
+                        continue
+                    for row in table:
+                        if not row or len(row) < 3:
+                            continue
+                        row = [c or '' for c in row]
+                        # Find date in row
+                        parsed_date = None
+                        for cell in row:
+                            m = date_pattern.search(cell.strip())
+                            if m:
+                                for fmt in date_formats:
+                                    try:
+                                        parsed_date = datetime.strptime(m.group(), fmt).date()
+                                        break
+                                    except ValueError:
+                                        continue
+                            if parsed_date:
+                                break
+                        if not parsed_date:
+                            continue
+
+                        # Find description (longest text cell)
+                        text_cells = [(i, c.strip()) for i, c in enumerate(row) if c.strip() and not amount_pattern.fullmatch(c.strip().replace(',', '')) and not date_pattern.fullmatch(c.strip())]
+                        desc = max(text_cells, key=lambda x: len(x[1]))[1] if text_cells else ''
+
+                        # Find debit amount (usually second-to-last numeric column)
+                        amounts = []
+                        for cell in row:
+                            cleaned = cell.strip().replace(',', '')
+                            m2 = amount_pattern.fullmatch(cleaned)
+                            if m2:
+                                try:
+                                    amounts.append(float(cleaned))
+                                except ValueError:
+                                    pass
+                        if not amounts:
+                            continue
+                        # For most bank statements: [debit, credit, balance] or [debit, balance]
+                        amt = amounts[0] if len(amounts) >= 1 else 0.0
+                        if amt <= 0:
+                            continue
+
+                        transactions.append({'date': parsed_date, 'description': desc, 'amount': amt})
+    except Exception:
+        pass
+    return transactions
+
+
+@main.route('/bank-statement')
+@login_required
+def bank_statement():
+    return render_template('bank_statement.html', categories=Config.EXPENSE_CATEGORIES)
+
+
+@main.route('/bank-statement/upload', methods=['POST'])
+@login_required
+def bank_statement_upload():
+    """Parse uploaded bank statement and return extracted transactions as JSON."""
+    f = request.files.get('statement')
+    if not f or not f.filename:
+        return jsonify(success=False, error='No file selected'), 400
+
+    filename = secure_filename(f.filename)
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    if ext not in ('csv', 'pdf'):
+        return jsonify(success=False, error='Only CSV and PDF files are supported'), 400
+
+    month = request.form.get('month', '')  # e.g. '2026-05'
+    bank_name = request.form.get('bank', '').strip()
+
+    if ext == 'csv':
+        transactions = _parse_bank_csv(f.stream)
+    else:
+        upload_dir = Config.UPLOAD_FOLDER
+        os.makedirs(upload_dir, exist_ok=True)
+        tmp_path = os.path.join(upload_dir, f'{current_user.id}_{secrets.token_hex(4)}.pdf')
+        try:
+            f.save(tmp_path)
+            transactions = _parse_bank_pdf(tmp_path)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
+    # Filter by selected month
+    if month:
+        try:
+            y, m_ = int(month.split('-')[0]), int(month.split('-')[1])
+            transactions = [t for t in transactions if t['date'].year == y and t['date'].month == m_]
+        except (ValueError, IndexError):
+            pass
+
+    # Auto-categorize
+    for t in transactions:
+        t['category'] = _categorize_transaction(t['description'])
+        t['date'] = t['date'].strftime('%Y-%m-%d')
+
+    return jsonify(success=True, transactions=transactions, bank=bank_name, count=len(transactions))
+
+
+@main.route('/bank-statement/import', methods=['POST'])
+@login_required
+def bank_statement_import():
+    """Import confirmed transactions as expenses."""
+    data = request.get_json(silent=True)
+    if not data or not data.get('transactions'):
+        return jsonify(success=False, error='No transactions to import'), 400
+
+    imported = 0
+    for t in data['transactions']:
+        try:
+            amt = float(t.get('amount', 0))
+            if amt <= 0:
+                continue
+            exp = Expense(
+                user_id=current_user.id,
+                category=t.get('category', 'Miscellaneous'),
+                amount=amt,
+                date=datetime.strptime(t['date'], '%Y-%m-%d').date(),
+                description=t.get('description', '')[:300],
+            )
+            db.session.add(exp)
+            imported += 1
+        except (ValueError, KeyError):
+            continue
+
+    if imported:
+        db.session.commit()
+    return jsonify(success=True, imported=imported)
 
 
 # ======================== INVESTMENTS ========================

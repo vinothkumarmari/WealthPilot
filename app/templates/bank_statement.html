@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+{% block title %}Bank Statement Import - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header mb-3">
+    <h4><span class="material-icons-outlined">account_balance</span> {{ t('Bank Statement Import') }}</h4>
+    <p class="text-muted mb-0">{{ t('Upload your bank statement (CSV/PDF) to auto-import expenses for a specific month.') }}</p>
+</div>
+
+<!-- Upload Card -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="uploadForm">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">{{ t('Bank Name') }}</label>
+                    <select class="form-select" id="bankName" name="bank" required>
+                        <option value="">{{ t('Select Bank') }}</option>
+                        <option value="SBI">State Bank of India (SBI)</option>
+                        <option value="HDFC">HDFC Bank</option>
+                        <option value="ICICI">ICICI Bank</option>
+                        <option value="Axis">Axis Bank</option>
+                        <option value="Kotak">Kotak Mahindra Bank</option>
+                        <option value="BOB">Bank of Baroda</option>
+                        <option value="PNB">Punjab National Bank</option>
+                        <option value="Canara">Canara Bank</option>
+                        <option value="Union">Union Bank of India</option>
+                        <option value="IndusInd">IndusInd Bank</option>
+                        <option value="Yes">Yes Bank</option>
+                        <option value="IDBI">IDBI Bank</option>
+                        <option value="Federal">Federal Bank</option>
+                        <option value="IOB">Indian Overseas Bank</option>
+                        <option value="Indian">Indian Bank</option>
+                        <option value="BOI">Bank of India</option>
+                        <option value="UCO">UCO Bank</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">{{ t('Month') }}</label>
+                    <input type="month" class="form-control" id="stmtMonth" name="month" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">{{ t('Statement File') }}</label>
+                    <input type="file" class="form-control" id="stmtFile" name="statement" accept=".csv,.pdf" required>
+                    <div class="form-text">{{ t('CSV or PDF (max 16 MB)') }}</div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100" id="uploadBtn">
+                        <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">upload_file</span>{{ t('Upload & Parse') }}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading -->
+<div id="parseLoading" class="text-center py-5 d-none">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">{{ t('Parsing your bank statement...') }}</p>
+</div>
+
+<!-- Results -->
+<div id="resultsSection" class="d-none">
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-1"><span class="material-icons-outlined me-1">receipt</span> {{ t('Extracted Transactions') }}</h5>
+                    <span class="text-muted" id="resultSummary"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="selectAll(true)">{{ t('Select All') }}</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="selectAll(false)">{{ t('Deselect All') }}</button>
+                    <button class="btn btn-success" id="importBtn" onclick="importSelected()">
+                        <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">download</span>{{ t('Import Selected') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:40px"><input type="checkbox" id="checkAll" checked onchange="selectAll(this.checked)"></th>
+                    <th>{{ t('Date') }}</th>
+                    <th>{{ t('Description') }}</th>
+                    <th class="text-end">{{ t('Amount') }} (₹)</th>
+                    <th>{{ t('Category') }}</th>
+                    <th style="width:60px"></th>
+                </tr>
+            </thead>
+            <tbody id="txnBody"></tbody>
+        </table>
+    </div>
+    <div id="noTxnMsg" class="alert alert-info d-none">
+        <span class="material-icons-outlined me-1">info</span>{{ t('No debit transactions found for the selected month. Try a different file or month.') }}
+    </div>
+</div>
+
+<!-- Import Success -->
+<div id="importSuccess" class="d-none">
+    <div class="alert alert-success d-flex align-items-center">
+        <span class="material-icons-outlined me-2">check_circle</span>
+        <div>
+            <strong id="importedCount">0</strong> {{ t('expenses imported successfully!') }}
+            <a href="{{ url_for('main.expenses') }}" class="alert-link ms-2">{{ t('View Expenses') }} →</a>
+        </div>
+    </div>
+</div>
+
+<!-- How-To Guide -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h6><span class="material-icons-outlined me-1">help_outline</span> {{ t('How to download your bank statement') }}</h6>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <p class="fw-semibold mb-1">CSV {{ t('format') }}:</p>
+                <ol class="small text-muted">
+                    <li>{{ t('Login to your bank\'s net banking or mobile app') }}</li>
+                    <li>{{ t('Go to Account Statement / Passbook section') }}</li>
+                    <li>{{ t('Select date range for the month') }}</li>
+                    <li>{{ t('Download as CSV / Excel format') }}</li>
+                </ol>
+            </div>
+            <div class="col-md-6">
+                <p class="fw-semibold mb-1">PDF {{ t('format') }}:</p>
+                <ol class="small text-muted">
+                    <li>{{ t('Most banks email monthly e-statements as PDF') }}</li>
+                    <li>{{ t('Check your registered email for bank statement') }}</li>
+                    <li>{{ t('Or download from net banking portal') }}</li>
+                    <li>{{ t('Password-protected PDFs are not supported') }}</li>
+                </ol>
+            </div>
+        </div>
+        <div class="alert alert-light border mt-2 small mb-0">
+            <span class="material-icons-outlined me-1" style="font-size:16px;vertical-align:middle">security</span>
+            {{ t('Your files are processed in memory and immediately deleted. We never store your bank statements.') }}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CATEGORIES = {{ categories|tojson }};
+let parsedTxns = [];
+
+// Default month to current
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const m = now.getMonth(); // previous month
+    const prev = new Date(now.getFullYear(), m - 1, 1);
+    document.getElementById('stmtMonth').value = prev.getFullYear() + '-' + String(prev.getMonth()+1).padStart(2,'0');
+});
+
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = new FormData(this);
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    document.getElementById('parseLoading').classList.remove('d-none');
+    document.getElementById('resultsSection').classList.add('d-none');
+    document.getElementById('importSuccess').classList.add('d-none');
+
+    try {
+        const resp = await fetch("{{ url_for('main.bank_statement_upload') }}", {
+            method: 'POST',
+            body: form,
+            headers: {'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''}
+        });
+        const data = await resp.json();
+        if (!data.success) {
+            alert(data.error || 'Upload failed');
+            return;
+        }
+        parsedTxns = data.transactions || [];
+        renderTransactions();
+    } catch (err) {
+        alert('Error parsing statement: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        document.getElementById('parseLoading').classList.add('d-none');
+    }
+});
+
+function renderTransactions() {
+    const body = document.getElementById('txnBody');
+    const section = document.getElementById('resultsSection');
+    const noMsg = document.getElementById('noTxnMsg');
+    body.innerHTML = '';
+
+    if (parsedTxns.length === 0) {
+        section.classList.remove('d-none');
+        noMsg.classList.remove('d-none');
+        document.getElementById('resultSummary').textContent = '0 transactions found';
+        return;
+    }
+    noMsg.classList.add('d-none');
+
+    let total = 0;
+    parsedTxns.forEach((t, i) => {
+        total += t.amount;
+        const catOptions = CATEGORIES.map(c =>
+            `<option value="${c}" ${c === t.category ? 'selected' : ''}>${c}</option>`
+        ).join('');
+
+        body.innerHTML += `
+        <tr data-idx="${i}">
+            <td><input type="checkbox" class="txn-check" data-idx="${i}" checked></td>
+            <td>${t.date}</td>
+            <td class="small">${escHtml(t.description).substring(0, 80)}</td>
+            <td class="text-end fw-semibold">₹${Number(t.amount).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
+            <td><select class="form-select form-select-sm cat-select" data-idx="${i}" style="min-width:140px">${catOptions}</select></td>
+            <td><button class="btn btn-sm btn-outline-danger" onclick="removeTxn(${i})" title="Remove"><span class="material-icons-outlined" style="font-size:18px">close</span></button></td>
+        </tr>`;
+    });
+
+    document.getElementById('resultSummary').textContent =
+        `${parsedTxns.length} transactions | Total: ₹${total.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
+    section.classList.remove('d-none');
+
+    // Listen for category changes
+    document.querySelectorAll('.cat-select').forEach(sel => {
+        sel.addEventListener('change', function() {
+            parsedTxns[+this.dataset.idx].category = this.value;
+        });
+    });
+}
+
+function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function selectAll(checked) {
+    document.querySelectorAll('.txn-check').forEach(cb => cb.checked = checked);
+    document.getElementById('checkAll').checked = checked;
+}
+
+function removeTxn(idx) {
+    parsedTxns.splice(idx, 1);
+    renderTransactions();
+}
+
+async function importSelected() {
+    const selected = [];
+    document.querySelectorAll('.txn-check').forEach(cb => {
+        if (cb.checked) {
+            const i = +cb.dataset.idx;
+            selected.push(parsedTxns[i]);
+        }
+    });
+    if (selected.length === 0) {
+        alert('Select at least one transaction to import.');
+        return;
+    }
+    if (!confirm(`Import ${selected.length} expense(s) into your account?`)) return;
+
+    const btn = document.getElementById('importBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importing...';
+
+    try {
+        const resp = await fetch("{{ url_for('main.bank_statement_import') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.content || ''
+            },
+            body: JSON.stringify({transactions: selected})
+        });
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('resultsSection').classList.add('d-none');
+            document.getElementById('importSuccess').classList.remove('d-none');
+            document.getElementById('importedCount').textContent = data.imported;
+        } else {
+            alert(data.error || 'Import failed');
+        }
+    } catch (err) {
+        alert('Import error: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">download</span>Import Selected';
+    }
+}
+</script>
+{% endblock %}

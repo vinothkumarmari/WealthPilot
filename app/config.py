@@ -44,7 +44,7 @@ class Config:
     # File Upload
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max
-    ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
+    ALLOWED_EXTENSIONS = {'pdf', 'csv', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'webp'}
     
     # Admin Configuration (MUST be set via env vars in production)
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
