@@ -57,6 +57,22 @@ def robots_txt():
     return content, 200, {'Content-Type': 'text/plain'}
 
 
+@main.route('/.well-known/assetlinks.json')
+def assetlinks():
+    """Digital Asset Links for Android TWA verification."""
+    data = [{
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "in.mywealthpilot.twa",
+            "sha256_cert_fingerprints": [
+                "79:88:D1:F1:EB:97:C8:39:36:DA:AA:C4:4F:E1:67:D2:EF:A6:8A:33:D8:C2:DD:51:73:A5:03:43:5C:60:AF:07"
+            ]
+        }
+    }]
+    return jsonify(data)
+
+
 @main.route('/sitemap.xml')
 def sitemap_xml():
     pages = ['index', 'privacy_policy', 'terms_of_service', 'contact', 'about', 'refund_policy']
