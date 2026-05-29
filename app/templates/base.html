@@ -22,7 +22,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ config.get('APP_VERSION', '1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2">
     <!-- CSRF Token for AJAX -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -612,8 +612,8 @@
     })();
     </script>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/offline.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=2"></script>
+    <script src="{{ url_for('static', filename='js/offline.js') }}?v=2"></script>
 
     <!-- Global Keyboard Shortcuts -->
     <script>

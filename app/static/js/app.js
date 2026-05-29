@@ -62,6 +62,8 @@ function toggleSidebarExpand() {
 function updateSidebarTooltips() {
     const sidebar = document.getElementById('sidebar');
     if (!sidebar) return;
+    // Skip tooltips entirely on touch/mobile devices
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth < 992) return;
     const isExpanded = sidebar.classList.contains('expanded');
     sidebar.querySelectorAll('.sidebar-nav .nav-link, .sidebar-footer .nav-link').forEach(function(link) {
         // Clean up old listeners
