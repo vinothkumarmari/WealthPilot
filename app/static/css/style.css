@@ -798,6 +798,37 @@ body {
 
 /* ============ MOBILE RESPONSIVE ============ */
 
+/* Mobile: use Poppins font for a modern app feel */
+@media (max-width: 991.98px) {
+    body {
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .sidebar {
+        font-family: 'Poppins', sans-serif;
+    }
+    .topbar {
+        font-family: 'Poppins', sans-serif;
+    }
+    .user-dropdown-menu {
+        font-family: 'Poppins', sans-serif;
+    }
+    .card-header h6, .card-header h5 {
+        font-family: 'Poppins', sans-serif;
+    }
+    .page-header h4 {
+        font-family: 'Poppins', sans-serif;
+    }
+    .stat-value {
+        font-family: 'Poppins', sans-serif;
+    }
+}
+
+/* User menu profile header */
+.user-menu-header {
+    background: linear-gradient(135deg, rgba(108,92,231,0.08), rgba(162,155,254,0.08));
+    border-radius: 8px 8px 0 0;
+}
+
 /* Mobile: sidebar overlay */
 @media (max-width: 991.98px) {
     .sidebar {

@@ -13,7 +13,7 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -33,6 +33,21 @@
         <div class="sidebar-brand">
             <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" class="brand-icon" style="width:32px;height:32px;border-radius:6px">
             <span class="brand-text">Wealth<span class="text-accent">Pilot</span></span>
+        </div>
+        <!-- Mobile: user greeting in sidebar -->
+        <div class="sidebar-user-greeting d-lg-none" style="padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;">
+            {% set has_profile_photo = current_user.profile_photo_data or current_user.profile_photo %}
+            {% set profile_photo_ver = (current_user.profile_photo_updated_at.timestamp()|int) if current_user.profile_photo_updated_at else 0 %}
+            {% if has_profile_photo %}
+            <img src="{{ url_for('main.current_user_profile_photo', v=profile_photo_ver) }}" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:2px solid var(--accent-light);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+            <span class="material-icons-outlined" style="display:none;font-size:30px;color:var(--accent-light);">account_circle</span>
+            {% else %}
+            <span class="material-icons-outlined" style="font-size:30px;color:var(--accent-light);">account_circle</span>
+            {% endif %}
+            <div style="overflow:hidden;">
+                <div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ current_user.full_name or current_user.username }}</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.5);">{{ current_user.subscription_plan or 'Starter' | title }}</div>
+            </div>
         </div>
         <nav class="sidebar-nav">
             <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
@@ -311,6 +326,21 @@
                         <span>{{ current_user.full_name or current_user.username }}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+                        <li class="dropdown-header user-menu-header px-3 py-2">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if has_profile_photo %}
+                                <img src="{{ url_for('main.current_user_profile_photo', v=profile_photo_ver) }}" alt="Profile" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex';">
+                                <span class="material-icons-outlined" style="display:none;font-size:36px;color:var(--accent);">account_circle</span>
+                                {% else %}
+                                <span class="material-icons-outlined" style="font-size:36px;color:var(--accent);">account_circle</span>
+                                {% endif %}
+                                <div>
+                                    <div style="font-weight:600;font-size:13px;color:var(--text-primary);line-height:1.2;">{{ current_user.full_name or current_user.username }}</div>
+                                    <div style="font-size:11px;color:var(--text-secondary);">@{{ current_user.username }}</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li><hr class="dropdown-divider" style="margin:4px 0;"></li>
                         <li><a class="dropdown-item" href="{{ url_for('main.profile') }}"><span class="material-icons-outlined">person</span> {{ t('Profile') }}</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('main.billing_history') }}"><span class="material-icons-outlined">receipt_long</span> {{ t('Billing History') }}</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('main.feedback') }}"><span class="material-icons-outlined">rate_review</span> {{ t('Feedback') }}</a></li>
