@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% block title %}Debt Planner - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">credit_score</span> {{ t('Debt Snowball / Avalanche Planner') }}</h4>
+    <p class="text-muted">{{ t('Optimize your debt repayment strategy to become debt-free faster') }}</p>
+</div>
+
+{% if not loans %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <span class="material-icons-outlined" style="font-size:64px;color:var(--bs-success)">celebration</span>
+        <h4 class="mt-3">No Active Loans!</h4>
+        <p class="text-muted">You're debt-free. Keep it up!</p>
+        <a href="{{ url_for('main.loans') }}" class="btn btn-outline-primary">Manage Loans</a>
+    </div>
+</div>
+{% else %}
+
+<!-- Summary -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-danger)">
+            <div class="card-body">
+                <div class="text-muted small">Total Outstanding Debt</div>
+                <h3 class="text-danger">₹{{ '{:,.0f}'.format(total_debt) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-warning)">
+            <div class="card-body">
+                <div class="text-muted small">Total Monthly EMIs</div>
+                <h3>₹{{ '{:,.0f}'.format(total_emi) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-info)">
+            <div class="card-body">
+                <div class="text-muted small">Active Loans</div>
+                <h3>{{ loans|length }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Strategy Comparison -->
+<ul class="nav nav-pills mb-4" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" data-bs-toggle="pill" href="#snowball">
+            <span class="material-icons-outlined">ac_unit</span> Snowball Method
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="pill" href="#avalanche">
+            <span class="material-icons-outlined">landscape</span> Avalanche Method
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="pill" href="#compare">
+            <span class="material-icons-outlined">compare</span> Compare
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Snowball -->
+    <div class="tab-pane fade show active" id="snowball">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">ac_unit</span> Snowball Method <small class="text-muted">— Pay smallest balance first</small></h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Pay minimum on all debts, throw extra money at the <strong>smallest balance</strong>. As each debt is paid off, roll that payment into the next. Great for motivation!</p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Loan</th>
+                                <th>Balance</th>
+                                <th>Rate</th>
+                                <th>EMI</th>
+                                <th>Months to Clear</th>
+                                <th>Total Interest</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in snowball %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ s.name }}</strong><br><small class="text-muted">{{ s.lender }}</small></td>
+                                <td>₹{{ '{:,.0f}'.format(s.balance) }}</td>
+                                <td>{{ s.rate }}%</td>
+                                <td>₹{{ '{:,.0f}'.format(s.emi) }}</td>
+                                <td>
+                                    {% if s.months >= 999 %}∞{% else %}{{ s.months }} mo ({{ (s.months / 12)|round(1) }} yr){% endif %}
+                                </td>
+                                <td class="text-danger">₹{{ '{:,.0f}'.format(s.total_interest) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avalanche -->
+    <div class="tab-pane fade" id="avalanche">
+        <div class="card">
+            <div class="card-header">
+                <h6><span class="material-icons-outlined">landscape</span> Avalanche Method <small class="text-muted">— Pay highest interest first</small></h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Pay minimum on all debts, throw extra money at the <strong>highest interest rate</strong> loan first. Saves the most money mathematically!</p>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Loan</th>
+                                <th>Balance</th>
+                                <th>Rate</th>
+                                <th>EMI</th>
+                                <th>Months to Clear</th>
+                                <th>Total Interest</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for a in avalanche %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ a.name }}</strong><br><small class="text-muted">{{ a.lender }}</small></td>
+                                <td>₹{{ '{:,.0f}'.format(a.balance) }}</td>
+                                <td>{{ a.rate }}%</td>
+                                <td>₹{{ '{:,.0f}'.format(a.emi) }}</td>
+                                <td>
+                                    {% if a.months >= 999 %}∞{% else %}{{ a.months }} mo ({{ (a.months / 12)|round(1) }} yr){% endif %}
+                                </td>
+                                <td class="text-danger">₹{{ '{:,.0f}'.format(a.total_interest) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare -->
+    <div class="tab-pane fade" id="compare">
+        <div class="card">
+            <div class="card-header"><h6>Strategy Comparison</h6></div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><span class="material-icons-outlined">ac_unit</span> Snowball</h6>
+                                <div class="text-muted small">Total Interest</div>
+                                <h4 class="text-danger">₹{{ '{:,.0f}'.format(snowball|sum(attribute='total_interest')) }}</h4>
+                                <div class="text-muted small">Best for: <strong>Motivation</strong></div>
+                                <p class="small mt-2">Quick wins by clearing small loans first. Keeps you motivated to continue.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><span class="material-icons-outlined">landscape</span> Avalanche</h6>
+                                <div class="text-muted small">Total Interest</div>
+                                <h4 class="text-danger">₹{{ '{:,.0f}'.format(avalanche|sum(attribute='total_interest')) }}</h4>
+                                <div class="text-muted small">Best for: <strong>Saving Money</strong></div>
+                                <p class="small mt-2">Mathematically optimal — saves the most interest over time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% set diff = (snowball|sum(attribute='total_interest')) - (avalanche|sum(attribute='total_interest')) %}
+                {% if diff > 0 %}
+                <div class="alert alert-info text-center">
+                    <strong>Avalanche saves you ₹{{ '{:,.0f}'.format(diff) }}</strong> in interest compared to Snowball method.
+                </div>
+                {% elif diff < 0 %}
+                <div class="alert alert-info text-center">
+                    <strong>Snowball saves you ₹{{ '{:,.0f}'.format(-diff) }}</strong> in interest compared to Avalanche method.
+                </div>
+                {% else %}
+                <div class="alert alert-success text-center">Both strategies cost the same for your current loans.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

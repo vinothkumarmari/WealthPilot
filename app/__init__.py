@@ -121,6 +121,7 @@ def create_app():
         return ('-' + result) if is_neg else result
 
     app.jinja_env.filters['inr'] = indian_format
+    app.jinja_env.filters['from_json'] = lambda s: json.loads(s) if s else []
 
     # Multi-language context processor
     from .translations import get_translator, LANGUAGES

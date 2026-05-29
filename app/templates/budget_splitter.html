@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}Budget Splitter - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">pie_chart</span> {{ t('Family Budget Splitter') }}</h4>
+    <p class="text-muted">{{ t('Allocate your income using the 50/30/20 rule — Needs, Wants, Savings') }}</p>
+</div>
+
+<!-- Income & Rule -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-primary)">
+            <div class="card-body">
+                <div class="text-muted small">Total Monthly Income</div>
+                <h3 class="text-primary">₹{{ '{:,.0f}'.format(total_income) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h6>Your Budget Rule: {{ needs_pct|int }}/{{ wants_pct|int }}/{{ savings_pct|int }}</h6>
+                <div class="progress" style="height:30px;border-radius:15px">
+                    <div class="progress-bar bg-success" style="width:{{ needs_pct }}%">Needs {{ needs_pct|int }}%</div>
+                    <div class="progress-bar bg-warning" style="width:{{ wants_pct }}%">Wants {{ wants_pct|int }}%</div>
+                    <div class="progress-bar bg-primary" style="width:{{ savings_pct }}%">Savings {{ savings_pct|int }}%</div>
+                </div>
+                <small class="text-muted mt-1 d-block">Customize ratios in <a href="{{ url_for('main.profile') }}">Profile Settings</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Planned vs Actual -->
+<div class="row mb-4">
+    <!-- Needs -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-success bg-opacity-10">
+                <h6 class="text-success mb-0"><span class="material-icons-outlined">home</span> Needs ({{ needs_pct|int }}%)</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Budget</span>
+                    <strong>₹{{ '{:,.0f}'.format(planned.needs) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Spent</span>
+                    <strong class="{% if actual.needs > planned.needs %}text-danger{% else %}text-success{% endif %}">₹{{ '{:,.0f}'.format(actual.needs) }}</strong>
+                </div>
+                {% set needs_pct_spent = (actual.needs / planned.needs * 100) if planned.needs else 0 %}
+                <div class="progress mb-2" style="height:10px">
+                    <div class="progress-bar {% if needs_pct_spent > 100 %}bg-danger{% else %}bg-success{% endif %}" style="width:{{ min(needs_pct_spent, 100) }}%"></div>
+                </div>
+                <small class="text-muted">{{ '{:.0f}'.format(needs_pct_spent) }}% used</small>
+                <hr>
+                <small class="text-muted">Rent, Groceries, Utilities, Transport, Insurance, EMIs, Medical, Education</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wants -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h6 class="text-warning mb-0"><span class="material-icons-outlined">shopping_cart</span> Wants ({{ wants_pct|int }}%)</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Budget</span>
+                    <strong>₹{{ '{:,.0f}'.format(planned.wants) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Spent</span>
+                    <strong class="{% if actual.wants > planned.wants %}text-danger{% else %}text-success{% endif %}">₹{{ '{:,.0f}'.format(actual.wants) }}</strong>
+                </div>
+                {% set wants_pct_spent = (actual.wants / planned.wants * 100) if planned.wants else 0 %}
+                <div class="progress mb-2" style="height:10px">
+                    <div class="progress-bar {% if wants_pct_spent > 100 %}bg-danger{% else %}bg-warning{% endif %}" style="width:{{ min(wants_pct_spent, 100) }}%"></div>
+                </div>
+                <small class="text-muted">{{ '{:.0f}'.format(wants_pct_spent) }}% used</small>
+                <hr>
+                <small class="text-muted">Entertainment, Shopping, Dining, Travel, Subscriptions, Personal Care</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Savings -->
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h6 class="text-primary mb-0"><span class="material-icons-outlined">savings</span> Savings ({{ savings_pct|int }}%)</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Target</span>
+                    <strong>₹{{ '{:,.0f}'.format(planned.savings) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Saved</span>
+                    <strong class="{% if actual.savings < planned.savings %}text-warning{% else %}text-success{% endif %}">₹{{ '{:,.0f}'.format(actual.savings) }}</strong>
+                </div>
+                {% set sav_pct_done = (actual.savings / planned.savings * 100) if planned.savings else 0 %}
+                <div class="progress mb-2" style="height:10px">
+                    <div class="progress-bar bg-primary" style="width:{{ min(sav_pct_done, 100) }}%"></div>
+                </div>
+                <small class="text-muted">{{ '{:.0f}'.format(sav_pct_done) }}% of target</small>
+                <hr>
+                <small class="text-muted">Investments, Mutual Funds, SIPs, FDs, Gold, PPF</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visual Chart -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header"><h6>Budget Allocation</h6></div>
+            <div class="card-body">
+                <canvas id="budgetChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header"><h6>Planned vs Actual</h6></div>
+            <div class="card-body">
+                <canvas id="compareChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tips -->
+<div class="card">
+    <div class="card-header"><h6><span class="material-icons-outlined">tips_and_updates</span> Smart Tips</h6></div>
+    <div class="card-body">
+        <ul class="mb-0">
+            {% if actual.needs > planned.needs %}
+            <li class="text-danger">Your needs spending exceeds budget by ₹{{ '{:,.0f}'.format(actual.needs - planned.needs) }}. Look for ways to reduce fixed costs (negotiate rent, switch plans).</li>
+            {% endif %}
+            {% if actual.wants > planned.wants %}
+            <li class="text-warning">Wants spending is over budget. Consider cutting subscriptions or dining out less this month.</li>
+            {% endif %}
+            {% if actual.savings < planned.savings %}
+            <li class="text-primary">You're ₹{{ '{:,.0f}'.format(planned.savings - actual.savings) }} short on savings. Set up auto-debit SIPs to invest before spending.</li>
+            {% endif %}
+            <li>The 50/30/20 rule is a guideline — adjust based on your life stage and goals.</li>
+            <li>If EMIs exceed 30% of income, prioritize debt repayment over wants.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    new Chart(document.getElementById('budgetChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Needs', 'Wants', 'Savings'],
+            datasets: [{
+                data: [{{ planned.needs }}, {{ planned.wants }}, {{ planned.savings }}],
+                backgroundColor: ['#00b894', '#fdcb6e', '#6c5ce7'],
+                borderWidth: 2
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    new Chart(document.getElementById('compareChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Needs', 'Wants', 'Savings'],
+            datasets: [
+                { label: 'Planned', data: [{{ planned.needs }}, {{ planned.wants }}, {{ planned.savings }}], backgroundColor: '#74b9ff', borderRadius: 8 },
+                { label: 'Actual', data: [{{ actual.needs }}, {{ actual.wants }}, {{ actual.savings }}], backgroundColor: '#e17055', borderRadius: 8 }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' } } }
+        }
+    });
+});
+</script>
+{% endblock %}

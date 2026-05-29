@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Crisis Alerts - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">crisis_alert</span> {{ t('Crisis Alerts & Financial Advisory') }}</h4>
+    <p class="text-muted">{{ t('Stay informed about global events that impact your finances') }}</p>
+</div>
+
+{% if current_user.is_admin %}
+<div class="mb-4">
+    <a href="{{ url_for('main.create_crisis_alert') }}" class="btn btn-danger">
+        <span class="material-icons-outlined">add_alert</span> Create New Alert
+    </a>
+</div>
+{% endif %}
+
+<!-- Active Alerts -->
+{% if active_alerts %}
+<h5 class="mb-3"><span class="material-icons-outlined text-danger">warning</span> Active Alerts</h5>
+{% for alert in active_alerts %}
+<div class="card mb-3 border-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'high' %}warning{% else %}info{% endif %}">
+    <div class="card-header d-flex justify-content-between align-items-center
+        {% if alert.severity == 'critical' %}bg-danger text-white{% elif alert.severity == 'high' %}bg-warning{% else %}bg-info bg-opacity-10{% endif %}">
+        <div>
+            <span class="material-icons-outlined">
+                {% if alert.crisis_type == 'pandemic' %}coronavirus
+                {% elif alert.crisis_type == 'war' %}military_tech
+                {% elif alert.crisis_type == 'oil_shock' %}local_gas_station
+                {% elif alert.crisis_type == 'elnino' %}thunderstorm
+                {% elif alert.crisis_type == 'recession' %}trending_down
+                {% elif alert.crisis_type == 'inflation' %}price_change
+                {% elif alert.crisis_type == 'market_crash' %}show_chart
+                {% else %}crisis_alert{% endif %}
+            </span>
+            <strong>{{ alert.title }}</strong>
+            <span class="badge bg-{% if alert.severity == 'critical' %}dark{% elif alert.severity == 'high' %}danger{% elif alert.severity == 'moderate' %}warning{% else %}info{% endif %} ms-2">{{ alert.severity|upper }}</span>
+        </div>
+        <small>{{ alert.created_at.strftime('%d %b %Y') }}</small>
+    </div>
+    <div class="card-body">
+        <p>{{ alert.description }}</p>
+
+        {% if alert.financial_impact %}
+        <div class="alert alert-warning">
+            <strong><span class="material-icons-outlined" style="font-size:18px">monetization_on</span> Financial Impact:</strong>
+            {{ alert.financial_impact }}
+        </div>
+        {% endif %}
+
+        {% if alert.affected_sectors %}
+        <div class="mb-3">
+            <strong>Affected Sectors:</strong>
+            {% for sector in alert.affected_sectors.split(',') %}
+            <span class="badge bg-secondary me-1">{{ sector.strip() }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if alert.suggestions %}
+        <h6><span class="material-icons-outlined">lightbulb</span> Financial Suggestions:</h6>
+        <ul class="list-group list-group-flush">
+            {% for suggestion in alert.suggestions|from_json if alert.suggestions %}
+            <li class="list-group-item bg-transparent">
+                <span class="material-icons-outlined text-success me-1" style="font-size:16px">check_circle</span>
+                {{ suggestion }}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if alert.expires_at %}
+        <small class="text-muted mt-2 d-block">Expires: {{ alert.expires_at.strftime('%d %b %Y') }}</small>
+        {% endif %}
+
+        {% if current_user.is_admin %}
+        <form method="POST" action="{{ url_for('main.deactivate_crisis_alert', alert_id=alert.id) }}" class="mt-3" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Deactivate Alert</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card mb-4">
+    <div class="card-body text-center py-5">
+        <span class="material-icons-outlined text-success" style="font-size:64px">verified_user</span>
+        <h4 class="mt-3">All Clear!</h4>
+        <p class="text-muted">No active crisis alerts at this time. Your financial environment is stable.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- General Preparedness Tips -->
+<div class="card mb-4">
+    <div class="card-header"><h6><span class="material-icons-outlined">shield</span> Crisis-Proof Your Finances</h6></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="d-flex mb-3">
+                    <span class="material-icons-outlined text-primary me-2">savings</span>
+                    <div>
+                        <strong>Emergency Fund</strong>
+                        <div class="text-muted small">Maintain 6-12 months of expenses in liquid assets</div>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <span class="material-icons-outlined text-success me-2">health_and_safety</span>
+                    <div>
+                        <strong>Health Insurance</strong>
+                        <div class="text-muted small">Ensure adequate coverage for the entire family (₹10L+ recommended)</div>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <span class="material-icons-outlined text-warning me-2">diversity_3</span>
+                    <div>
+                        <strong>Diversify Investments</strong>
+                        <div class="text-muted small">Spread across equity, debt, gold, and fixed income</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex mb-3">
+                    <span class="material-icons-outlined text-danger me-2">credit_score</span>
+                    <div>
+                        <strong>Reduce High-Interest Debt</strong>
+                        <div class="text-muted small">Pay off credit cards and personal loans first</div>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <span class="material-icons-outlined text-info me-2">school</span>
+                    <div>
+                        <strong>Upskill Continuously</strong>
+                        <div class="text-muted small">Multiple income skills protect against job loss</div>
+                    </div>
+                </div>
+                <div class="d-flex mb-3">
+                    <span class="material-icons-outlined text-secondary me-2">inventory</span>
+                    <div>
+                        <strong>Stock Essentials</strong>
+                        <div class="text-muted small">During supply chain crises, bulk-buy non-perishables when prices are low</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Past Alerts -->
+{% if past_alerts %}
+<div class="card">
+    <div class="card-header"><h6>Past Alerts</h6></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead><tr><th>Date</th><th>Type</th><th>Title</th><th>Severity</th></tr></thead>
+                <tbody>
+                    {% for alert in past_alerts %}
+                    <tr>
+                        <td>{{ alert.created_at.strftime('%d %b %Y') }}</td>
+                        <td><span class="badge bg-secondary">{{ alert.crisis_type }}</span></td>
+                        <td>{{ alert.title }}</td>
+                        <td><span class="badge bg-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'high' %}warning{% else %}info{% endif %}">{{ alert.severity }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

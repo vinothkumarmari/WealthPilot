@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge, WealthCard
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge, WealthCard, CrisisAlert
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -436,6 +436,13 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.what_if_simulator': 'starter',
     'main.gold_silver': 'starter',
     'main.global_gold_prices': 'starter',
+    'main.net_worth': 'starter',
+    'main.emergency_fund': 'starter',
+    'main.education_fund': 'starter',
+    'main.expense_forecast': 'starter',
+    'main.budget_splitter': 'starter',
+    'main.debt_planner': 'starter',
+    'main.crisis_alerts': 'starter',
     # Pro modules
     'main.policies': 'pro_monthly',
     'main.schemes': 'pro_monthly',
@@ -6150,6 +6157,371 @@ def contact():
 @main.route('/about')
 def about():
     return render_template('about.html')
+
+
+# ======================== NET WORTH DASHBOARD ========================
+
+@main.route('/net-worth')
+@login_required
+def net_worth():
+    uid = current_user.id
+    # Assets
+    total_investments = db.session.query(db.func.sum(Investment.current_value)).filter_by(user_id=uid).scalar() or 0
+    total_assets = db.session.query(db.func.sum(Asset.current_value)).filter_by(user_id=uid).scalar() or 0
+    total_bank = db.session.query(db.func.sum(BankAccount.balance)).filter_by(user_id=uid).scalar() or 0
+    total_pf = db.session.query(db.func.sum(ProvidentFund.total_balance)).filter_by(user_id=uid).scalar() or 0
+    total_gold_value = 0  # Gold tracked via investments
+    total_sip_value = db.session.query(db.func.sum(SIP.current_value)).filter_by(user_id=uid).scalar() or 0
+
+    # Liabilities
+    total_loans = db.session.query(db.func.sum(Loan.outstanding_balance)).filter_by(user_id=uid, is_active=True).scalar() or 0
+    total_asset_loans = db.session.query(db.func.sum(Asset.loan_amount)).filter_by(user_id=uid).scalar() or 0
+
+    asset_total = float(total_investments) + float(total_assets) + float(total_bank) + float(total_pf) + float(total_sip_value)
+    liability_total = float(total_loans) + float(total_asset_loans)
+    net_worth_value = asset_total - liability_total
+
+    # Breakdown for chart
+    breakdown = {
+        'Investments': float(total_investments),
+        'Assets': float(total_assets),
+        'Bank Balance': float(total_bank),
+        'Provident Fund': float(total_pf),
+        'SIPs': float(total_sip_value),
+    }
+    # Remove zero entries
+    breakdown = {k: v for k, v in breakdown.items() if v > 0}
+
+    liabilities = {
+        'Active Loans': float(total_loans),
+        'Asset Loans': float(total_asset_loans),
+    }
+    liabilities = {k: v for k, v in liabilities.items() if v > 0}
+
+    return render_template('net_worth.html',
+        net_worth=net_worth_value,
+        asset_total=asset_total,
+        liability_total=liability_total,
+        breakdown=breakdown,
+        liabilities=liabilities)
+
+
+# ======================== EMERGENCY FUND TRACKER ========================
+
+@main.route('/emergency-fund')
+@login_required
+def emergency_fund():
+    uid = current_user.id
+    monthly_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == uid,
+        Expense.is_recurring == True
+    ).scalar() or 0
+    if not monthly_expenses:
+        # Fallback: average of last 3 months
+        from sqlalchemy import extract
+        three_months_ago = date.today() - timedelta(days=90)
+        total_3m = db.session.query(db.func.sum(Expense.amount)).filter(
+            Expense.user_id == uid,
+            Expense.date >= three_months_ago
+        ).scalar() or 0
+        monthly_expenses = float(total_3m) / 3 if total_3m else float(current_user.monthly_salary or 0) * 0.6
+
+    monthly_expenses = float(monthly_expenses)
+    target_6_month = monthly_expenses * 6
+    target_3_month = monthly_expenses * 3
+
+    # Current liquid savings (bank balance)
+    liquid_savings = float(db.session.query(db.func.sum(BankAccount.balance)).filter_by(user_id=uid).scalar() or 0)
+    progress_pct = min(round((liquid_savings / target_6_month * 100) if target_6_month else 0, 1), 100)
+    months_covered = round(liquid_savings / monthly_expenses, 1) if monthly_expenses else 0
+    shortfall = max(target_6_month - liquid_savings, 0)
+
+    # Monthly saving needed to reach target in 12 months
+    monthly_needed = round(shortfall / 12, 0) if shortfall > 0 else 0
+
+    return render_template('emergency_fund.html',
+        monthly_expenses=monthly_expenses,
+        target_6_month=target_6_month,
+        target_3_month=target_3_month,
+        liquid_savings=liquid_savings,
+        progress_pct=progress_pct,
+        months_covered=months_covered,
+        shortfall=shortfall,
+        monthly_needed=monthly_needed)
+
+
+# ======================== EDUCATION FUND PLANNER ========================
+
+@main.route('/education-fund')
+@login_required
+def education_fund():
+    return render_template('education_fund.html')
+
+
+@main.route('/api/education-fund-calculate', methods=['POST'])
+@login_required
+def education_fund_calculate():
+    data = request.get_json()
+    current_cost = float(data.get('current_cost', 1000000))
+    years_until = int(data.get('years_until', 10))
+    inflation_rate = float(data.get('inflation_rate', 8))
+    return_rate = float(data.get('return_rate', 12))
+
+    # Future cost with inflation
+    future_cost = current_cost * ((1 + inflation_rate / 100) ** years_until)
+    # Monthly SIP needed
+    monthly_rate = return_rate / 100 / 12
+    if monthly_rate > 0 and years_until > 0:
+        months = years_until * 12
+        sip_needed = future_cost * monthly_rate / (((1 + monthly_rate) ** months) - 1)
+    else:
+        sip_needed = future_cost / max(years_until * 12, 1)
+
+    # Lumpsum needed today
+    lumpsum_needed = future_cost / ((1 + return_rate / 100) ** years_until) if return_rate > 0 else future_cost
+
+    return jsonify({
+        'future_cost': round(future_cost),
+        'sip_needed': round(sip_needed),
+        'lumpsum_needed': round(lumpsum_needed),
+        'total_sip_investment': round(sip_needed * years_until * 12),
+        'wealth_gain': round(future_cost - (sip_needed * years_until * 12)),
+    })
+
+
+# ======================== DEBT SNOWBALL / AVALANCHE PLANNER ========================
+
+@main.route('/debt-planner')
+@login_required
+def debt_planner():
+    loans = Loan.query.filter_by(user_id=current_user.id, is_active=True).all()
+    total_debt = sum(float(l.outstanding_balance or 0) for l in loans)
+    total_emi = sum(float(l.emi_amount or 0) for l in loans)
+
+    # Snowball order: smallest balance first
+    snowball = sorted(loans, key=lambda l: float(l.outstanding_balance or 0))
+    # Avalanche order: highest interest first
+    avalanche = sorted(loans, key=lambda l: float(l.interest_rate or 0), reverse=True)
+
+    def calc_strategy(ordered_loans, extra_payment=0):
+        results = []
+        for l in ordered_loans:
+            bal = float(l.outstanding_balance or 0)
+            rate = float(l.interest_rate or 0) / 100 / 12
+            emi = float(l.emi_amount or 0) + extra_payment
+            if emi <= 0 or bal <= 0:
+                results.append({'name': l.loan_name, 'months': 0, 'total_interest': 0, 'balance': bal})
+                continue
+            months = 0
+            total_interest = 0
+            remaining = bal
+            while remaining > 0 and months < 600:
+                interest = remaining * rate
+                total_interest += interest
+                principal = emi - interest
+                if principal <= 0:
+                    months = 999
+                    break
+                remaining -= principal
+                months += 1
+            results.append({
+                'name': l.loan_name or l.loan_type,
+                'lender': l.lender or '',
+                'balance': round(bal),
+                'rate': float(l.interest_rate or 0),
+                'emi': float(l.emi_amount or 0),
+                'months': months,
+                'total_interest': round(total_interest),
+            })
+            extra_payment = emi  # freed-up EMI rolls to next loan
+        return results
+
+    return render_template('debt_planner.html',
+        loans=loans,
+        total_debt=total_debt,
+        total_emi=total_emi,
+        snowball=calc_strategy(snowball),
+        avalanche=calc_strategy(avalanche))
+
+
+# ======================== FAMILY BUDGET SPLITTER (50/30/20) ========================
+
+@main.route('/budget-splitter')
+@login_required
+def budget_splitter():
+    income = float(current_user.monthly_salary or 0)
+    needs_pct = float(current_user.budget_needs_pct or 50)
+    wants_pct = float(current_user.budget_wants_pct or 30)
+    savings_pct = float(current_user.budget_savings_pct or 20)
+
+    # Additional income sources
+    uid = current_user.id
+    other_income = db.session.query(db.func.sum(Income.amount)).filter(
+        Income.user_id == uid,
+        Income.frequency == 'monthly'
+    ).scalar() or 0
+    total_income = income + float(other_income)
+
+    # Actual spending this month
+    today = date.today()
+    month_start = today.replace(day=1)
+    actual_needs = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == uid,
+        Expense.date >= month_start,
+        Expense.category.in_(['Rent', 'Groceries', 'Utilities', 'Transport', 'Insurance', 'EMI', 'Medical', 'Education'])
+    ).scalar() or 0
+    actual_wants = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == uid,
+        Expense.date >= month_start,
+        Expense.category.in_(['Entertainment', 'Shopping', 'Dining', 'Travel', 'Subscriptions', 'Personal Care'])
+    ).scalar() or 0
+    actual_savings = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.user_id == uid,
+        Expense.date >= month_start,
+        Expense.category.in_(['Investment', 'Savings', 'Mutual Fund', 'SIP', 'FD', 'Gold'])
+    ).scalar() or 0
+
+    planned = {
+        'needs': round(total_income * needs_pct / 100),
+        'wants': round(total_income * wants_pct / 100),
+        'savings': round(total_income * savings_pct / 100),
+    }
+    actual = {
+        'needs': float(actual_needs),
+        'wants': float(actual_wants),
+        'savings': float(actual_savings),
+    }
+
+    return render_template('budget_splitter.html',
+        total_income=total_income,
+        needs_pct=needs_pct, wants_pct=wants_pct, savings_pct=savings_pct,
+        planned=planned, actual=actual)
+
+
+# ======================== EXPENSE FORECAST ========================
+
+@main.route('/expense-forecast')
+@login_required
+def expense_forecast():
+    uid = current_user.id
+    today = date.today()
+
+    # Get last 6 months of expenses by category
+    six_months_ago = today - timedelta(days=180)
+    expenses = Expense.query.filter(
+        Expense.user_id == uid,
+        Expense.date >= six_months_ago
+    ).all()
+
+    # Group by month and category
+    monthly_totals = {}
+    category_totals = {}
+    for e in expenses:
+        month_key = e.date.strftime('%Y-%m')
+        monthly_totals[month_key] = monthly_totals.get(month_key, 0) + float(e.amount)
+        cat = e.category or 'Other'
+        if cat not in category_totals:
+            category_totals[cat] = []
+        category_totals[cat].append(float(e.amount))
+
+    # Calculate monthly average and trend
+    sorted_months = sorted(monthly_totals.keys())
+    monthly_values = [monthly_totals[m] for m in sorted_months]
+    avg_monthly = sum(monthly_values) / len(monthly_values) if monthly_values else 0
+
+    # Simple linear trend
+    if len(monthly_values) >= 2:
+        n = len(monthly_values)
+        x_mean = (n - 1) / 2
+        y_mean = avg_monthly
+        numerator = sum((i - x_mean) * (v - y_mean) for i, v in enumerate(monthly_values))
+        denominator = sum((i - x_mean) ** 2 for i in range(n))
+        slope = numerator / denominator if denominator else 0
+        next_month_forecast = monthly_values[-1] + slope
+    else:
+        slope = 0
+        next_month_forecast = avg_monthly
+
+    trend = 'increasing' if slope > 100 else ('decreasing' if slope < -100 else 'stable')
+
+    # Category averages for forecast
+    category_forecast = {}
+    for cat, amounts in category_totals.items():
+        category_forecast[cat] = round(sum(amounts) / len(set(e.date.strftime('%Y-%m') for e in expenses if e.category == cat)) if amounts else 0)
+
+    # Sort by amount
+    category_forecast = dict(sorted(category_forecast.items(), key=lambda x: x[1], reverse=True))
+
+    return render_template('expense_forecast.html',
+        months=sorted_months,
+        monthly_values=monthly_values,
+        avg_monthly=round(avg_monthly),
+        next_month_forecast=round(max(next_month_forecast, 0)),
+        trend=trend,
+        slope=round(slope),
+        category_forecast=category_forecast)
+
+
+# ======================== CRISIS ALERTS ========================
+
+@main.route('/crisis-alerts')
+@login_required
+def crisis_alerts():
+    active_alerts = CrisisAlert.query.filter_by(is_active=True).order_by(CrisisAlert.created_at.desc()).all()
+    past_alerts = CrisisAlert.query.filter_by(is_active=False).order_by(CrisisAlert.created_at.desc()).limit(10).all()
+    return render_template('crisis_alerts.html', active_alerts=active_alerts, past_alerts=past_alerts)
+
+
+@main.route('/admin/crisis-alert/create', methods=['GET', 'POST'])
+@admin_required
+def create_crisis_alert():
+    if request.method == 'POST':
+        import json
+        suggestions_list = [s.strip() for s in request.form.get('suggestions', '').split('\n') if s.strip()]
+        alert = CrisisAlert(
+            crisis_type=request.form.get('crisis_type', 'other'),
+            title=request.form.get('title', ''),
+            description=request.form.get('description', ''),
+            severity=request.form.get('severity', 'moderate'),
+            financial_impact=request.form.get('financial_impact', ''),
+            suggestions=json.dumps(suggestions_list),
+            affected_sectors=request.form.get('affected_sectors', ''),
+            is_active=True,
+            created_by=current_user.id,
+        )
+        expires = request.form.get('expires_at')
+        if expires:
+            try:
+                alert.expires_at = datetime.strptime(expires, '%Y-%m-%d')
+            except ValueError:
+                pass
+        db.session.add(alert)
+        # Create notifications for all users
+        users = User.query.filter_by(is_active_user=True).all()
+        for user in users:
+            notif = Notification(
+                user_id=user.id,
+                title=f'⚠️ Crisis Alert: {alert.title}',
+                message=alert.financial_impact or alert.description[:200],
+                category='danger' if alert.severity in ('high', 'critical') else 'warning',
+                icon='crisis_alert',
+                link='/crisis-alerts',
+            )
+            db.session.add(notif)
+        db.session.commit()
+        flash(f'Crisis alert "{alert.title}" created and {len(users)} users notified.', 'success')
+        return redirect(url_for('main.crisis_alerts'))
+    return render_template('create_crisis_alert.html')
+
+
+@main.route('/admin/crisis-alert/<int:alert_id>/deactivate', methods=['POST'])
+@admin_required
+def deactivate_crisis_alert(alert_id):
+    alert = CrisisAlert.query.get_or_404(alert_id)
+    alert.is_active = False
+    db.session.commit()
+    flash(f'Crisis alert "{alert.title}" deactivated.', 'success')
+    return redirect(url_for('main.crisis_alerts'))
 
 
 @main.route('/refund-policy')

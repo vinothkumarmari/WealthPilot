@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Net Worth Dashboard - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">account_balance_wallet</span> {{ t('Net Worth Dashboard') }}</h4>
+    <p class="text-muted">{{ t('Your complete financial picture — Assets minus Liabilities') }}</p>
+</div>
+
+<!-- Net Worth Summary -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-success)">
+            <div class="card-body">
+                <div class="text-muted small">Total Assets</div>
+                <h3 class="text-success">₹{{ '{:,.0f}'.format(asset_total) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-danger)">
+            <div class="card-body">
+                <div class="text-muted small">Total Liabilities</div>
+                <h3 class="text-danger">₹{{ '{:,.0f}'.format(liability_total) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center" style="border-left:4px solid {% if net_worth >= 0 %}var(--bs-primary){% else %}var(--bs-danger){% endif %}">
+            <div class="card-body">
+                <div class="text-muted small">Net Worth</div>
+                <h3 class="{% if net_worth >= 0 %}text-primary{% else %}text-danger{% endif %}">₹{{ '{:,.0f}'.format(net_worth) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Asset Breakdown -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h6><span class="material-icons-outlined text-success">trending_up</span> Asset Breakdown</h6></div>
+            <div class="card-body">
+                {% if breakdown %}
+                <canvas id="assetChart" height="250"></canvas>
+                <div class="mt-3">
+                    {% for name, value in breakdown.items() %}
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span>{{ name }}</span>
+                        <strong>₹{{ '{:,.0f}'.format(value) }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <span class="material-icons-outlined" style="font-size:48px">info</span>
+                    <p>No assets tracked yet. Start by adding investments, bank accounts, or assets.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Liabilities -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><h6><span class="material-icons-outlined text-danger">trending_down</span> Liabilities</h6></div>
+            <div class="card-body">
+                {% if liabilities %}
+                <canvas id="liabilityChart" height="250"></canvas>
+                <div class="mt-3">
+                    {% for name, value in liabilities.items() %}
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span>{{ name }}</span>
+                        <strong class="text-danger">₹{{ '{:,.0f}'.format(value) }}</strong>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <span class="material-icons-outlined" style="font-size:48px">celebration</span>
+                    <p>No liabilities — you're debt-free!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Health Indicator -->
+<div class="card mb-4">
+    <div class="card-body text-center">
+        {% set debt_ratio = (liability_total / asset_total * 100) if asset_total > 0 else 0 %}
+        <h6>Debt-to-Asset Ratio: <span class="{% if debt_ratio < 30 %}text-success{% elif debt_ratio < 60 %}text-warning{% else %}text-danger{% endif %}">{{ '{:.1f}'.format(debt_ratio) }}%</span></h6>
+        <div class="progress" style="height:20px;max-width:600px;margin:auto">
+            <div class="progress-bar {% if debt_ratio < 30 %}bg-success{% elif debt_ratio < 60 %}bg-warning{% else %}bg-danger{% endif %}" style="width:{{ min(debt_ratio, 100) }}%">{{ '{:.1f}'.format(debt_ratio) }}%</div>
+        </div>
+        <small class="text-muted mt-2 d-block">
+            {% if debt_ratio < 30 %}Excellent — Your debts are well under control{% elif debt_ratio < 60 %}Moderate — Consider reducing liabilities{% else %}High — Focus on debt repayment{% endif %}
+        </small>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const breakdown = {{ breakdown | tojson }};
+    const liabilities = {{ liabilities | tojson }};
+    const colors = ['#6C5CE7', '#00B894', '#FDCB6E', '#E17055', '#74B9FF', '#A29BFE', '#55EFC4'];
+
+    if (Object.keys(breakdown).length > 0) {
+        new Chart(document.getElementById('assetChart'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(breakdown),
+                datasets: [{
+                    data: Object.values(breakdown),
+                    backgroundColor: colors.slice(0, Object.keys(breakdown).length),
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+    if (Object.keys(liabilities).length > 0) {
+        new Chart(document.getElementById('liabilityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(liabilities),
+                datasets: [{
+                    data: Object.values(liabilities),
+                    backgroundColor: ['#E17055', '#D63031', '#FF7675'],
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+});
+</script>
+{% endblock %}

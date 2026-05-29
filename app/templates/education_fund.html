@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Education Fund Planner - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">school</span> {{ t('Education Fund Planner') }}</h4>
+    <p class="text-muted">{{ t('Plan and save for your child\'s future education expenses') }}</p>
+</div>
+
+<div class="row">
+    <!-- Input Section -->
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-header"><h6>Education Details</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Education Type</label>
+                    <select class="form-select" id="eduType" onchange="updateCost()">
+                        <option value="500000">School (CBSE/ICSE) - ₹5L</option>
+                        <option value="1000000">Engineering (B.Tech) - ₹10L</option>
+                        <option value="2500000" selected>Engineering (Top College) - ₹25L</option>
+                        <option value="3000000">Medical (MBBS) - ₹30L</option>
+                        <option value="2000000">MBA (India) - ₹20L</option>
+                        <option value="5000000">MBA (Abroad) - ₹50L</option>
+                        <option value="4000000">MS (Abroad) - ₹40L</option>
+                        <option value="0">Custom Amount</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Current Cost of Education (₹)</label>
+                    <input type="number" class="form-control" id="currentCost" value="2500000" min="50000" step="50000">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Years Until Needed</label>
+                    <input type="range" class="form-range" id="yearsSlider" min="1" max="25" value="10" oninput="document.getElementById('yearsVal').value=this.value; calculate()">
+                    <div class="d-flex justify-content-between">
+                        <small>1 year</small>
+                        <input type="number" class="form-control form-control-sm" id="yearsVal" value="10" style="width:80px;text-align:center" onchange="document.getElementById('yearsSlider').value=this.value; calculate()">
+                        <small>25 years</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Education Inflation Rate (% p.a.)</label>
+                    <input type="range" class="form-range" id="inflationSlider" min="4" max="15" value="8" step="0.5" oninput="document.getElementById('inflationVal').value=this.value; calculate()">
+                    <input type="number" class="form-control mt-1" id="inflationVal" value="8" step="0.5" onchange="document.getElementById('inflationSlider').value=this.value; calculate()">
+                    <small class="text-muted">Education inflation in India: 8-12% p.a.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Expected Investment Return (% p.a.)</label>
+                    <input type="range" class="form-range" id="returnSlider" min="6" max="20" value="12" step="0.5" oninput="document.getElementById('returnVal').value=this.value; calculate()">
+                    <input type="number" class="form-control mt-1" id="returnVal" value="12" step="0.5" onchange="document.getElementById('returnSlider').value=this.value; calculate()">
+                </div>
+                <button class="btn btn-primary w-100" onclick="calculate()">
+                    <span class="material-icons-outlined">calculate</span> Calculate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="col-lg-7 mb-4">
+        <div class="card mb-3">
+            <div class="card-header"><h6>Projected Results</h6></div>
+            <div class="card-body">
+                <div class="row text-center" id="resultsSection">
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Current Cost</div>
+                        <h4 id="resCurrent">₹25,00,000</h4>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Future Cost (with inflation)</div>
+                        <h4 class="text-danger" id="resFuture">—</h4>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Monthly SIP Needed</div>
+                        <h4 class="text-primary" id="resSIP">—</h4>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-muted small">Or Lumpsum Today</div>
+                        <h4 class="text-success" id="resLumpsum">—</h4>
+                    </div>
+                </div>
+                <canvas id="eduChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Recommended Instruments -->
+        <div class="card">
+            <div class="card-header"><h6><span class="material-icons-outlined">tips_and_updates</span> Recommended Instruments</h6></div>
+            <div class="card-body">
+                <div id="recommendations">
+                    <div class="d-flex align-items-center py-2 border-bottom">
+                        <span class="material-icons-outlined text-primary me-2">trending_up</span>
+                        <div>
+                            <strong>Equity Mutual Funds / SIPs</strong>
+                            <div class="text-muted small">Best for 7+ years horizon. Expected returns: 12-15% p.a.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center py-2 border-bottom">
+                        <span class="material-icons-outlined text-success me-2">account_balance</span>
+                        <div>
+                            <strong>PPF (Public Provident Fund)</strong>
+                            <div class="text-muted small">Tax-free returns, 15-year lock-in. Current rate: ~7.1%</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center py-2 border-bottom">
+                        <span class="material-icons-outlined text-warning me-2">savings</span>
+                        <div>
+                            <strong>Sukanya Samriddhi Yojana</strong>
+                            <div class="text-muted small">For girl child. Current rate: ~8.2%. Tax benefits under 80C.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center py-2">
+                        <span class="material-icons-outlined text-info me-2">shield</span>
+                        <div>
+                            <strong>Child Education Plan (ULIP)</strong>
+                            <div class="text-muted small">Insurance + investment combo. Useful for risk-averse parents.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let eduChart = null;
+
+function updateCost() {
+    const val = document.getElementById('eduType').value;
+    if (val !== '0') {
+        document.getElementById('currentCost').value = val;
+    }
+    calculate();
+}
+
+function formatINR(n) {
+    return '₹' + n.toLocaleString('en-IN');
+}
+
+function calculate() {
+    const cost = parseFloat(document.getElementById('currentCost').value) || 0;
+    const years = parseInt(document.getElementById('yearsVal').value) || 1;
+    const inflation = parseFloat(document.getElementById('inflationVal').value) || 8;
+    const returnRate = parseFloat(document.getElementById('returnVal').value) || 12;
+
+    fetch('/api/education-fund-calculate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name=csrf-token]').content},
+        body: JSON.stringify({current_cost: cost, years_until: years, inflation_rate: inflation, return_rate: returnRate})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('resCurrent').textContent = formatINR(cost);
+        document.getElementById('resFuture').textContent = formatINR(data.future_cost);
+        document.getElementById('resSIP').textContent = formatINR(data.sip_needed) + '/mo';
+        document.getElementById('resLumpsum').textContent = formatINR(data.lumpsum_needed);
+
+        if (eduChart) eduChart.destroy();
+        eduChart = new Chart(document.getElementById('eduChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Current Cost', 'Future Cost', 'Total SIP Investment', 'Wealth Gain'],
+                datasets: [{
+                    data: [cost, data.future_cost, data.total_sip_investment, data.wealth_gain],
+                    backgroundColor: ['#74b9ff', '#e17055', '#6c5ce7', '#00b894'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + (v/100000).toFixed(1) + 'L' } } }
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', calculate);
+</script>
+{% endblock %}

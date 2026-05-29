@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Emergency Fund Tracker - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">health_and_safety</span> {{ t('Emergency Fund Tracker') }}</h4>
+    <p class="text-muted">{{ t('Build your financial safety net — aim for 6 months of expenses') }}</p>
+</div>
+
+<!-- Progress Ring -->
+<div class="row mb-4">
+    <div class="col-lg-4 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body py-4">
+                <div style="position:relative;width:180px;height:180px;margin:auto">
+                    <canvas id="progressRing" width="180" height="180"></canvas>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+                        <div style="font-size:2rem;font-weight:700" class="{% if progress_pct >= 100 %}text-success{% elif progress_pct >= 50 %}text-warning{% else %}text-danger{% endif %}">{{ progress_pct }}%</div>
+                        <small class="text-muted">funded</small>
+                    </div>
+                </div>
+                <h5 class="mt-3">{{ months_covered }} months covered</h5>
+                <small class="text-muted">of recommended 6 months</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8 mb-3">
+        <div class="row">
+            <div class="col-sm-6 mb-3">
+                <div class="card h-100" style="border-left:4px solid var(--bs-info)">
+                    <div class="card-body">
+                        <div class="text-muted small">Monthly Expenses</div>
+                        <h4>₹{{ '{:,.0f}'.format(monthly_expenses) }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 mb-3">
+                <div class="card h-100" style="border-left:4px solid var(--bs-success)">
+                    <div class="card-body">
+                        <div class="text-muted small">Current Liquid Savings</div>
+                        <h4 class="text-success">₹{{ '{:,.0f}'.format(liquid_savings) }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 mb-3">
+                <div class="card h-100" style="border-left:4px solid var(--bs-warning)">
+                    <div class="card-body">
+                        <div class="text-muted small">6-Month Target</div>
+                        <h4>₹{{ '{:,.0f}'.format(target_6_month) }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 mb-3">
+                <div class="card h-100" style="border-left:4px solid {% if shortfall > 0 %}var(--bs-danger){% else %}var(--bs-success){% endif %}">
+                    <div class="card-body">
+                        <div class="text-muted small">{% if shortfall > 0 %}Shortfall{% else %}Surplus{% endif %}</div>
+                        <h4 class="{% if shortfall > 0 %}text-danger{% else %}text-success{% endif %}">₹{{ '{:,.0f}'.format(shortfall) }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Plan -->
+<div class="card mb-4">
+    <div class="card-header"><h6><span class="material-icons-outlined">tips_and_updates</span> Action Plan</h6></div>
+    <div class="card-body">
+        {% if shortfall > 0 %}
+        <div class="alert alert-warning">
+            <strong>You need ₹{{ '{:,.0f}'.format(shortfall) }} more</strong> to reach your 6-month emergency fund target.
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Save monthly for 12 months</div>
+                        <h4>₹{{ '{:,.0f}'.format(monthly_needed) }}/mo</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Save monthly for 6 months</div>
+                        <h4>₹{{ '{:,.0f}'.format(shortfall / 6) }}/mo</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Save monthly for 24 months</div>
+                        <h4>₹{{ '{:,.0f}'.format(shortfall / 24) }}/mo</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h6 class="mt-3">Tips to build your emergency fund:</h6>
+        <ul>
+            <li>Set up an automatic monthly transfer to a high-interest savings account or liquid fund</li>
+            <li>Keep emergency funds in liquid assets — savings account, liquid mutual funds, or short-term FDs</li>
+            <li>Don't mix emergency fund with investment goals</li>
+            <li>Review and adjust the target every 6 months as expenses change</li>
+        </ul>
+        {% else %}
+        <div class="alert alert-success">
+            <strong>Congratulations!</strong> Your emergency fund covers {{ months_covered }} months of expenses. You've exceeded the 6-month target!
+        </div>
+        <p>Consider investing the surplus (₹{{ '{:,.0f}'.format(liquid_savings - target_6_month) }}) in higher-return instruments like mutual funds or index funds.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Milestone Progress -->
+<div class="card">
+    <div class="card-header"><h6>Milestones</h6></div>
+    <div class="card-body">
+        {% set milestones = [
+            (1, target_6_month / 6, '1 Month'),
+            (3, target_3_month, '3 Months'),
+            (6, target_6_month, '6 Months (Target)'),
+        ] %}
+        {% for m, target, label in milestones %}
+        <div class="d-flex align-items-center mb-3">
+            <span class="material-icons-outlined me-2 {% if liquid_savings >= target %}text-success{% else %}text-muted{% endif %}">
+                {% if liquid_savings >= target %}check_circle{% else %}radio_button_unchecked{% endif %}
+            </span>
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between">
+                    <span>{{ label }}</span>
+                    <small>₹{{ '{:,.0f}'.format(target) }}</small>
+                </div>
+                <div class="progress" style="height:8px">
+                    <div class="progress-bar {% if liquid_savings >= target %}bg-success{% else %}bg-primary{% endif %}" style="width:{{ min(liquid_savings / target * 100, 100) if target else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('progressRing');
+    const ctx = canvas.getContext('2d');
+    const pct = {{ progress_pct }};
+    const cx = 90, cy = 90, r = 75, lw = 12;
+
+    // Background ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#e9ecef';
+    ctx.lineWidth = lw;
+    ctx.stroke();
+
+    // Progress ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * pct / 100));
+    ctx.strokeStyle = pct >= 100 ? '#00b894' : (pct >= 50 ? '#fdcb6e' : '#e17055');
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Expense Forecast - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h4><span class="material-icons-outlined">auto_graph</span> {{ t('Expense Forecast') }}</h4>
+    <p class="text-muted">{{ t('Predict next month\'s expenses based on your spending trends') }}</p>
+</div>
+
+<!-- Forecast Summary -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-primary)">
+            <div class="card-body">
+                <div class="text-muted small">6-Month Average</div>
+                <h3>₹{{ '{:,.0f}'.format(avg_monthly) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center" style="border-left:4px solid {% if trend == 'increasing' %}var(--bs-danger){% elif trend == 'decreasing' %}var(--bs-success){% else %}var(--bs-info){% endif %}">
+            <div class="card-body">
+                <div class="text-muted small">Trend</div>
+                <h3>
+                    {% if trend == 'increasing' %}
+                    <span class="text-danger"><span class="material-icons-outlined">trending_up</span> Rising</span>
+                    {% elif trend == 'decreasing' %}
+                    <span class="text-success"><span class="material-icons-outlined">trending_down</span> Falling</span>
+                    {% else %}
+                    <span class="text-info"><span class="material-icons-outlined">trending_flat</span> Stable</span>
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-warning)">
+            <div class="card-body">
+                <div class="text-muted small">Monthly Change</div>
+                <h3 class="{% if slope > 0 %}text-danger{% elif slope < 0 %}text-success{% else %}text-muted{% endif %}">
+                    {% if slope > 0 %}+{% endif %}₹{{ '{:,.0f}'.format(slope) }}
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center" style="border-left:4px solid var(--bs-success)">
+            <div class="card-body">
+                <div class="text-muted small">Next Month Forecast</div>
+                <h3 class="text-success">₹{{ '{:,.0f}'.format(next_month_forecast) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trend Chart -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6>Monthly Expense Trend</h6></div>
+            <div class="card-body">
+                {% if months %}
+                <canvas id="trendChart" height="250"></canvas>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <span class="material-icons-outlined" style="font-size:48px">info</span>
+                    <p>Not enough expense data yet. Add expenses to see forecasts.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-3">
+        <div class="card h-100">
+            <div class="card-header"><h6>Forecast Breakdown</h6></div>
+            <div class="card-body">
+                {% if category_forecast %}
+                <canvas id="categoryChart" height="250"></canvas>
+                {% else %}
+                <p class="text-muted text-center py-3">No category data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Details -->
+{% if category_forecast %}
+<div class="card">
+    <div class="card-header"><h6><span class="material-icons-outlined">category</span> Category-wise Forecast</h6></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Avg Monthly</th>
+                        <th>% of Total</th>
+                        <th>Trend</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total_cat = category_forecast.values()|sum %}
+                    {% for cat, amt in category_forecast.items() %}
+                    <tr>
+                        <td><strong>{{ cat }}</strong></td>
+                        <td>₹{{ '{:,.0f}'.format(amt) }}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height:8px">
+                                    <div class="progress-bar" style="width:{{ (amt / total_cat * 100) if total_cat else 0 }}%"></div>
+                                </div>
+                                <small>{{ '{:.1f}'.format((amt / total_cat * 100) if total_cat else 0) }}%</small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if amt > avg_monthly * 0.3 %}
+                            <span class="badge bg-danger">High</span>
+                            {% elif amt > avg_monthly * 0.1 %}
+                            <span class="badge bg-warning">Medium</span>
+                            {% else %}
+                            <span class="badge bg-success">Low</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if months %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const months = {{ months | tojson }};
+    const values = {{ monthly_values | tojson }};
+    const forecast = {{ next_month_forecast }};
+    const avg = {{ avg_monthly }};
+
+    // Add forecast point
+    const allLabels = [...months, 'Next Month'];
+    const actualData = [...values, null];
+    const forecastData = new Array(values.length - 1).fill(null);
+    forecastData.push(values[values.length - 1]);
+    forecastData.push(forecast);
+    const avgLine = new Array(allLabels.length).fill(avg);
+
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: allLabels,
+            datasets: [
+                {
+                    label: 'Actual',
+                    data: actualData,
+                    borderColor: '#6c5ce7',
+                    backgroundColor: 'rgba(108,92,231,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5
+                },
+                {
+                    label: 'Forecast',
+                    data: forecastData,
+                    borderColor: '#00b894',
+                    borderDash: [5, 5],
+                    pointRadius: 8,
+                    pointStyle: 'star',
+                    fill: false
+                },
+                {
+                    label: 'Average',
+                    data: avgLine,
+                    borderColor: '#fdcb6e',
+                    borderDash: [10, 5],
+                    pointRadius: 0,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: false, ticks: { callback: v => '₹' + (v/1000).toFixed(0) + 'K' } } }
+        }
+    });
+
+    {% if category_forecast %}
+    const catData = {{ category_forecast | tojson }};
+    const colors = ['#6c5ce7', '#00b894', '#fdcb6e', '#e17055', '#74b9ff', '#a29bfe', '#55efc4', '#fab1a0', '#81ecec', '#ffeaa7'];
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(catData),
+            datasets: [{ data: Object.values(catData), backgroundColor: colors.slice(0, Object.keys(catData).length), borderWidth: 2 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+    });
+    {% endif %}
+});
+</script>
+{% endif %}
+{% endblock %}

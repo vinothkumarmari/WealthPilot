@@ -299,6 +299,22 @@ class Feedback(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
+class CrisisAlert(db.Model):
+    """Global crisis alerts that trigger financial suggestions for users."""
+    id = db.Column(db.Integer, primary_key=True)
+    crisis_type = db.Column(db.String(50), nullable=False)  # pandemic, war, oil_shock, elnino, recession, inflation, market_crash
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.String(1000))
+    severity = db.Column(db.String(20), default='moderate')  # low, moderate, high, critical
+    financial_impact = db.Column(db.String(500))  # Brief impact description
+    suggestions = db.Column(db.Text)  # JSON list of financial suggestions
+    affected_sectors = db.Column(db.String(500))  # comma-separated: healthcare, fuel, food, markets
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = db.Column(db.DateTime)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))  # admin who created it
+
+
 class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)

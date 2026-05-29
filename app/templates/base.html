@@ -176,6 +176,36 @@
                 <span>{{ t('What-If Simulator') }}</span>
             </a>
 
+            <div class="sidebar-divider"><small>{{ t('PLANNING') }}</small></div>
+            <a href="{{ url_for('main.net_worth') }}" class="nav-link {% if request.endpoint == 'main.net_worth' %}active{% endif %}">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+                <span>{{ t('Net Worth') }}</span>
+            </a>
+            <a href="{{ url_for('main.emergency_fund') }}" class="nav-link {% if request.endpoint == 'main.emergency_fund' %}active{% endif %}">
+                <span class="material-icons-outlined">health_and_safety</span>
+                <span>{{ t('Emergency Fund') }}</span>
+            </a>
+            <a href="{{ url_for('main.education_fund') }}" class="nav-link {% if request.endpoint == 'main.education_fund' %}active{% endif %}">
+                <span class="material-icons-outlined">school</span>
+                <span>{{ t('Education Fund') }}</span>
+            </a>
+            <a href="{{ url_for('main.debt_planner') }}" class="nav-link {% if request.endpoint == 'main.debt_planner' %}active{% endif %}">
+                <span class="material-icons-outlined">credit_score</span>
+                <span>{{ t('Debt Planner') }}</span>
+            </a>
+            <a href="{{ url_for('main.budget_splitter') }}" class="nav-link {% if request.endpoint == 'main.budget_splitter' %}active{% endif %}">
+                <span class="material-icons-outlined">pie_chart</span>
+                <span>{{ t('Budget Splitter') }}</span>
+            </a>
+            <a href="{{ url_for('main.expense_forecast') }}" class="nav-link {% if request.endpoint == 'main.expense_forecast' %}active{% endif %}">
+                <span class="material-icons-outlined">auto_graph</span>
+                <span>{{ t('Expense Forecast') }}</span>
+            </a>
+            <a href="{{ url_for('main.crisis_alerts') }}" class="nav-link {% if request.endpoint == 'main.crisis_alerts' %}active{% endif %}">
+                <span class="material-icons-outlined">crisis_alert</span>
+                <span>{{ t('Crisis Alerts') }}</span>
+            </a>
+
             <div class="sidebar-divider"><small>{{ t('FAMILY') }}</small></div>
             <a href="{{ url_for('main.family_members') }}" class="nav-link {% if request.endpoint == 'main.family_members' %}active{% endif %}">
                 <span class="material-icons-outlined">family_restroom</span>
