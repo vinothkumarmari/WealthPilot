@@ -438,11 +438,11 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.global_gold_prices': 'starter',
     'main.net_worth': 'starter',
     'main.emergency_fund': 'starter',
-    'main.education_fund': 'starter',
-    'main.expense_forecast': 'starter',
-    'main.budget_splitter': 'starter',
-    'main.debt_planner': 'starter',
     'main.crisis_alerts': 'starter',
+    'main.education_fund': 'pro_monthly',
+    'main.expense_forecast': 'pro_monthly',
+    'main.budget_splitter': 'pro_monthly',
+    'main.debt_planner': 'pro_monthly',
     # Pro modules
     'main.policies': 'pro_monthly',
     'main.schemes': 'pro_monthly',
@@ -6254,6 +6254,7 @@ def emergency_fund():
 
 @main.route('/education-fund')
 @login_required
+@subscription_required('pro_monthly')
 def education_fund():
     return render_template('education_fund.html')
 
@@ -6293,6 +6294,7 @@ def education_fund_calculate():
 
 @main.route('/debt-planner')
 @login_required
+@subscription_required('pro_monthly')
 def debt_planner():
     loans = Loan.query.filter_by(user_id=current_user.id, is_active=True).all()
     total_debt = sum(float(l.outstanding_balance or 0) for l in loans)
@@ -6348,6 +6350,7 @@ def debt_planner():
 
 @main.route('/budget-splitter')
 @login_required
+@subscription_required('pro_monthly')
 def budget_splitter():
     income = float(current_user.monthly_salary or 0)
     needs_pct = float(current_user.budget_needs_pct or 50)
@@ -6402,6 +6405,7 @@ def budget_splitter():
 
 @main.route('/expense-forecast')
 @login_required
+@subscription_required('pro_monthly')
 def expense_forecast():
     uid = current_user.id
     today = date.today()

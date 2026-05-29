@@ -188,18 +188,22 @@
             <a href="{{ url_for('main.education_fund') }}" class="nav-link {% if request.endpoint == 'main.education_fund' %}active{% endif %}">
                 <span class="material-icons-outlined">school</span>
                 <span>{{ t('Education Fund') }}</span>
+                {% if not has_access('main.education_fund') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.debt_planner') }}" class="nav-link {% if request.endpoint == 'main.debt_planner' %}active{% endif %}">
                 <span class="material-icons-outlined">credit_score</span>
                 <span>{{ t('Debt Planner') }}</span>
+                {% if not has_access('main.debt_planner') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.budget_splitter') }}" class="nav-link {% if request.endpoint == 'main.budget_splitter' %}active{% endif %}">
                 <span class="material-icons-outlined">pie_chart</span>
                 <span>{{ t('Budget Splitter') }}</span>
+                {% if not has_access('main.budget_splitter') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.expense_forecast') }}" class="nav-link {% if request.endpoint == 'main.expense_forecast' %}active{% endif %}">
                 <span class="material-icons-outlined">auto_graph</span>
                 <span>{{ t('Expense Forecast') }}</span>
+                {% if not has_access('main.expense_forecast') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.crisis_alerts') }}" class="nav-link {% if request.endpoint == 'main.crisis_alerts' %}active{% endif %}">
                 <span class="material-icons-outlined">crisis_alert</span>
