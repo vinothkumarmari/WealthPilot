@@ -798,28 +798,60 @@ body {
 
 /* ============ MOBILE RESPONSIVE ============ */
 
-/* Mobile: use Poppins font for a modern app feel */
+/* Mobile: use DM Sans font for a modern app feel */
 @media (max-width: 991.98px) {
     body {
-        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 14px;
     }
     .sidebar {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'DM Sans', sans-serif;
     }
     .topbar {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'DM Sans', sans-serif;
     }
     .user-dropdown-menu {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'DM Sans', sans-serif;
     }
     .card-header h6, .card-header h5 {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'DM Sans', sans-serif;
     }
     .page-header h4 {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 1.1rem;
     }
     .stat-value {
-        font-family: 'Poppins', sans-serif;
+        font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Buttons: compact on mobile */
+    .btn {
+        font-size: 13px;
+        padding: 6px 14px;
+        border-radius: 8px;
+    }
+    .btn-sm {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+    .btn-lg {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+    .btn .material-icons-outlined {
+        font-size: 18px;
+    }
+    /* Action buttons row - compact */
+    .page-header .btn,
+    .card-header .btn,
+    .d-flex > .btn,
+    .d-flex > a.btn {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    .page-header .btn .material-icons-outlined,
+    .card-header .btn .material-icons-outlined {
+        font-size: 16px;
     }
 }
 
