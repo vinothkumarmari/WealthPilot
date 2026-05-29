@@ -34,7 +34,11 @@ const chartColors = [
 // Sidebar toggle for mobile
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
     sidebar.classList.toggle('show');
+    if (overlay) overlay.classList.toggle('show');
+    // Prevent body scroll when sidebar is open
+    document.body.style.overflow = sidebar.classList.contains('show') ? 'hidden' : '';
 }
 
 // Sidebar expand/collapse for desktop (button click)
@@ -120,10 +124,13 @@ function updateSidebarTooltips() {
 // Close sidebar on outside click (mobile)
 document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
     const toggle = document.querySelector('.sidebar-toggle');
     if (sidebar && window.innerWidth < 992) {
-        if (!sidebar.contains(e.target) && toggle && !toggle.contains(e.target)) {
+        if (!sidebar.contains(e.target) && toggle && !toggle.contains(e.target) && !e.target.closest('.sidebar-overlay')) {
             sidebar.classList.remove('show');
+            if (overlay) overlay.classList.remove('show');
+            document.body.style.overflow = '';
         }
     }
 });
