@@ -207,3 +207,76 @@ function filterTableByCol(tableId, colIndex, value) {
     const searchInput = table.closest('.card').querySelector('input[type="text"]');
     if (searchInput) searchInput.value = '';
 }
+
+// ============ SIDEBAR SEARCH / FILTER ============
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('sidebarSearchInput');
+        const clearBtn = document.getElementById('sidebarSearchClear');
+        const noResult = document.getElementById('sidebarNoResult');
+        if (!input) return;
+
+        const nav = document.querySelector('.sidebar-nav');
+        const links = nav.querySelectorAll('.nav-link');
+        const dividers = nav.querySelectorAll('.sidebar-divider');
+
+        // Clicking search icon in collapsed sidebar expands it
+        const searchIcon = document.querySelector('.sidebar-search-icon');
+        if (searchIcon) {
+            searchIcon.addEventListener('click', function() {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.classList.contains('expanded') && window.innerWidth >= 992) {
+                    toggleSidebarExpand();
+                    setTimeout(function() { input.focus(); }, 350);
+                }
+            });
+        }
+
+        input.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            clearBtn.style.display = q ? '' : 'none';
+
+            let visibleCount = 0;
+            links.forEach(function(link) {
+                const text = link.textContent.toLowerCase();
+                const match = !q || text.includes(q);
+                link.classList.toggle('search-hidden', !match);
+                if (match) visibleCount++;
+            });
+
+            // Show/hide section dividers based on whether they have visible links after them
+            dividers.forEach(function(div) {
+                let next = div.nextElementSibling;
+                let hasVisible = false;
+                while (next && !next.classList.contains('sidebar-divider')) {
+                    if (next.classList.contains('nav-link') && !next.classList.contains('search-hidden')) {
+                        hasVisible = true;
+                        break;
+                    }
+                    next = next.nextElementSibling;
+                }
+                div.classList.toggle('search-hidden', !hasVisible);
+            });
+
+            noResult.style.display = (q && visibleCount === 0) ? '' : 'none';
+        });
+
+        clearBtn.addEventListener('click', function() {
+            input.value = '';
+            input.dispatchEvent(new Event('input'));
+            input.focus();
+        });
+
+        // Keyboard shortcut: Ctrl+K or / to focus search (when sidebar is visible)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))) {
+                e.preventDefault();
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.classList.contains('expanded') && window.innerWidth >= 992) {
+                    toggleSidebarExpand();
+                }
+                setTimeout(function() { input.focus(); }, 350);
+            }
+        });
+    });
+})();

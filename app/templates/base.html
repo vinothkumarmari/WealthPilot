@@ -22,7 +22,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
     <!-- CSRF Token for AJAX -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
@@ -48,6 +48,15 @@
                 <div style="font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ current_user.full_name or current_user.username }}</div>
                 <div style="font-size:10px;color:rgba(255,255,255,0.5);">{{ current_user.subscription_plan or 'Starter' | title }}</div>
             </div>
+        </div>
+        <!-- Sidebar Search -->
+        <div class="sidebar-search" id="sidebarSearch">
+            <div class="sidebar-search-wrap">
+                <span class="material-icons-outlined sidebar-search-icon">search</span>
+                <input type="text" id="sidebarSearchInput" placeholder="Search menu..." autocomplete="off">
+                <span class="material-icons-outlined sidebar-search-clear" id="sidebarSearchClear" style="display:none;">close</span>
+            </div>
+            <div class="sidebar-search-noresult" id="sidebarNoResult" style="display:none;">No matches found</div>
         </div>
         <nav class="sidebar-nav">
             <a href="{{ url_for('main.dashboard') }}" class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
@@ -612,8 +621,8 @@
     })();
     </script>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=3"></script>
-    <script src="{{ url_for('static', filename='js/offline.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/offline.js') }}?v=4"></script>
 
     <!-- Global Keyboard Shortcuts -->
     <script>
