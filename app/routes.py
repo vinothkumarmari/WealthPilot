@@ -49,6 +49,12 @@ def service_worker():
     return send_from_directory(main.static_folder or 'static', 'sw.js', mimetype='application/javascript')
 
 
+@main.route('/favicon.ico')
+def favicon_ico():
+    return send_from_directory(os.path.join(main.static_folder or 'static'),
+                               'favicon.ico', mimetype='image/x-icon')
+
+
 # ======================== ROBOTS.TXT & SITEMAP ========================
 
 @main.route('/robots.txt')
