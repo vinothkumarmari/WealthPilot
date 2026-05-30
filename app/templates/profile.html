@@ -128,14 +128,14 @@
                         </div>
                     </div>
                     <div class="d-grid gap-2 mt-2 d-lg-flex">
-                        <button type="submit" class="btn btn-accent btn-sm">
-                            <span class="material-icons-outlined">save</span> {{ t('Update Profile') }}
+                        <button type="submit" class="btn btn-accent btn-sm d-flex align-items-center justify-content-center gap-1">
+                            <span class="material-icons-outlined" style="font-size:18px">save</span> {{ t('Update Profile') }}
                         </button>
-                        <a href="{{ url_for('main.change_password') }}" class="btn btn-outline-secondary btn-sm">
-                            <span class="material-icons-outlined">lock_reset</span> {{ t('Change Password') }}
+                        <a href="{{ url_for('main.change_password') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center gap-1">
+                            <span class="material-icons-outlined" style="font-size:18px">lock_reset</span> {{ t('Change Password') }}
                         </a>
-                        <a href="{{ url_for('main.mfa_setup') }}" class="btn btn-outline-{{ 'success' if current_user.mfa_method else 'primary' }} btn-sm">
-                            <span class="material-icons-outlined">{{ 'verified_user' if current_user.mfa_method else 'security' }}</span>
+                        <a href="{{ url_for('main.mfa_setup') }}" class="btn btn-outline-{{ 'success' if current_user.mfa_method else 'primary' }} btn-sm d-flex align-items-center justify-content-center gap-1">
+                            <span class="material-icons-outlined" style="font-size:18px">{{ 'verified_user' if current_user.mfa_method else 'security' }}</span>
                             {% if current_user.mfa_method %}{{ t('2FA Enabled') }}{% else %}{{ t('Setup 2FA') }}{% endif %}
                         </a>
                     </div>
