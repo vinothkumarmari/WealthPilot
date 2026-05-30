@@ -36,6 +36,9 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 180,
+        'connect_args': {
+            'prepare_threshold': 0,
+        },
     }
     
     # App Port
