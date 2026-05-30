@@ -127,16 +127,18 @@
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-accent">
-                        <span class="material-icons-outlined">save</span> {{ t('Update Profile') }}
-                    </button>
-                    <a href="{{ url_for('main.change_password') }}" class="btn btn-outline-secondary ms-2">
-                        <span class="material-icons-outlined">lock_reset</span> {{ t('Change Password') }}
-                    </a>
-                    <a href="{{ url_for('main.mfa_setup') }}" class="btn btn-outline-{{ 'success' if current_user.mfa_method else 'primary' }} ms-2">
-                        <span class="material-icons-outlined">{{ 'verified_user' if current_user.mfa_method else 'security' }}</span>
-                        {% if current_user.mfa_method %}{{ t('2FA Enabled') }}{% else %}{{ t('Setup 2FA') }}{% endif %}
-                    </a>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button type="submit" class="btn btn-accent">
+                            <span class="material-icons-outlined">save</span> {{ t('Update Profile') }}
+                        </button>
+                        <a href="{{ url_for('main.change_password') }}" class="btn btn-outline-secondary">
+                            <span class="material-icons-outlined">lock_reset</span> {{ t('Change Password') }}
+                        </a>
+                        <a href="{{ url_for('main.mfa_setup') }}" class="btn btn-outline-{{ 'success' if current_user.mfa_method else 'primary' }}">
+                            <span class="material-icons-outlined">{{ 'verified_user' if current_user.mfa_method else 'security' }}</span>
+                            {% if current_user.mfa_method %}{{ t('2FA Enabled') }}{% else %}{{ t('Setup 2FA') }}{% endif %}
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
