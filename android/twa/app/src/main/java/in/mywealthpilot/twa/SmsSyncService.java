@@ -1,8 +1,6 @@
 package in.mywealthpilot.twa;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -22,14 +20,14 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * Handles SMS sync with the MyWealthPilot server.
- * - Reads existing bank SMS from inbox (batch sync)
- * - Sends individual real-time SMS from BroadcastReceiver
+ * Handles real-time SMS sync with the MyWealthPilot server.
+ * Only processes NEW incoming SMS — never reads SMS history.
+ * When a bank SMS arrives, SmsBroadcastReceiver calls syncSingleSms()
+ * which immediately sends it to the server for parsing.
  */
 public class SmsSyncService {
     private static final String TAG = "SmsSyncService";
     private static final String API_URL = "https://mywealthpilot.in/api/sms/sync";
-    private static final int MAX_SMS_PER_BATCH = 30;
 
     private static Handler backgroundHandler;
 
@@ -61,86 +59,6 @@ public class SmsSyncService {
                 Log.e(TAG, "Error syncing single SMS", e);
             }
         });
-    }
-
-    /**
-     * Batch sync — reads recent bank SMS from inbox and sends to server.
-     * Called on app startup or when user enables SMS sync.
-     */
-    public static void batchSync(Context context) {
-        backgroundHandler.post(() -> {
-            try {
-                SmsPreferences prefs = new SmsPreferences(context);
-                String token = prefs.getToken();
-                if (token.isEmpty() || !prefs.isEnabled()) return;
-
-                long lastSync = prefs.getLastSyncTimestamp();
-                // If never synced, only go back 7 days
-                if (lastSync == 0) {
-                    lastSync = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000);
-                }
-
-                JSONArray messages = readBankSms(context, lastSync);
-                if (messages.length() == 0) {
-                    Log.d(TAG, "No new bank SMS to sync");
-                    return;
-                }
-
-                Log.d(TAG, "Syncing " + messages.length() + " bank SMS");
-                sendToServer(token, messages);
-                prefs.setLastSyncTimestamp(System.currentTimeMillis());
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error in batch sync", e);
-            }
-        });
-    }
-
-    /**
-     * Read bank SMS from inbox since the given timestamp.
-     */
-    private static JSONArray readBankSms(Context context, long sinceTimestamp) {
-        JSONArray messages = new JSONArray();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-
-        Uri smsUri = Uri.parse("content://sms/inbox");
-        String selection = "date > ?";
-        String[] selectionArgs = { String.valueOf(sinceTimestamp) };
-        String sortOrder = "date DESC LIMIT " + MAX_SMS_PER_BATCH;
-
-        Cursor cursor = null;
-        try {
-            cursor = context.getContentResolver().query(
-                    smsUri, new String[]{"address", "body", "date"},
-                    selection, selectionArgs, sortOrder
-            );
-
-            if (cursor != null && cursor.moveToFirst()) {
-                int addrIdx = cursor.getColumnIndex("address");
-                int bodyIdx = cursor.getColumnIndex("body");
-                int dateIdx = cursor.getColumnIndex("date");
-
-                do {
-                    String sender = cursor.getString(addrIdx);
-                    String body = cursor.getString(bodyIdx);
-                    long dateMs = cursor.getLong(dateIdx);
-
-                    if (body != null && SmsBroadcastReceiver.isBankSms(sender, body)) {
-                        JSONObject msg = new JSONObject();
-                        msg.put("body", body);
-                        msg.put("date", sdf.format(new Date(dateMs)));
-                        msg.put("sender", sender != null ? sender : "");
-                        messages.put(msg);
-                    }
-                } while (cursor.moveToNext());
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error reading SMS inbox", e);
-        } finally {
-            if (cursor != null) cursor.close();
-        }
-
-        return messages;
     }
 
     /**

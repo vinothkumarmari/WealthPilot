@@ -41,11 +41,7 @@ public class LauncherActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         }
 
-        // Trigger SMS batch sync on app launch if enabled
-        SmsPreferences smsPrefs = new SmsPreferences(this);
-        if (smsPrefs.isEnabled() && !smsPrefs.getToken().isEmpty()) {
-            SmsSyncService.batchSync(this);
-        }
+        // SMS sync is real-time only — SmsBroadcastReceiver handles incoming SMS automatically
     }
 
     @Override

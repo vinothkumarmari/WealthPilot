@@ -31,7 +31,6 @@ public class SmsSyncSetupActivity extends Activity {
     private Switch enableSwitch;
     private TextView statusText;
     private Button saveButton;
-    private Button syncNowButton;
     private SmsPreferences prefs;
 
     @Override
@@ -124,25 +123,13 @@ public class SmsSyncSetupActivity extends Activity {
         spacer4.setMinimumHeight(16);
         layout.addView(spacer4);
 
-        // Sync now button
-        syncNowButton = new Button(this);
-        syncNowButton.setText("🔄 Sync Now");
-        syncNowButton.setBackgroundColor(0xFF2D3436);
-        syncNowButton.setTextColor(0xFFFFFFFF);
-        syncNowButton.setOnClickListener(v -> {
-            if (prefs.isEnabled() && !prefs.getToken().isEmpty()) {
-                SmsSyncService.batchSync(this);
-                Toast.makeText(this, "Syncing recent bank SMS...", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Please save settings first", Toast.LENGTH_SHORT).show();
-            }
-        });
-        layout.addView(syncNowButton);
-
-        // Spacer
-        View spacer5 = new View(this);
-        spacer5.setMinimumHeight(16);
-        layout.addView(spacer5);
+        // Info text
+        TextView realtimeInfo = new TextView(this);
+        realtimeInfo.setText("⚡ Real-time mode: Only new incoming bank SMS will be processed automatically. We never read your SMS history.");
+        realtimeInfo.setTextSize(13);
+        realtimeInfo.setTextColor(0xFF6C5CE7);
+        realtimeInfo.setPadding(0, 0, 0, 16);
+        layout.addView(realtimeInfo);
 
         // Back button
         Button backBtn = new Button(this);
@@ -176,9 +163,8 @@ public class SmsSyncSetupActivity extends Activity {
                 requestSmsPermission();
                 return; // Will save after permission granted
             }
-            // Start batch sync
-            SmsSyncService.batchSync(this);
-            Toast.makeText(this, "✅ SMS sync enabled! Syncing recent messages...", Toast.LENGTH_LONG).show();
+            // Real-time listener is now active via SmsBroadcastReceiver
+            Toast.makeText(this, "✅ SMS sync enabled! New bank SMS will be auto-added.", Toast.LENGTH_LONG).show();
         } else {
             Toast.makeText(this, "SMS sync disabled", Toast.LENGTH_SHORT).show();
         }
@@ -187,14 +173,12 @@ public class SmsSyncSetupActivity extends Activity {
     }
 
     private boolean hasSmsPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestSmsPermission() {
         ActivityCompat.requestPermissions(this,
                 new String[]{
-                        Manifest.permission.READ_SMS,
                         Manifest.permission.RECEIVE_SMS
                 },
                 PERMISSION_REQUEST_CODE);
@@ -212,9 +196,8 @@ public class SmsSyncSetupActivity extends Activity {
             }
 
             if (allGranted) {
-                // Permission granted — complete save
-                SmsSyncService.batchSync(this);
-                Toast.makeText(this, "✅ SMS sync enabled! Syncing recent messages...", Toast.LENGTH_LONG).show();
+                // Permission granted — real-time SMS listener is now active
+                Toast.makeText(this, "✅ SMS sync enabled! New bank SMS will be auto-added.", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this, "SMS permission denied. SMS sync won't work without it.", Toast.LENGTH_LONG).show();
                 prefs.setEnabled(false);
