@@ -26,7 +26,7 @@ _AMOUNT_PATTERNS = [
 _DEBIT_KEYWORDS = [
     'debited', 'spent', 'paid', 'withdrawn', 'purchase', 'deducted',
     'sent', 'transferred', 'txn of rs', 'payment of', 'used at',
-    'charged', 'debit', 'dr', 'outgoing',
+    'has been used', 'charged', 'debit', 'dr', 'outgoing',
 ]
 
 _CREDIT_KEYWORDS = [
@@ -205,16 +205,26 @@ def _regex_parse_single_sms(sms):
     # Extract date
     txn_date = ''
     date_patterns = [
-        (r'(\d{1,2})[/-](\w{3})[/-](\d{2,4})', '%d-%b-%y'),
-        (r'(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})', '%d-%m-%Y'),
         (r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})', '%Y-%m-%d'),
+        (r'(\d{1,2})[/-](\w{3})[/-](\d{2,4})', '%d-%b-%y'),
+        (r'(\d{1,2})(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(\d{2,4})', None),
+        (r'(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})', None),  # dd-mm-yy or dd-mm-yyyy
     ]
     for pat, fmt in date_patterns:
-        dm = re.search(pat, sms)
+        dm = re.search(pat, sms, re.IGNORECASE)
         if dm:
             try:
                 raw = dm.group(0)
-                raw = raw.replace('/', '-')
+                if fmt is None:
+                    # Handle no-separator or ambiguous-length year
+                    d, m, y = dm.group(1), dm.group(2), dm.group(3)
+                    raw = f'{d}-{m}-{y}'
+                    if m.isdigit():
+                        fmt = '%d-%m-%y' if len(y) == 2 else '%d-%m-%Y'
+                    else:
+                        fmt = '%d-%b-%y' if len(y) == 2 else '%d-%b-%Y'
+                else:
+                    raw = raw.replace('/', '-')
                 parsed = datetime.strptime(raw, fmt)
                 txn_date = parsed.strftime('%Y-%m-%d')
                 break
@@ -223,12 +233,16 @@ def _regex_parse_single_sms(sms):
 
     # Extract merchant (text after 'at', 'to', 'from', 'by', 'VPA')
     merchant = ''
-    merch_match = re.search(
-        r'(?:at|to|from|by|VPA|payee)[:\s]+([A-Za-z0-9@.\-_ ]+?)(?:\s+(?:on|ref|upi|txn|avl|bal|$))',
-        sms, re.IGNORECASE
-    )
-    if merch_match:
-        merchant = merch_match.group(1).strip()[:100]
+    merch_patterns = [
+        r'(?:at|to)\s+([A-Za-z][A-Za-z0-9@.\-_ ]+?)(?:\s*(?:\bon\b|\bref\b|\bupi\b|\btxn\b|\bavl\b|\bbal\b|\bIMPS\b|\.|$))',
+        r'(?:VPA|payee)[:\s]+([A-Za-z0-9@.\-_]+)',
+        r'(?:from)\s+([A-Za-z][A-Za-z0-9@.\-_ ]+?)(?:\s*(?:\bon\b|\bref\b|\bupi\b|\btxn\b|\bavl\b|\bbal\b|\bIMPS\b|\.|$))',
+    ]
+    for mp in merch_patterns:
+        merch_match = re.search(mp, sms, re.IGNORECASE)
+        if merch_match:
+            merchant = merch_match.group(1).strip()[:100]
+            break
 
     # Categorize
     category = 'Miscellaneous'

@@ -187,6 +187,7 @@
             options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
         });
     }
+</script>
 
 <!-- SMS Import Modal -->
 <div class="modal fade" id="smsImportModal" tabindex="-1" aria-labelledby="smsImportLabel" aria-hidden="true">
@@ -254,6 +255,7 @@ function parseSmsMessages() {
 
     const fd = new FormData();
     fd.append('sms_text', text);
+    fd.append('csrf_token', '{{ csrf_token() }}');
 
     fetch('{{ url_for("main.sms_parse") }}', { method: 'POST', body: fd })
         .then(r => r.json())
@@ -372,7 +374,7 @@ function smsConfirmAdd() {
 
     fetch('{{ url_for("main.sms_confirm") }}', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
         body: JSON.stringify({ transactions: selected })
     })
     .then(r => r.json())

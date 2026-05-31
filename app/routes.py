@@ -2753,6 +2753,7 @@ def sms_confirm():
 
 
 @main.route('/api/sms/sync', methods=['POST'])
+@csrf.exempt
 def api_sms_sync():
     """Mobile app SMS sync endpoint — token-based auth (no login session needed).
 
@@ -2888,6 +2889,7 @@ def api_sms_sync():
 
 
 @main.route('/api/sms/status', methods=['GET'])
+@csrf.exempt
 def api_sms_status():
     """Check if SMS sync is enabled for a token. Used by Android app on startup."""
     token = request.args.get('token', '').strip()
