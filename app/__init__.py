@@ -475,6 +475,12 @@ def _ensure_user_columns(app):
                 if 'mfa_recovery_codes' not in cols:
                     conn.execute(text("ALTER TABLE user ADD COLUMN mfa_recovery_codes TEXT"))
                     app.logger.info('Added column: user.mfa_recovery_codes')
+                if 'enable_sms_sync' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN enable_sms_sync BOOLEAN DEFAULT 0"))
+                    app.logger.info('Added column: user.enable_sms_sync')
+                if 'sms_sync_token' not in cols:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN sms_sync_token VARCHAR(64)"))
+                    app.logger.info('Added column: user.sms_sync_token')
                 # Add member column to expense and financial_goal tables
                 exp_cols = {r[1] for r in conn.execute(text("PRAGMA table_info(expense)")).fetchall()}
                 if 'member' not in exp_cols:
@@ -564,6 +570,12 @@ def _ensure_user_columns(app):
                 if 'mfa_recovery_codes' not in cols:
                     conn.execute(text("ALTER TABLE \"user\" ADD COLUMN mfa_recovery_codes TEXT"))
                     app.logger.info('Added column: user.mfa_recovery_codes')
+                if 'enable_sms_sync' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN enable_sms_sync BOOLEAN DEFAULT FALSE"))
+                    app.logger.info('Added column: user.enable_sms_sync')
+                if 'sms_sync_token' not in cols:
+                    conn.execute(text("ALTER TABLE \"user\" ADD COLUMN sms_sync_token VARCHAR(64)"))
+                    app.logger.info('Added column: user.sms_sync_token')
                 # Widen otp_code from VARCHAR(10) to VARCHAR(64) for full SHA-256 hash
                 try:
                     conn.execute(text("SAVEPOINT sp_otp"))
@@ -621,6 +633,24 @@ def _ensure_user_columns(app):
                     if 'discount_pct' not in tp_cols:
                         conn.execute(text("ALTER TABLE tracked_product ADD COLUMN discount_pct FLOAT"))
                         app.logger.info('Added column: tracked_product.discount_pct')
+                    if 'rating' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN rating FLOAT"))
+                        app.logger.info('Added column: tracked_product.rating')
+                    if 'rating_count' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN rating_count INTEGER"))
+                        app.logger.info('Added column: tracked_product.rating_count')
+                    if 'brand' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN brand VARCHAR(200)"))
+                        app.logger.info('Added column: tracked_product.brand')
+                    if 'category' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN category VARCHAR(100)"))
+                        app.logger.info('Added column: tracked_product.category')
+                    if 'specs_json' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN specs_json TEXT"))
+                        app.logger.info('Added column: tracked_product.specs_json')
+                    if 'ai_extracted' not in tp_cols:
+                        conn.execute(text("ALTER TABLE tracked_product ADD COLUMN ai_extracted BOOLEAN DEFAULT FALSE"))
+                        app.logger.info('Added column: tracked_product.ai_extracted')
                 ph_exists = conn.execute(text(
                     "SELECT 1 FROM information_schema.tables WHERE table_name='price_history'"
                 )).fetchone()
