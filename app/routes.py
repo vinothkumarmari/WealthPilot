@@ -1284,6 +1284,11 @@ def billing_callback():
         flash('Payment record not found. Please contact support.', 'danger')
         return redirect(url_for('main.pricing'))
 
+    # Verify the logged-in user owns this transaction
+    if current_user.is_authenticated and txn.user_id != current_user.id:
+        flash('Payment does not belong to your account.', 'danger')
+        return redirect(url_for('main.pricing'))
+
     txn.razorpay_payment_id = payment_id
     txn.razorpay_signature = signature
     txn.status = 'paid'
@@ -1327,6 +1332,7 @@ def verify_billing_payment():
     txn.razorpay_signature = signature
     txn.status = 'paid'
     txn.paid_at = datetime.now(timezone.utc)
+    txn.expires_at = datetime.now(timezone.utc) + timedelta(days=30)
     db.session.commit()
     session.pop('_cached_plan', None)
     return jsonify({'success': True, 'message': 'Payment verified successfully.'})
