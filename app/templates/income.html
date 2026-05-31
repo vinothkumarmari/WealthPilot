@@ -6,9 +6,15 @@
         <h4><span class="material-icons-outlined">payments</span> {{ t('Income & Salary') }}</h4>
         <p class="text-muted">{{ t('Track all your income sources') }}</p>
     </div>
-    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
-        <span class="material-icons-outlined">add</span> {{ t('Add Income') }}
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#smsImportModal" title="{{ t('Import from SMS') }}">
+            <span class="material-icons-outlined">sms</span>
+            <span class="d-none d-md-inline">{{ t('SMS') }}</span>
+        </button>
+        <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addIncomeModal">
+            <span class="material-icons-outlined">add</span> {{ t('Add Income') }}
+        </button>
+    </div>
 </div>
 
 <!-- Summary Cards -->
@@ -181,5 +187,215 @@
             options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
         });
     }
+
+<!-- SMS Import Modal -->
+<div class="modal fade" id="smsImportModal" tabindex="-1" aria-labelledby="smsImportLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="smsImportLabel">
+          <span class="material-icons-outlined me-2" style="vertical-align:middle;">sms</span>{{ t('Import from SMS') }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="smsStep1">
+          <p class="text-muted mb-2">{{ t('Paste your bank SMS messages below to auto-detect income transactions.') }}</p>
+          <textarea id="smsTextInput" class="form-control mb-3" rows="6" placeholder="Example:
+HDFC Bank: Rs 2,500.00 credited to a/c XX5678 on 30-05-25. UPI Ref: 512345678901. Avl bal: Rs 45,000.00
+
+SBI: Salary of Rs.50,000.00 credited to your A/c XX1234 on 01Jun25. Avl Bal Rs.65,000.00"></textarea>
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted"><span class="material-icons-outlined" style="font-size:14px;vertical-align:middle;">info</span> {{ t('We never store your raw SMS. Only the extracted amount & type are saved.') }}</small>
+            <button class="btn btn-primary" id="smsParsBtn" onclick="parseSmsMessages()">
+              <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle;">auto_awesome</span>{{ t('Parse SMS') }}
+            </button>
+          </div>
+        </div>
+        <div id="smsStep2" class="d-none">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <span class="badge bg-primary" id="smsTxnCount">0</span> {{ t('transactions found') }}
+              <span class="badge bg-success ms-1" id="smsAiBadge" style="display:none;">
+                <span class="material-icons-outlined" style="font-size:12px;vertical-align:middle;">auto_awesome</span> AI
+              </span>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-outline-secondary me-1" onclick="smsGoBack()">
+                <span class="material-icons-outlined" style="font-size:16px;vertical-align:middle;">arrow_back</span> {{ t('Back') }}
+              </button>
+              <button class="btn btn-sm btn-outline-danger me-1" onclick="smsToggleAll(false)">{{ t('Deselect All') }}</button>
+              <button class="btn btn-sm btn-outline-success" onclick="smsToggleAll(true)">{{ t('Select All') }}</button>
+            </div>
+          </div>
+          <div id="smsTxnList" style="max-height:400px;overflow-y:auto;"></div>
+        </div>
+      </div>
+      <div class="modal-footer" id="smsStep2Footer" style="display:none;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('Cancel') }}</button>
+        <button type="button" class="btn btn-success" id="smsConfirmBtn" onclick="smsConfirmAdd()">
+          <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle;">add_task</span>{{ t('Add Selected') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _smsParsedTxns = [];
+
+function parseSmsMessages() {
+    const text = document.getElementById('smsTextInput').value.trim();
+    if (!text) { alert('Please paste SMS messages first.'); return; }
+
+    const btn = document.getElementById('smsParsBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Parsing...';
+
+    const fd = new FormData();
+    fd.append('sms_text', text);
+
+    fetch('{{ url_for("main.sms_parse") }}', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle;">auto_awesome</span>Parse SMS';
+
+            if (data.error) { alert(data.error); return; }
+            if (!data.transactions || data.transactions.length === 0) {
+                alert('No transactions found in the SMS text.');
+                return;
+            }
+
+            _smsParsedTxns = data.transactions;
+            renderSmsTxns();
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle;">auto_awesome</span>Parse SMS';
+            alert('Error parsing SMS: ' + err.message);
+        });
+}
+
+function renderSmsTxns() {
+    document.getElementById('smsStep1').classList.add('d-none');
+    document.getElementById('smsStep2').classList.remove('d-none');
+    document.getElementById('smsStep2Footer').style.display = '';
+    document.getElementById('smsTxnCount').textContent = _smsParsedTxns.length;
+
+    const hasAi = _smsParsedTxns.some(t => t.ai_parsed);
+    document.getElementById('smsAiBadge').style.display = hasAi ? '' : 'none';
+
+    const container = document.getElementById('smsTxnList');
+    container.innerHTML = '';
+
+    const incomeTypes = {{ income_types | tojson }};
+    const expenseCategories = ['Housing','Food & Groceries','Transportation','Utilities','Healthcare','Insurance','Education','Entertainment','Shopping','Personal Care','Loan','Debt Payments','Savings','Investments','Charity','Miscellaneous'];
+
+    _smsParsedTxns.forEach((txn, i) => {
+        const isCredit = txn.type === 'credit';
+        const icon = isCredit ? 'arrow_downward' : 'arrow_upward';
+        const color = isCredit ? 'success' : 'danger';
+        const typeLabel = isCredit ? 'Income' : 'Expense';
+
+        let catOptions = '';
+        if (isCredit) {
+            incomeTypes.forEach(t => {
+                catOptions += `<option value="${t}" ${t === txn.income_type ? 'selected' : ''}>${t}</option>`;
+            });
+        } else {
+            expenseCategories.forEach(c => {
+                catOptions += `<option value="${c}" ${c === txn.category ? 'selected' : ''}>${c}</option>`;
+            });
+        }
+
+        const dateVal = txn.date || new Date().toISOString().split('T')[0];
+
+        container.innerHTML += `
+        <div class="card mb-2" style="border-left:4px solid var(--bs-${color});">
+          <div class="card-body py-2 px-3">
+            <div class="d-flex align-items-start">
+              <div class="form-check me-2 mt-1">
+                <input class="form-check-input sms-txn-check" type="checkbox" checked data-idx="${i}">
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <div>
+                    <span class="material-icons-outlined text-${color}" style="font-size:18px;vertical-align:middle;">${icon}</span>
+                    <strong class="ms-1">${typeLabel}</strong>
+                    <span class="text-muted ms-2" style="font-size:13px;">${txn.merchant || ''}</span>
+                  </div>
+                  <strong class="text-${color}">₹${Number(txn.amount).toLocaleString('en-IN')}</strong>
+                </div>
+                <div class="row g-2 mt-1">
+                  <div class="col-sm-4">
+                    <select class="form-select form-select-sm" onchange="_smsParsedTxns[${i}].${isCredit ? 'income_type' : 'category'}=this.value">
+                      ${catOptions}
+                    </select>
+                  </div>
+                  <div class="col-sm-3">
+                    <input type="date" class="form-control form-control-sm" value="${dateVal}" onchange="_smsParsedTxns[${i}].date=this.value">
+                  </div>
+                  <div class="col-sm-5">
+                    <input type="text" class="form-control form-control-sm" value="${txn.description || ''}" placeholder="Description" onchange="_smsParsedTxns[${i}].description=this.value">
+                  </div>
+                </div>
+                ${txn.original_sms ? `<small class="text-muted d-block mt-1" style="font-size:11px;line-height:1.3;max-height:2.6em;overflow:hidden;">${txn.original_sms.substring(0,120)}${txn.original_sms.length > 120 ? '...' : ''}</small>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    });
+}
+
+function smsGoBack() {
+    document.getElementById('smsStep1').classList.remove('d-none');
+    document.getElementById('smsStep2').classList.add('d-none');
+    document.getElementById('smsStep2Footer').style.display = 'none';
+}
+
+function smsToggleAll(checked) {
+    document.querySelectorAll('.sms-txn-check').forEach(cb => cb.checked = checked);
+}
+
+function smsConfirmAdd() {
+    const selected = [];
+    document.querySelectorAll('.sms-txn-check:checked').forEach(cb => {
+        selected.push(_smsParsedTxns[parseInt(cb.dataset.idx)]);
+    });
+
+    if (selected.length === 0) { alert('Select at least one transaction.'); return; }
+
+    const btn = document.getElementById('smsConfirmBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Adding...';
+
+    fetch('{{ url_for("main.sms_confirm") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: selected })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle;">add_task</span>Add Selected';
+
+        if (data.success) {
+            let msg = '';
+            if (data.added_expenses > 0) msg += data.added_expenses + ' expense(s) ';
+            if (data.added_income > 0) msg += (msg ? '& ' : '') + data.added_income + ' income(s) ';
+            msg += 'added from SMS!';
+            alert(msg);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle;">add_task</span>Add Selected';
+        alert('Error: ' + err.message);
+    });
+}
 </script>
 {% endblock %}

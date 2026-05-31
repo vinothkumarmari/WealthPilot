@@ -2651,6 +2651,99 @@ def edit_expense(id):
     return redirect(url_for('main.expenses'))
 
 
+# ======================== SMS AUTO-ADD ========================
+
+@main.route('/sms/parse', methods=['POST'])
+@login_required
+def sms_parse():
+    """Parse SMS messages and return extracted transactions as JSON."""
+    from app.sms_parser import parse_sms_transactions
+    sms_text = request.form.get('sms_text', '').strip()
+    if not sms_text:
+        return jsonify({'error': 'No SMS text provided'}), 400
+    if len(sms_text) > 10000:
+        return jsonify({'error': 'Text too long (max 10,000 characters)'}), 400
+
+    transactions = parse_sms_transactions(sms_text)
+    return jsonify({'transactions': transactions, 'count': len(transactions)})
+
+
+@main.route('/sms/confirm', methods=['POST'])
+@login_required
+def sms_confirm():
+    """Save confirmed SMS transactions as expenses/income."""
+    data = request.get_json()
+    if not data or not data.get('transactions'):
+        return jsonify({'error': 'No transactions provided'}), 400
+
+    added_expenses = 0
+    added_income = 0
+    errors = []
+
+    for txn in data['transactions']:
+        try:
+            amount = float(str(txn.get('amount', 0)).replace(',', ''))
+            if amount <= 0:
+                continue
+
+            txn_date_str = txn.get('date', '')
+            if txn_date_str:
+                try:
+                    txn_date = datetime.strptime(txn_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    txn_date = date.today()
+            else:
+                txn_date = date.today()
+
+            desc = txn.get('description', '') or txn.get('merchant', '') or ''
+            sms_ref = txn.get('upi_ref', '')
+            if sms_ref:
+                desc = f'{desc} (Ref: {sms_ref})'.strip()
+            # Tag SMS-sourced entries
+            if txn.get('original_sms'):
+                desc = f'{desc} [SMS]'.strip() if desc else '[SMS]'
+
+            if txn.get('type') == 'credit':
+                inc = Income(
+                    user_id=current_user.id,
+                    source=txn.get('merchant', '') or 'SMS Import',
+                    income_type=txn.get('income_type', 'Other'),
+                    amount=amount,
+                    frequency='one-time',
+                    date=txn_date,
+                    description=desc[:300],
+                )
+                db.session.add(inc)
+                added_income += 1
+            else:
+                exp = Expense(
+                    user_id=current_user.id,
+                    category=txn.get('category', 'Miscellaneous'),
+                    amount=amount,
+                    date=txn_date,
+                    description=desc[:300],
+                    is_recurring=False,
+                )
+                db.session.add(exp)
+                added_expenses += 1
+
+        except Exception as e:
+            errors.append(str(e))
+
+    if added_expenses + added_income > 0:
+        # Sync salary if any income was added
+        if added_income > 0:
+            _sync_user_salary(current_user, force_from_income=True)
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'added_expenses': added_expenses,
+        'added_income': added_income,
+        'errors': errors,
+    })
+
+
 # ======================== BANK STATEMENT IMPORT ========================
 
 _BANK_KEYWORDS = {
