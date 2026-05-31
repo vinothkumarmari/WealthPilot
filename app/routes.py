@@ -2298,6 +2298,14 @@ def profile():
         current_user.enable_future_monthly_reminders = request.form.get('enable_future_monthly_reminders') == 'on'
         current_user.enable_future_quarterly_reminders = request.form.get('enable_future_quarterly_reminders') == 'on'
         current_user.enable_only_critical_notifications = request.form.get('enable_only_critical_notifications') == 'on'
+        try:
+            current_user.enable_sms_sync = request.form.get('enable_sms_sync') == 'on'
+            # Generate SMS sync token when enabled for the first time
+            if current_user.enable_sms_sync and not current_user.sms_sync_token:
+                import secrets
+                current_user.sms_sync_token = secrets.token_urlsafe(32)
+        except Exception:
+            pass  # Column may not exist yet if migration hasn't run
         lang = request.form.get('language', 'en')
         if lang in ('en', 'ta', 'hi', 'te'):
             current_user.language = lang
@@ -2742,6 +2750,157 @@ def sms_confirm():
         'added_income': added_income,
         'errors': errors,
     })
+
+
+@main.route('/api/sms/sync', methods=['POST'])
+def api_sms_sync():
+    """Mobile app SMS sync endpoint — token-based auth (no login session needed).
+
+    The Android app reads bank SMS, sends them here with the user's sync token.
+    We parse & auto-add as expenses/income.
+
+    Expected JSON body:
+    {
+        "token": "user's sms_sync_token",
+        "messages": [
+            {"body": "SBI: Your A/c XX1234 debited Rs.500...", "date": "2025-05-30T10:30:00"},
+            ...
+        ]
+    }
+    """
+    from app.sms_parser import parse_sms_transactions
+    import hmac
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({'error': 'Invalid request'}), 400
+
+    token = (data.get('token') or '').strip()
+    messages = data.get('messages', [])
+
+    if not token or len(token) < 10:
+        return jsonify({'error': 'Missing or invalid token'}), 401
+
+    if not messages:
+        return jsonify({'error': 'No messages provided'}), 400
+
+    if len(messages) > 50:
+        return jsonify({'error': 'Too many messages (max 50)'}), 400
+
+    # Find user by token
+    try:
+        user = User.query.filter_by(sms_sync_token=token).first()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'SMS sync not available yet. Please retry after a few minutes.'}), 503
+    if not user or not getattr(user, 'enable_sms_sync', False):
+        return jsonify({'error': 'Invalid token or SMS sync disabled'}), 401
+
+    # Combine all SMS bodies for parsing
+    sms_text = '\n\n'.join(
+        m.get('body', '').strip() for m in messages if m.get('body', '').strip()
+    )
+    if not sms_text:
+        return jsonify({'error': 'No SMS content'}), 400
+
+    # Parse
+    transactions = parse_sms_transactions(sms_text)
+    if not transactions:
+        return jsonify({'success': True, 'added_expenses': 0, 'added_income': 0, 'message': 'No transactions found'})
+
+    added_expenses = 0
+    added_income = 0
+
+    for txn in transactions:
+        try:
+            amount = float(str(txn.get('amount', 0)).replace(',', ''))
+            if amount <= 0:
+                continue
+
+            txn_date_str = txn.get('date', '')
+            if txn_date_str:
+                try:
+                    txn_date = datetime.strptime(txn_date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    txn_date = date.today()
+            else:
+                txn_date = date.today()
+
+            # Check for duplicate — same user, amount, date, within last 24h
+            desc = txn.get('description', '') or txn.get('merchant', '') or ''
+            sms_ref = txn.get('upi_ref', '')
+            if sms_ref:
+                desc = f'{desc} (Ref: {sms_ref})'.strip()
+            desc = f'{desc} [SMS Auto]'.strip() if desc else '[SMS Auto]'
+
+            if txn.get('type') == 'credit':
+                # Check duplicate income
+                existing = Income.query.filter_by(
+                    user_id=user.id, amount=amount, date=txn_date
+                ).filter(Income.description.like('%[SMS Auto]%')).first()
+                if existing:
+                    continue
+
+                inc = Income(
+                    user_id=user.id,
+                    source=txn.get('merchant', '') or 'SMS Auto',
+                    income_type=txn.get('income_type', 'Other'),
+                    amount=amount,
+                    frequency='one-time',
+                    date=txn_date,
+                    description=desc[:300],
+                )
+                db.session.add(inc)
+                added_income += 1
+            else:
+                # Check duplicate expense
+                existing = Expense.query.filter_by(
+                    user_id=user.id, amount=amount, date=txn_date
+                ).filter(Expense.description.like('%[SMS Auto]%')).first()
+                if existing:
+                    continue
+
+                exp = Expense(
+                    user_id=user.id,
+                    category=txn.get('category', 'Miscellaneous'),
+                    amount=amount,
+                    date=txn_date,
+                    description=desc[:300],
+                    is_recurring=False,
+                )
+                db.session.add(exp)
+                added_expenses += 1
+
+        except Exception:
+            continue
+
+    if added_expenses + added_income > 0:
+        if added_income > 0:
+            _sync_user_salary(user, force_from_income=True)
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'added_expenses': added_expenses,
+        'added_income': added_income,
+        'total_parsed': len(transactions),
+    })
+
+
+@main.route('/api/sms/status', methods=['GET'])
+def api_sms_status():
+    """Check if SMS sync is enabled for a token. Used by Android app on startup."""
+    token = request.args.get('token', '').strip()
+    if not token or len(token) < 10:
+        return jsonify({'enabled': False}), 401
+    try:
+        user = User.query.filter_by(sms_sync_token=token).first()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'enabled': False})
+    if not user or not getattr(user, 'enable_sms_sync', False):
+        return jsonify({'enabled': False})
+    return jsonify({'enabled': True, 'username': user.username})
 
 
 # ======================== BANK STATEMENT IMPORT ========================

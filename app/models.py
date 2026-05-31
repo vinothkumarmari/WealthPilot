@@ -26,6 +26,8 @@ class User(UserMixin, db.Model):
     enable_future_monthly_reminders = db.Column(db.Boolean, default=True)
     enable_future_quarterly_reminders = db.Column(db.Boolean, default=True)
     enable_only_critical_notifications = db.Column(db.Boolean, default=False)
+    enable_sms_sync = db.Column(db.Boolean, default=False)  # Auto-read SMS from mobile
+    sms_sync_token = db.Column(db.String(64))  # Token for SMS sync API auth
     profession = db.Column(db.String(100))  # IT, Doctor, Teacher, Farmer, etc.
     state = db.Column(db.String(50))  # Indian state for state-specific schemes
     language = db.Column(db.String(5), default='en')  # en, ta, hi, te
