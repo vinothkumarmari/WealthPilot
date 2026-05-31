@@ -230,6 +230,32 @@ def create_app():
     from .routes import main
     app.register_blueprint(main)
 
+    # ── Error handlers ──
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        app.logger.error(f'500 Internal Server Error: {error}')
+        return render_template('base.html', **{
+            'content': '<div class="text-center py-5">'
+                       '<h1 class="text-danger">500</h1>'
+                       '<p>Something went wrong. Please try again.</p>'
+                       '<a href="/dashboard" class="btn btn-primary">Retry</a></div>'
+        }), 500
+
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return render_template('base.html', **{
+            'content': '<div class="text-center py-5">'
+                       '<h1>404</h1><p>Page not found.</p>'
+                       '<a href="/dashboard" class="btn btn-primary">Go to Dashboard</a></div>'
+        }), 404
+
+    # ── Rollback stale DB sessions on request teardown ──
+    @app.teardown_request
+    def teardown_request(exception):
+        if exception:
+            db.session.rollback()
+
     # Security headers
     @app.after_request
     def set_security_headers(response):

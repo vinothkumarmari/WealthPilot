@@ -33,12 +33,20 @@ class Config:
         _db_url = _db_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     SQLALCHEMY_DATABASE_URI = _db_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Engine options — tuned for Supabase PgBouncer free tier
+    _is_postgres = _db_url.startswith('postgresql')
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
-        'pool_recycle': 180,
+        'pool_recycle': 120,        # Recycle stale connections sooner
+        'pool_size': 3,             # Small pool for free tier
+        'max_overflow': 2,          # Allow 2 extra connections under load
+        'pool_timeout': 20,         # Wait max 20s for a connection
         'connect_args': {
-            'prepare_threshold': 0,
+            'prepare_threshold': 0,  # Required for PgBouncer transaction mode
         },
+    } if _is_postgres else {
+        'pool_pre_ping': True,
     }
     
     # App Port
