@@ -3279,9 +3279,33 @@ def price_tracker():
         return render_template('price_tracker.html', products=products)
     except Exception as e:
         db.session.rollback()
+        err_str = str(e)
         import logging
         logging.getLogger('app').error(f'Price tracker error: {e}\n{"".join(_tb.format_exc())}')
-        flash(f'Error loading price tracker: {e}', 'danger')
+
+        # Auto-add missing columns if DB schema is outdated
+        if 'UndefinedColumn' in err_str or 'does not exist' in err_str:
+            try:
+                from sqlalchemy import text as _text
+                new_cols = {
+                    'rating': 'FLOAT', 'rating_count': 'INTEGER', 'brand': 'VARCHAR(200)',
+                    'category': 'VARCHAR(100)', 'specs_json': 'TEXT', 'ai_extracted': 'BOOLEAN DEFAULT FALSE',
+                }
+                for col, typ in new_cols.items():
+                    try:
+                        db.session.execute(_text(f'ALTER TABLE tracked_product ADD COLUMN {col} {typ}'))
+                    except Exception:
+                        db.session.rollback()
+                db.session.commit()
+                logging.getLogger('app').info('Auto-added missing AI columns to tracked_product')
+                products = TrackedProduct.query.filter_by(user_id=current_user.id, is_active=True)\
+                    .order_by(TrackedProduct.created_at.desc()).all()
+                return render_template('price_tracker.html', products=products)
+            except Exception as e2:
+                db.session.rollback()
+                logging.getLogger('app').error(f'Auto-migrate failed: {e2}')
+
+        flash('Price tracker is temporarily unavailable. Please try again.', 'warning')
         return redirect(url_for('main.dashboard'))
 
 
