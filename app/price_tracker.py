@@ -1,9 +1,17 @@
-"""Product price tracker — fetches prices from Indian e-commerce sites."""
+"""Product price tracker — AI-powered extraction using Google Gemini Flash.
+
+Flow:
+1. User pastes a product URL
+2. We fetch the page HTML
+3. Gemini Flash AI extracts structured product data (name, price, MRP, image, specs, rating)
+4. Falls back to traditional scraping if AI unavailable
+5. Cross-platform search for comparison
+"""
 
 import re
 import json
 import logging
-from urllib.parse import urlparse, parse_qs, urlencode
+from urllib.parse import urlparse, parse_qs, urlencode, quote_plus
 
 import requests
 from bs4 import BeautifulSoup
@@ -179,6 +187,187 @@ def _extract_name_from_url(url):
         return name[:200]
     except Exception:
         return None
+
+
+# ── Gemini AI Extraction ─────────────────────────────────────────
+
+_GEMINI_EXTRACT_PROMPT = """You are a product data extraction AI. Given the HTML content of an Indian e-commerce product page, extract the following information in JSON format:
+
+{
+  "name": "Full product name/title",
+  "price": 1299.00,
+  "mrp": 1999.00,
+  "discount_pct": 35,
+  "image": "URL of the main product image (full https URL)",
+  "rating": 4.2,
+  "rating_count": 1523,
+  "specs": ["spec1: value1", "spec2: value2", "spec3: value3"],
+  "brand": "Brand name",
+  "category": "Category like Electronics, Beauty, Fashion etc.",
+  "in_stock": true
+}
+
+Rules:
+- price and mrp should be numeric (no currency symbols), in INR
+- If MRP is not available, set it to null
+- discount_pct should be an integer percentage
+- specs should be top 5 key specifications as "key: value" strings
+- If any field is not found, set it to null
+- Only return valid JSON, no extra text
+
+HTML content (key parts):
+"""
+
+
+def _get_gemini_key():
+    """Get Gemini API key from Flask config or env."""
+    try:
+        from flask import current_app
+        return current_app.config.get('GEMINI_API_KEY', '')
+    except RuntimeError:
+        import os
+        return os.environ.get('GEMINI_API_KEY', '')
+
+
+def _extract_key_html(html_text, max_chars=12000):
+    """Extract the most relevant parts of HTML for AI processing."""
+    soup = BeautifulSoup(html_text, 'html.parser')
+    parts = []
+
+    # Title
+    title = soup.find('title')
+    if title:
+        parts.append(f'<title>{title.get_text()}</title>')
+
+    # Meta tags (og:*)
+    for meta in soup.find_all('meta', attrs={'property': True}):
+        if 'og:' in meta.get('property', ''):
+            parts.append(str(meta))
+
+    # JSON-LD structured data
+    for script in soup.find_all('script', type='application/ld+json'):
+        if script.string:
+            parts.append(f'<script type="application/ld+json">{script.string[:3000]}</script>')
+
+    # Product-related containers
+    product_selectors = [
+        ('span', {'id': 'productTitle'}),
+        ('div', {'id': 'corePriceDisplay_desktop_feature_div'}),
+        ('div', {'id': 'corePrice_desktop'}),
+        ('div', {'id': 'ppd'}),
+        ('h1', {}),
+        ('span', {'class': re.compile(r'price|amount', re.I)}),
+    ]
+
+    product_html = ''
+    for tag, attrs in product_selectors:
+        for el in soup.find_all(tag, attrs, limit=3):
+            chunk = str(el)[:2000]
+            product_html += chunk + '\n'
+            if len(product_html) > 8000:
+                break
+        if len(product_html) > 8000:
+            break
+
+    parts.append(product_html[:8000])
+    combined = '\n'.join(parts)
+    return combined[:max_chars]
+
+
+def _ai_extract_product(html_text, url=''):
+    """Use Gemini Flash to extract product data from HTML."""
+    api_key = _get_gemini_key()
+    if not api_key:
+        return None
+
+    key_html = _extract_key_html(html_text)
+    prompt = _GEMINI_EXTRACT_PROMPT + key_html
+
+    try:
+        resp = requests.post(
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}',
+            json={
+                'contents': [{'parts': [{'text': prompt}]}],
+                'generationConfig': {
+                    'temperature': 0.1,
+                    'maxOutputTokens': 1024,
+                    'responseMimeType': 'application/json',
+                }
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        text = data['candidates'][0]['content']['parts'][0]['text']
+        text = re.sub(r'^```json\s*', '', text.strip())
+        text = re.sub(r'\s*```$', '', text.strip())
+        result = json.loads(text)
+
+        log.info('Gemini AI extracted: %s — ₹%s', result.get('name', '?')[:50], result.get('price'))
+        return result
+
+    except Exception as e:
+        log.warning('Gemini AI extraction failed for %s: %s', url[:80], e)
+        return None
+
+
+def ai_search_product(query):
+    """AI-powered product search — returns structured results from a text query.
+
+    User can type "best earbuds under 2000" and get structured suggestions.
+    """
+    api_key = _get_gemini_key()
+    if not api_key:
+        return {'results': [], 'error': 'AI not configured'}
+
+    prompt = f"""You are a product search assistant for Indian e-commerce. A user searched for:
+"{query}"
+
+Return a JSON object with product suggestions available on Indian e-commerce sites:
+{{
+  "results": [
+    {{
+      "name": "Product Name",
+      "estimated_price": 1299,
+      "platform": "Amazon",
+      "url": "https://www.amazon.in/s?k=encoded+search+query",
+      "why": "Brief reason (15 words max)"
+    }}
+  ],
+  "search_tip": "Brief shopping tip (20 words max)"
+}}
+
+Rules:
+- 5 product suggestions max
+- Only real products on Indian sites (Amazon.in, Flipkart, Myntra, Croma, Nykaa)
+- URLs should be SEARCH URLs (not direct product links)
+- Prices in INR, approximate
+- Vary the platforms
+- Return ONLY valid JSON"""
+
+    try:
+        resp = requests.post(
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}',
+            json={
+                'contents': [{'parts': [{'text': prompt}]}],
+                'generationConfig': {
+                    'temperature': 0.4,
+                    'maxOutputTokens': 1024,
+                    'responseMimeType': 'application/json',
+                }
+            },
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        text = data['candidates'][0]['content']['parts'][0]['text']
+        text = re.sub(r'^```json\s*', '', text.strip())
+        text = re.sub(r'\s*```$', '', text.strip())
+        return json.loads(text)
+    except Exception as e:
+        log.warning('AI search failed: %s', e)
+        return {'results': [], 'error': str(e)}
 
 
 def _parse_amazon(soup, raw_html='', url=''):
@@ -454,14 +643,40 @@ def _parse_generic(soup, raw_html=''):
 
 
 def fetch_product_info(url):
-    """Fetch product name, price, image, MRP, and discount from a product URL.
-    
-    Returns dict with: name, price, mrp, discount, image, platform, success, error.
+    """Fetch product info using AI (primary) + scraping (fallback).
+
+    Returns dict with: name, price, mrp, discount, image, platform, success,
+    rating, rating_count, specs, brand, category, in_stock, ai_used.
     """
     platform = detect_platform(url)
     try:
         soup, raw_html = _fetch_page(url, platform)
 
+        # ── Strategy 1: Try Gemini AI extraction first ──
+        ai_result = _ai_extract_product(raw_html, url)
+
+        if ai_result and ai_result.get('price'):
+            name = ai_result.get('name') or 'Unknown Product'
+            if len(name) > 200:
+                name = name[:197] + '...'
+            return {
+                'name': name,
+                'price': float(ai_result['price']) if ai_result.get('price') else None,
+                'mrp': float(ai_result['mrp']) if ai_result.get('mrp') else None,
+                'discount': int(ai_result['discount_pct']) if ai_result.get('discount_pct') else None,
+                'image': ai_result.get('image'),
+                'platform': platform,
+                'success': True,
+                'rating': float(ai_result['rating']) if ai_result.get('rating') else None,
+                'rating_count': int(ai_result['rating_count']) if ai_result.get('rating_count') else None,
+                'specs': ai_result.get('specs'),
+                'brand': ai_result.get('brand'),
+                'category': ai_result.get('category'),
+                'in_stock': ai_result.get('in_stock', True),
+                'ai_used': True,
+            }
+
+        # ── Strategy 2: Traditional scraping fallback ──
         mrp = None
         discount = None
 
@@ -503,6 +718,7 @@ def fetch_product_info(url):
             'image': image,
             'platform': platform,
             'success': bool(price),
+            'ai_used': False,
         }
     except Exception as e:
         log.warning('Price fetch failed for %s: %s', url, e)
@@ -515,12 +731,12 @@ def fetch_product_info(url):
             'platform': platform,
             'success': False,
             'error': str(e),
+            'ai_used': False,
         }
 
 
 # ── Global price cache helpers ────────────────────────────────
 
-import re as _re
 import hashlib as _hashlib
 
 def normalize_product_key(name):
@@ -533,7 +749,7 @@ def normalize_product_key(name):
     noise = {'buy', 'online', 'india', 'best', 'price', 'new', 'latest',
              'with', 'and', 'the', 'for', 'from', 'in', 'on', 'at', 'to',
              'of', 'by', 'a', 'an', '&', '-', '|', ',', '.', '(', ')', '/'}
-    tokens = _re.findall(r'[a-z0-9]+', name)
+    tokens = re.findall(r'[a-z0-9]+', name)
     tokens = [t for t in tokens if t not in noise and len(t) > 1]
     # Keep first 8 significant tokens, sorted for stability
     key_str = ' '.join(sorted(tokens[:8]))

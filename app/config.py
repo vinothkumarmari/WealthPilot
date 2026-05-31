@@ -76,7 +76,10 @@ class Config:
     RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', '')
     RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
     RAZORPAY_CURRENCY = 'INR'
-    
+
+    # Google Gemini AI (for Price Tracker AI extraction)
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
     # App Version (for cache busting static assets)
     APP_VERSION = os.environ.get('APP_VERSION', '12')
 

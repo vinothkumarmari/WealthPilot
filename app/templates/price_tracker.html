@@ -42,6 +42,28 @@
     </div>
 </div>
 
+<!-- AI Search Section -->
+<div class="card mb-4 border-0" style="background: linear-gradient(135deg, #667eea08, #764ba208); border: 1px solid #667eea22 !important">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="material-icons-outlined text-primary" style="font-size:20px">auto_awesome</span>
+            <h6 class="mb-0 fw-bold">{{ t('AI Product Search') }}</h6>
+            <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:10px">Gemini</span>
+        </div>
+        <p class="text-muted small mb-2">{{ t('Search any product in natural language — AI finds the best options across platforms') }}</p>
+        <div class="input-group">
+            <input type="text" id="ai-search-input" class="form-control"
+                   placeholder="{{ t('e.g. best wireless earbuds under ₹2000, iPhone 15 case, sunscreen for oily skin...') }}">
+            <button class="btn btn-primary" type="button" id="ai-search-btn" onclick="aiSearch()">
+                <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">search</span>
+                {{ t('Search') }}
+            </button>
+        </div>
+        <!-- AI Results Container -->
+        <div id="ai-search-results" class="mt-3" style="display:none"></div>
+    </div>
+</div>
+
 <!-- Tracked Products -->
 {% if products %}
 <div class="row">
@@ -66,10 +88,25 @@
                         <a href="{{ p.url }}" target="_blank" rel="noopener" class="text-decoration-none">
                             <div class="fw-bold mb-1 product-name" title="{{ p.name }}">{{ p.name[:80] }}{% if p.name|length > 80 %}...{% endif %}</div>
                         </a>
-                        <span class="badge" style="background:{{ platform_color(p.platform) }};font-size:11px">
-                            <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">{{ platform_icon(p.platform) }}</span>
-                            {{ p.platform }}
-                        </span>
+                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                            <span class="badge" style="background:{{ platform_color(p.platform) }};font-size:11px">
+                                <span class="material-icons-outlined" style="font-size:13px;vertical-align:middle">{{ platform_icon(p.platform) }}</span>
+                                {{ p.platform }}
+                            </span>
+                            {% if p.ai_extracted %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary" style="font-size:10px" title="AI-extracted data">
+                                <span class="material-icons-outlined" style="font-size:11px;vertical-align:middle">auto_awesome</span> AI
+                            </span>
+                            {% endif %}
+                            {% if p.rating %}
+                            <span class="badge bg-warning bg-opacity-10 text-dark" style="font-size:10px">
+                                ⭐ {{ "%.1f"|format(p.rating) }}{% if p.rating_count %} ({{ p.rating_count | int }}){% endif %}
+                            </span>
+                            {% endif %}
+                            {% if p.brand %}
+                            <span class="text-muted" style="font-size:11px">{{ p.brand }}</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
@@ -103,6 +140,20 @@
                     {% if p.current_price and p.current_price <= p.target_price %}
                     <span class="badge bg-success ms-1 animate-pulse">{{ t('Price dropped!') }}</span>
                     {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- AI Specs (collapsible) -->
+                {% if p.specs %}
+                <div class="mb-2">
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for spec in p.specs[:3] %}
+                        <span class="badge bg-light text-dark border" style="font-size:10px;font-weight:normal">{{ spec }}</span>
+                        {% endfor %}
+                        {% if p.specs|length > 3 %}
+                        <span class="badge bg-light text-muted border" style="font-size:10px;font-weight:normal">+{{ p.specs|length - 3 }} more</span>
+                        {% endif %}
+                    </div>
                 </div>
                 {% endif %}
 
@@ -915,5 +966,72 @@ function showCompareModal(data, productName) {
     bsModal.show();
     modal.addEventListener('hidden.bs.modal', () => modal.remove());
 }
+
+// ── AI Search ──
+function aiSearch() {
+    const input = document.getElementById('ai-search-input');
+    const btn = document.getElementById('ai-search-btn');
+    const results = document.getElementById('ai-search-results');
+    const query = input.value.trim();
+    if (!query || query.length < 3) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    results.style.display = 'block';
+    results.innerHTML = '<div class="text-center py-3"><span class="spinner-border spinner-border-sm text-primary"></span> <span class="text-muted small">AI is searching across platforms...</span></div>';
+
+    fetch('{{ url_for("main.price_tracker_ai_search") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
+        body: JSON.stringify({query: query})
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">search</span> Search';
+        if (data.error && !data.results?.length) {
+            results.innerHTML = `<div class="alert alert-warning small mb-0"><span class="material-icons-outlined" style="font-size:16px;vertical-align:middle">warning</span> ${data.error}</div>`;
+            return;
+        }
+        let html = '';
+        if (data.search_tip) {
+            html += `<div class="alert alert-info small py-2 mb-2"><span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">tips_and_updates</span> ${data.search_tip}</div>`;
+        }
+        if (data.results && data.results.length) {
+            html += '<div class="list-group list-group-flush">';
+            data.results.forEach((item, i) => {
+                const color = {
+                    'Amazon': '#FF9900', 'Flipkart': '#2874F0', 'Myntra': '#FF3F6C',
+                    'Croma': '#00A859', 'Nykaa': '#FC2779', 'JioMart': '#0078D4'
+                }[item.platform] || '#6c757d';
+                html += `
+                <a href="${item.url}" target="_blank" rel="noopener" class="list-group-item list-group-item-action p-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge" style="background:${color};font-size:10px;min-width:60px">${item.platform}</span>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">${item.name}</div>
+                            <div class="text-muted" style="font-size:11px">${item.why || ''}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-primary">~₹${item.estimated_price?.toLocaleString('en-IN') || '?'}</div>
+                        </div>
+                    </div>
+                </a>`;
+            });
+            html += '</div>';
+        }
+        results.innerHTML = html || '<div class="text-muted small">No results found.</div>';
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">search</span> Search';
+        results.innerHTML = '<div class="alert alert-danger small mb-0">Search failed. Try again.</div>';
+    });
+}
+
+// Enter key for AI search
+document.getElementById('ai-search-input')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); aiSearch(); }
+});
 </script>
 {% endblock %}

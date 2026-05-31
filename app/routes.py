@@ -3329,6 +3329,12 @@ def price_tracker_add():
         max_price=info.get('price'),
         target_price=target_price,
         last_checked=datetime.now(timezone.utc),
+        rating=info.get('rating'),
+        rating_count=info.get('rating_count'),
+        brand=info.get('brand'),
+        category=info.get('category'),
+        specs_json=json.dumps(info['specs']) if info.get('specs') else None,
+        ai_extracted=bool(info.get('ai_used')),
     )
     db.session.add(product)
     db.session.flush()
@@ -3341,7 +3347,8 @@ def price_tracker_add():
     db.session.commit()
 
     if info.get('success'):
-        flash(f'Now tracking: {product.name} — ₹{product.current_price:,.0f}', 'success')
+        ai_badge = ' 🤖' if info.get('ai_used') else ''
+        flash(f'Now tracking: {product.name} — ₹{product.current_price:,.0f}{ai_badge}', 'success')
     else:
         flash(f'Product added but price could not be fetched. We\'ll retry later.', 'warning')
 
@@ -3591,6 +3598,20 @@ def price_tracker_compare(product_id):
         'platforms': platforms,
         'lowest_price': lowest,
     })
+
+
+@main.route('/price-tracker/ai-search', methods=['POST'])
+@login_required
+def price_tracker_ai_search():
+    """AI-powered product search — user types a query, gets smart suggestions."""
+    from .price_tracker import ai_search_product
+    query = request.form.get('query', '').strip() or request.json.get('query', '').strip() if request.is_json else request.form.get('query', '').strip()
+    if not query or len(query) < 3:
+        return jsonify({'error': 'Query too short', 'results': []})
+    if len(query) > 200:
+        query = query[:200]
+    result = ai_search_product(query)
+    return jsonify(result)
 
 
 @main.route('/ai-playbooks')

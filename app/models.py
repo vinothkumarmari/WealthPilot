@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime, timezone
+import json
 
 db = SQLAlchemy()
 
@@ -397,8 +398,25 @@ class TrackedProduct(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     last_checked = db.Column(db.DateTime)
+    # AI-extracted fields
+    rating = db.Column(db.Float)
+    rating_count = db.Column(db.Integer)
+    brand = db.Column(db.String(200))
+    category = db.Column(db.String(100))
+    specs_json = db.Column(db.Text)  # JSON array of "key: value" strings
+    ai_extracted = db.Column(db.Boolean, default=False)
     price_history = db.relationship('PriceHistory', backref='product', lazy=True, cascade='all, delete-orphan')
     owner = db.relationship('User', backref=db.backref('tracked_products', lazy=True, cascade='all, delete-orphan'))
+
+    @property
+    def specs(self):
+        """Parse specs_json into a list."""
+        if self.specs_json:
+            try:
+                return json.loads(self.specs_json)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return []
 
 
 class PriceHistory(db.Model):
