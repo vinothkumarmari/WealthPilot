@@ -62,6 +62,25 @@ public class SmsSyncService {
     }
 
     /**
+     * Sync a batch of SMS messages (called from SmsInboxReader).
+     */
+    public static void syncBatch(Context context, JSONArray messages) {
+        backgroundHandler.post(() -> {
+            try {
+                SmsPreferences prefs = new SmsPreferences(context);
+                String token = prefs.getToken();
+                if (token.isEmpty() || !prefs.isEnabled()) return;
+
+                sendToServer(token, messages);
+                prefs.setLastSyncTimestamp(System.currentTimeMillis());
+                Log.i(TAG, "Batch sync completed: " + messages.length() + " SMS sent");
+            } catch (Exception e) {
+                Log.e(TAG, "Error syncing batch SMS", e);
+            }
+        });
+    }
+
+    /**
      * Send SMS messages to the server API.
      */
     private static void sendToServer(String token, JSONArray messages) {

@@ -125,11 +125,27 @@ public class SmsSyncSetupActivity extends Activity {
 
         // Info text
         TextView realtimeInfo = new TextView(this);
-        realtimeInfo.setText("⚡ Real-time mode: Only new incoming bank SMS will be processed automatically. We never read your SMS history.");
+        realtimeInfo.setText("📱 How it works:\n" +
+                "• Real-time: New bank SMS are automatically detected and added\n" +
+                "• Inbox Scan: Tap below to read recent bank SMS from your inbox\n" +
+                "• Only bank/UPI transaction SMS are processed — personal messages are never read");
         realtimeInfo.setTextSize(13);
         realtimeInfo.setTextColor(0xFF6C5CE7);
         realtimeInfo.setPadding(0, 0, 0, 16);
         layout.addView(realtimeInfo);
+
+        // Scan Inbox button
+        Button scanBtn = new Button(this);
+        scanBtn.setText("📥 Scan SMS Inbox (Last 7 Days)");
+        scanBtn.setBackgroundColor(0xFF00B894);
+        scanBtn.setTextColor(0xFFFFFFFF);
+        scanBtn.setOnClickListener(v -> scanInbox(scanBtn));
+        layout.addView(scanBtn);
+
+        // Spacer
+        View spacer5 = new View(this);
+        spacer5.setMinimumHeight(16);
+        layout.addView(spacer5);
 
         // Back button
         Button backBtn = new Button(this);
@@ -173,13 +189,15 @@ public class SmsSyncSetupActivity extends Activity {
     }
 
     private boolean hasSmsPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void requestSmsPermission() {
         ActivityCompat.requestPermissions(this,
                 new String[]{
-                        Manifest.permission.RECEIVE_SMS
+                        Manifest.permission.RECEIVE_SMS,
+                        Manifest.permission.READ_SMS
                 },
                 PERMISSION_REQUEST_CODE);
     }
@@ -216,13 +234,55 @@ public class SmsSyncSetupActivity extends Activity {
             sb.append("⚫ Disabled");
         }
         sb.append("\nSMS Permission: ");
-        sb.append(hasSmsPermission() ? "✅ Granted" : "❌ Not Granted");
+        boolean hasReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED;
+        boolean hasRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED;
+        if (hasReceive && hasRead) {
+            sb.append("✅ Receive & Read Granted");
+        } else if (hasReceive) {
+            sb.append("⚠️ Receive Only (tap Save to grant Read)");
+        } else {
+            sb.append("❌ Not Granted");
+        }
 
         long lastSync = prefs.getLastSyncTimestamp();
         if (lastSync > 0) {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault());
             sb.append("\nLast sync: ").append(sdf.format(new java.util.Date(lastSync)));
         }
+
+        long lastInbox = prefs.getLastInboxSyncTimestamp();
+        if (lastInbox > 0) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault());
+            sb.append("\nLast inbox scan: ").append(sdf.format(new java.util.Date(lastInbox)));
+        }
+
         statusText.setText(sb.toString());
+    }
+
+    private void scanInbox(Button btn) {
+        if (!prefs.isEnabled() || prefs.getToken().isEmpty()) {
+            Toast.makeText(this, "Please save your token and enable sync first", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            // Need READ_SMS permission
+            requestSmsPermission();
+            Toast.makeText(this, "Please grant SMS permission first, then tap Scan again", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        btn.setEnabled(false);
+        btn.setText("⏳ Scanning...");
+
+        new Thread(() -> {
+            SmsInboxReader.readAndSync(SmsSyncSetupActivity.this);
+            runOnUiThread(() -> {
+                btn.setEnabled(true);
+                btn.setText("📥 Scan SMS Inbox (Last 7 Days)");
+                updateStatus();
+                Toast.makeText(SmsSyncSetupActivity.this, "✅ Inbox scan complete! Check your expenses & income.", Toast.LENGTH_LONG).show();
+            });
+        }).start();
     }
 }

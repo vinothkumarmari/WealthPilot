@@ -15,11 +15,14 @@
  */
 package in.mywealthpilot.twa;
 
+import android.Manifest;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
+import androidx.core.content.ContextCompat;
 
 
 public class LauncherActivity
@@ -41,7 +44,12 @@ public class LauncherActivity
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         }
 
-        // SMS sync is real-time only — SmsBroadcastReceiver handles incoming SMS automatically
+        // Auto-scan inbox on launch if SMS sync is enabled and permission is granted
+        SmsPreferences prefs = new SmsPreferences(this);
+        if (prefs.isEnabled() && !prefs.getToken().isEmpty()
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED) {
+            new Thread(() -> SmsInboxReader.readAndSync(LauncherActivity.this)).start();
+        }
     }
 
     @Override

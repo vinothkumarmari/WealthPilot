@@ -11,6 +11,7 @@ public class SmsPreferences {
     private static final String KEY_TOKEN = "sms_sync_token";
     private static final String KEY_ENABLED = "sms_sync_enabled";
     private static final String KEY_LAST_SYNC = "last_sync_timestamp";
+    private static final String KEY_LAST_INBOX_SYNC = "last_inbox_sync_timestamp";
 
     private final SharedPreferences prefs;
 
@@ -41,6 +42,14 @@ public class SmsPreferences {
 
     public void setLastSyncTimestamp(long timestamp) {
         prefs.edit().putLong(KEY_LAST_SYNC, timestamp).apply();
+    }
+
+    public long getLastInboxSyncTimestamp() {
+        return prefs.getLong(KEY_LAST_INBOX_SYNC, 0);
+    }
+
+    public void setLastInboxSyncTimestamp(long timestamp) {
+        prefs.edit().putLong(KEY_LAST_INBOX_SYNC, timestamp).apply();
     }
 
     public void clear() {
