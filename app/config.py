@@ -39,11 +39,12 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
         'pool_recycle': 120,        # Recycle stale connections sooner
-        'pool_size': 3,             # Small pool for free tier
-        'max_overflow': 2,          # Allow 2 extra connections under load
+        'pool_size': 2,             # Smaller pool — 2 workers × 2 = 4 max
+        'max_overflow': 1,          # Only 1 extra under burst
         'pool_timeout': 20,         # Wait max 20s for a connection
+        'pool_reset_on_return': 'rollback',
         'connect_args': {
-            'prepare_threshold': 0,  # Required for PgBouncer transaction mode
+            'prepare_threshold': None,  # Completely disable prepared stmts for PgBouncer
         },
     } if _is_postgres else {
         'pool_pre_ping': True,
