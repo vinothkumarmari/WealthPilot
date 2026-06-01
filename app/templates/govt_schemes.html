@@ -6,6 +6,57 @@
     <p class="text-muted">Central & State Government savings and investment schemes</p>
 </div>
 
+<!-- Subsidy Eligibility Checker -->
+<div class="card mb-4 border-0" style="background:linear-gradient(135deg,#6C5CE715,#8E2DE208);border-left:4px solid #6C5CE7 !important;">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="material-icons-outlined" style="color:#6C5CE7;font-size:28px">fact_check</span>
+            <div>
+                <h6 class="mb-0 fw-bold">{{ t('Check Your Eligibility') }}</h6>
+                <small class="text-muted">{{ t('Enter your details to find which govt schemes you qualify for') }}</small>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3 col-6">
+                <label class="form-label small fw-bold">{{ t('Monthly Income') }} (₹)</label>
+                <input type="number" class="form-control" id="eligIncome" placeholder="e.g. 25000" min="0">
+            </div>
+            <div class="col-md-2 col-6">
+                <label class="form-label small fw-bold">{{ t('Age') }}</label>
+                <input type="number" class="form-control" id="eligAge" placeholder="e.g. 35" min="18" max="100" value="{{ current_user.age or '' }}">
+            </div>
+            <div class="col-md-2 col-6">
+                <label class="form-label small fw-bold">{{ t('Category') }}</label>
+                <select class="form-select" id="eligCategory">
+                    <option value="general">General</option>
+                    <option value="obc">OBC</option>
+                    <option value="sc">SC</option>
+                    <option value="st">ST</option>
+                    <option value="minority">Minority</option>
+                </select>
+            </div>
+            <div class="col-md-2 col-6">
+                <label class="form-label small fw-bold">{{ t('Occupation') }}</label>
+                <select class="form-select" id="eligOccupation">
+                    <option value="salaried">Salaried</option>
+                    <option value="farmer">Farmer</option>
+                    <option value="daily_wage">Daily Wage</option>
+                    <option value="self_employed">Self-Employed</option>
+                    <option value="student">Student</option>
+                    <option value="senior">Senior Citizen</option>
+                    <option value="homemaker">Homemaker</option>
+                </select>
+            </div>
+            <div class="col-md-3 col-12 d-flex align-items-end">
+                <button class="btn w-100" style="background:linear-gradient(135deg,#6C5CE7,#8E2DE2);color:#fff;" onclick="checkEligibility()">
+                    <span class="material-icons-outlined me-1" style="font-size:18px;vertical-align:middle">search</span>{{ t('Find My Schemes') }}
+                </button>
+            </div>
+        </div>
+        <div id="eligResults" class="mt-3" style="display:none;"></div>
+    </div>
+</div>
+
 <!-- Filter -->
 <div class="row mb-4">
     <div class="col-md-4">
@@ -1030,6 +1081,119 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+function checkEligibility() {
+    const income = parseFloat(document.getElementById('eligIncome').value) || 0;
+    const age = parseInt(document.getElementById('eligAge').value) || 0;
+    const category = document.getElementById('eligCategory').value;
+    const occupation = document.getElementById('eligOccupation').value;
+    const annualIncome = income * 12;
+
+    if (!income || !age) { alert('Please enter your monthly income and age'); return; }
+
+    const eligible = [];
+    const isBPL = annualIncome <= 300000;
+    const isLowIncome = annualIncome <= 500000;
+    const isFarmer = occupation === 'farmer';
+    const isDailyWage = occupation === 'daily_wage';
+    const isSCSTOBC = ['sc','st','obc','minority'].includes(category);
+
+    // PM Kisan Samman Nidhi
+    if (isFarmer) {
+        eligible.push({ name: 'PM Kisan Samman Nidhi', icon: '🌾', benefit: '₹6,000/year (₹2,000 every 4 months)', who: 'All land-holding farmers', desc: 'Direct income support to farmer families. Register via PM Kisan portal or CSC center.' });
+    }
+
+    // Ayushman Bharat (PM-JAY)
+    if (isLowIncome || isBPL || isDailyWage) {
+        eligible.push({ name: 'Ayushman Bharat (PM-JAY)', icon: '🏥', benefit: '₹5 lakh/year free health cover per family', who: 'Annual income < ₹5 lakh', desc: 'Free cashless treatment at empanelled hospitals. Get your Ayushman card at any CSC center.' });
+    }
+
+    // Atal Pension Yojana
+    if (age >= 18 && age <= 40) {
+        eligible.push({ name: 'Atal Pension Yojana (APY)', icon: '🧓', benefit: '₹1,000-5,000/month pension after 60', who: 'Age 18-40, no income tax payer', desc: 'Guaranteed pension scheme. Enroll through any bank with Aadhaar and savings account.' });
+    }
+
+    // PM Awas Yojana
+    if (isLowIncome) {
+        let awasCategory = annualIncome <= 300000 ? 'EWS' : 'LIG';
+        eligible.push({ name: 'PM Awas Yojana', icon: '🏠', benefit: '₹1.5-2.67 lakh subsidy on home loan interest', who: `${awasCategory} category (income < ₹6 lakh)`, desc: 'Interest subsidy on home loans for first-time home buyers. Apply through bank or housing finance company.' });
+    }
+
+    // PM Ujjwala Yojana
+    if (isBPL && (occupation === 'homemaker' || isDailyWage || isFarmer)) {
+        eligible.push({ name: 'PM Ujjwala Yojana', icon: '🔥', benefit: 'Free LPG connection + subsidy', who: 'BPL households', desc: 'Free cooking gas connection. Apply at nearest LPG distributor with BPL ration card.' });
+    }
+
+    // Sukanya Samriddhi
+    eligible.push({ name: 'Sukanya Samriddhi Yojana', icon: '👧', benefit: '8.2% interest + tax free, for daughters', who: 'Any parent with girl child (age 0-10)', desc: 'High-interest savings for girl child education/marriage. Open at post office or bank. Min ₹250/year.' });
+
+    // PM Mudra Loan
+    if (['self_employed','farmer','daily_wage'].includes(occupation)) {
+        eligible.push({ name: 'PM Mudra Yojana', icon: '💼', benefit: 'Loans up to ₹10 lakh without collateral', who: 'Self-employed, small business, vendors', desc: 'Three categories: Shishu (up to ₹50K), Kishore (₹50K-5L), Tarun (5L-10L). Apply at any bank.' });
+    }
+
+    // Stand Up India
+    if (isSCSTOBC && ['self_employed','farmer'].includes(occupation)) {
+        eligible.push({ name: 'Stand Up India', icon: '🚀', benefit: '₹10 lakh - ₹1 crore loan for business', who: 'SC/ST/Women entrepreneurs', desc: 'Bank loan for greenfield enterprises. At least one loan per bank branch to SC/ST borrower.' });
+    }
+
+    // National Pension System
+    if (age >= 18 && age <= 65) {
+        eligible.push({ name: 'National Pension System (NPS)', icon: '📊', benefit: 'Tax saving + market-linked pension', who: 'All citizens 18-65', desc: 'Additional ₹50,000 tax deduction under 80CCD(1B). Open NPS account online or at POP.' });
+    }
+
+    // PM Vishwakarma
+    if (['daily_wage','self_employed'].includes(occupation)) {
+        eligible.push({ name: 'PM Vishwakarma Yojana', icon: '🔨', benefit: 'Skill training + ₹3 lakh loan at 5%', who: 'Artisans & craftspeople (18+ trades)', desc: 'For carpenters, blacksmiths, tailors, cobblers, etc. Apply via CSC or pmvishwakarma.gov.in.' });
+    }
+
+    // MGNREGA
+    if (isDailyWage || isFarmer) {
+        eligible.push({ name: 'MGNREGA', icon: '⛏️', benefit: '100 days guaranteed employment/year', who: 'Rural households', desc: 'Apply for job card at Gram Panchayat. Current wage ₹250-350/day depending on state.' });
+    }
+
+    // KVP & NSC
+    eligible.push({ name: 'Kisan Vikas Patra (KVP)', icon: '📜', benefit: 'Money doubles in 115 months (7.5% rate)', who: 'Any Indian citizen', desc: 'Safe govt-backed investment. Buy at post office. Min ₹1,000.' });
+
+    // Senior citizens
+    if (age >= 60) {
+        eligible.push({ name: 'PM Vaya Vandana Yojana', icon: '🧡', benefit: '7.4% guaranteed returns for seniors', who: 'Citizens aged 60+', desc: 'Pension scheme by LIC. Max investment ₹15 lakh. Monthly/quarterly/annual pension options.' });
+        eligible.push({ name: 'Senior Citizen Savings Scheme', icon: '🏦', benefit: '8.2% interest, quarterly payout', who: 'Citizens aged 60+', desc: 'Available at post offices and banks. Max ₹30 lakh. 5-year tenure, extendable by 3 years.' });
+    }
+
+    // Render results
+    const container = document.getElementById('eligResults');
+    container.style.display = '';
+
+    if (eligible.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">No matching schemes found. Try adjusting your details.</div>';
+        return;
+    }
+
+    let html = `<div class="alert alert-success py-2 mb-3"><strong>${eligible.length} scheme(s)</strong> you may be eligible for:</div>`;
+    html += '<div class="row g-2">';
+    eligible.forEach(s => {
+        html += `
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex gap-2 align-items-start">
+                        <span style="font-size:24px">${s.icon}</span>
+                        <div>
+                            <h6 class="mb-0 fw-bold">${s.name}</h6>
+                            <span class="badge bg-success bg-opacity-10 text-success small">${s.benefit}</span>
+                            <p class="text-muted small mb-1 mt-1">${s.desc}</p>
+                            <small class="text-muted"><em>Who: ${s.who}</em></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 </script>
 {% endblock %}
 
