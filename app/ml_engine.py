@@ -111,6 +111,270 @@ class FinancialAdvisor:
             'debt_ratio': round(debt_ratio, 1),
             'expense_ratio': round(expense_ratio, 1)
         }
+
+    def calculate_wealth_pulse(self, data):
+        """
+        Calculate Wealth Pulse — a comprehensive 0-100 financial health score
+        using 9 dimensions from all tracked data.
+
+        ``data`` dict keys (all pre-computed in dashboard route):
+            monthly_income, month_expenses, monthly_net_savings,
+            total_investments, total_assets, total_debts,
+            net_worth, bank_balance, pf_balance,
+            total_sum_assured, monthly_commitments,
+            total_loan_emi, total_loan_outstanding,
+            goals (list of FinancialGoal objects),
+            active_loans (list of Loan objects),
+            investment_type_count (int),
+            months_with_surplus (int), total_tracked_months (int),
+            emergency_months_target (float, default 6),
+        """
+        monthly_income = float(data.get('monthly_income', 0))
+        month_expenses = float(data.get('month_expenses', 0))
+        savings = float(data.get('monthly_net_savings', 0))
+        total_investments = float(data.get('total_investments', 0))
+        total_assets = float(data.get('total_assets', 0))
+        total_debts = float(data.get('total_debts', 0))
+        net_worth = float(data.get('net_worth', 0))
+        bank_balance = float(data.get('bank_balance', 0))
+        pf_balance = float(data.get('pf_balance', 0))
+        total_sum_assured = float(data.get('total_sum_assured', 0))
+        monthly_commitments = float(data.get('monthly_commitments', 0))
+        total_loan_emi = float(data.get('total_loan_emi', 0))
+        goals = data.get('goals', [])
+        inv_type_count = int(data.get('investment_type_count', 0))
+        months_surplus = int(data.get('months_with_surplus', 0))
+        total_months = int(data.get('total_tracked_months', 1)) or 1
+        emergency_target = float(data.get('emergency_months_target', 6))
+
+        dimensions = {}
+        advice = []
+
+        # ── 1. Savings Rate (0-15) ──
+        if monthly_income > 0:
+            sr = savings / monthly_income
+            if sr >= 0.30:
+                d = 15
+            elif sr >= 0.20:
+                d = 12
+            elif sr >= 0.10:
+                d = 8
+            elif sr > 0:
+                d = 4
+            else:
+                d = 0
+                advice.append('Your expenses exceed income. Cut discretionary spending.')
+        else:
+            d = 0
+            advice.append('Add your income to start tracking savings rate.')
+        dimensions['savings'] = d
+
+        # ── 2. Spending Discipline (0-15) ──
+        if total_months > 1 and monthly_income > 0:
+            consistency = months_surplus / total_months
+            if consistency >= 0.90:
+                d = 15
+            elif consistency >= 0.75:
+                d = 12
+            elif consistency >= 0.50:
+                d = 8
+            elif consistency > 0:
+                d = 4
+            else:
+                d = 0
+                advice.append('You overspend most months. Set budget alerts.')
+        elif monthly_income > 0 and savings > 0:
+            d = 8
+        else:
+            d = 3
+        dimensions['discipline'] = d
+
+        # ── 3. Emergency Readiness (0-12) ──
+        avg_expense = month_expenses if month_expenses > 0 else (monthly_income * 0.5 if monthly_income > 0 else 1)
+        if avg_expense > 0:
+            months_covered = bank_balance / avg_expense
+            if months_covered >= emergency_target:
+                d = 12
+            elif months_covered >= 6:
+                d = 10
+            elif months_covered >= 3:
+                d = 7
+            elif months_covered >= 1:
+                d = 4
+            else:
+                d = 1
+                advice.append(f'Emergency fund covers only {months_covered:.1f} months. Target {int(emergency_target)}.')
+        else:
+            d = 3
+        dimensions['emergency'] = d
+
+        # ── 4. Debt Health (0-12) ──
+        if monthly_income > 0:
+            dti = total_loan_emi / monthly_income
+            if total_debts == 0 and total_loan_emi == 0:
+                d = 12
+            elif dti < 0.20:
+                d = 10
+            elif dti < 0.30:
+                d = 8
+            elif dti < 0.40:
+                d = 5
+            elif dti < 0.50:
+                d = 3
+            else:
+                d = 1
+                advice.append(f'Debt-to-income ratio is {dti:.0%}. Consider debt consolidation.')
+        elif total_debts == 0:
+            d = 10
+        else:
+            d = 2
+        dimensions['debt'] = d
+
+        # ── 5. Investment Growth (0-15) ──
+        annual_income = monthly_income * 12
+        if annual_income > 0:
+            inv_rate = total_investments / annual_income
+            if inv_rate >= 0.30:
+                d = 15
+            elif inv_rate >= 0.20:
+                d = 12
+            elif inv_rate >= 0.10:
+                d = 8
+            elif inv_rate > 0:
+                d = 4
+            else:
+                d = 0
+                advice.append('Start investing — even small SIPs build wealth over time.')
+        elif total_investments > 0:
+            d = 5
+        else:
+            d = 0
+        dimensions['investments'] = d
+
+        # ── 6. Insurance Shield (0-10) ──
+        if annual_income > 0 and total_sum_assured > 0:
+            cover_ratio = total_sum_assured / annual_income
+            if cover_ratio >= 10:
+                d = 10
+            elif cover_ratio >= 5:
+                d = 8
+            elif cover_ratio >= 3:
+                d = 5
+            elif cover_ratio > 0:
+                d = 3
+            else:
+                d = 0
+        elif total_sum_assured > 0:
+            d = 4
+        else:
+            d = 0
+            if monthly_income > 0:
+                advice.append('No insurance coverage detected. Add term + health policies.')
+        dimensions['insurance'] = d
+
+        # ── 7. Goal Progress (0-10) ──
+        if goals:
+            on_track = sum(1 for g in goals if g.target_amount > 0 and g.current_saved / g.target_amount >= 0.25)
+            ratio = on_track / len(goals)
+            if ratio >= 0.80:
+                d = 10
+            elif ratio >= 0.50:
+                d = 7
+            elif ratio >= 0.25:
+                d = 4
+            else:
+                d = 2
+                advice.append('Most goals are under-funded. Increase goal contributions.')
+        else:
+            d = 0
+            if monthly_income > 0:
+                advice.append('Set financial goals to give your savings a purpose.')
+        dimensions['goals'] = d
+
+        # ── 8. Net Worth Momentum (0-6) ──
+        if net_worth > 0 and monthly_income > 0:
+            nw_ratio = net_worth / annual_income
+            if nw_ratio >= 3:
+                d = 6
+            elif nw_ratio >= 1.5:
+                d = 4
+            elif nw_ratio >= 0.5:
+                d = 2
+            else:
+                d = 1
+        elif net_worth > 0:
+            d = 3
+        else:
+            d = 0
+        dimensions['networth'] = d
+
+        # ── 9. Diversification (0-5) ──
+        if inv_type_count >= 5:
+            d = 5
+        elif inv_type_count >= 3:
+            d = 3
+        elif inv_type_count >= 1:
+            d = 1
+        else:
+            d = 0
+            if total_investments > 0:
+                advice.append('Diversify — your investments are concentrated in too few types.')
+        dimensions['diversification'] = d
+
+        # ── Total Score ──
+        score = sum(dimensions.values())
+        score = min(100, max(0, score))
+
+        # ── Grade ──
+        if score >= 85:
+            grade = 'Excellent'
+            color = '#00b894'
+            emoji = 'favorite'
+        elif score >= 70:
+            grade = 'Strong'
+            color = '#00cec9'
+            emoji = 'monitor_heart'
+        elif score >= 55:
+            grade = 'Steady'
+            color = '#fdcb6e'
+            emoji = 'healing'
+        elif score >= 40:
+            grade = 'Building'
+            color = '#e17055'
+            emoji = 'trending_up'
+        elif score >= 25:
+            grade = 'Fragile'
+            color = '#d63031'
+            emoji = 'heart_broken'
+        else:
+            grade = 'Critical'
+            color = '#636e72'
+            emoji = 'emergency'
+
+        return {
+            'score': score,
+            'grade': grade,
+            'color': color,
+            'icon': emoji,
+            'dimensions': dimensions,
+            'advice': advice[:3],  # top 3 actionable tips
+            'dimension_labels': {
+                'savings': 'Savings Rate',
+                'discipline': 'Spending Discipline',
+                'emergency': 'Emergency Fund',
+                'debt': 'Debt Health',
+                'investments': 'Investment Growth',
+                'insurance': 'Insurance Shield',
+                'goals': 'Goal Progress',
+                'networth': 'Net Worth',
+                'diversification': 'Diversification',
+            },
+            'dimension_max': {
+                'savings': 15, 'discipline': 15, 'emergency': 12,
+                'debt': 12, 'investments': 15, 'insurance': 10,
+                'goals': 10, 'networth': 6, 'diversification': 5,
+            },
+        }
     
     def get_budget_analysis(self, monthly_salary, expenses_by_category, ratios=None):
         """Analyze budget using customizable rule (default 50/30/20)"""

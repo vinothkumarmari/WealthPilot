@@ -2163,6 +2163,40 @@ def dashboard():
         },
     ]
 
+    # ── Wealth Pulse (comprehensive 0-100 score) ──
+    _months_with_surplus = sum(
+        1 for item in month_trend
+        if isinstance(item, dict) and item.get('income', 0) > item.get('expense', 0)
+    )
+    _inv_types_used = set()
+    for _t, _a in inv_by_type:
+        _inv_types_used.add(_t)
+    if total_sip_invested > 0:
+        _inv_types_used.add('SIP')
+    if float(total_pf_balance) > 0:
+        _inv_types_used.add('PF')
+
+    wealth_pulse = advisor.calculate_wealth_pulse({
+        'monthly_income': dashboard_income,
+        'month_expenses': float(month_expenses),
+        'monthly_net_savings': float(monthly_net_savings),
+        'total_investments': total_investments_all,
+        'total_assets': total_assets_value,
+        'total_debts': total_debts,
+        'net_worth': net_worth,
+        'bank_balance': float(total_bank_balance),
+        'pf_balance': float(total_pf_balance),
+        'total_sum_assured': total_sum_assured,
+        'monthly_commitments': monthly_commitments,
+        'total_loan_emi': total_loan_emi,
+        'total_loan_outstanding': total_loan_outstanding,
+        'goals': goals,
+        'active_loans': active_loans,
+        'investment_type_count': len(_inv_types_used),
+        'months_with_surplus': _months_with_surplus,
+        'total_tracked_months': len(month_trend) if month_trend else 1,
+    })
+
     return render_template('dashboard.html',
         total_income=dashboard_income,
         total_expenses=total_expenses,
@@ -2201,6 +2235,7 @@ def dashboard():
         future_monthly_target=future_target,
         future_emergency_target=emergency_target,
         future_target_year=future_target_year,
+        wealth_pulse=wealth_pulse,
     )
 
 
