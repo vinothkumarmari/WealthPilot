@@ -200,9 +200,9 @@
                 <span>{{ t('Govt Schemes') }}</span>
                 {% if not has_access('main.govt_schemes') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
-            <a href="{{ url_for('main.farmer_package') }}" class="nav-link {% if request.endpoint == 'main.farmer_package' %}active{% endif %}" title="Farmer Smart Package">
+            <a href="{{ url_for('main.farmer_package') }}" class="nav-link {% if request.endpoint == 'main.farmer_package' %}active{% endif %}" title="{{ t('Farmer Smart Package') }}">
                 <span class="material-icons-outlined">agriculture</span>
-                <span>Farmer Smart</span>
+                <span>{{ t('Farmer Smart') }}</span>
                 {% if not has_access('main.farmer_package') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.indian_budget') }}" class="nav-link {% if request.endpoint == 'main.indian_budget' %}active{% endif %}" title="{{ t('Indian Budget') }}">

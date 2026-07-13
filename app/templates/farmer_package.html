@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Farmer Smart Package - MyWealthPilot{% endblock %}
+{% block title %}{{ t('Farmer Smart Package') }} - MyWealthPilot{% endblock %}
 
 {% block content %}
 <style>
@@ -55,15 +55,15 @@
         <div>
             <div class="d-inline-flex align-items-center gap-2 mb-2 px-3 py-2 rounded-pill" style="background: rgba(22,101,52,0.12); color: #166534; font-weight: 700;">
                 <span class="material-icons-outlined">agriculture</span>
-                Farmer Smart Package
+                {{ t('Farmer Smart Package') }}
             </div>
-            <div class="farmer-hero-title">Farm budgeting, daily logs, climate cues, and guided decisions</div>
-            <p class="text-muted mb-0 mt-2">Build season plans, watch your working-capital gap, log daily field activity, and get location-aware farming suggestions in one workflow.</p>
+            <div class="farmer-hero-title">{{ t('Farm budgeting, daily logs, climate cues, and guided decisions') }}</div>
+            <p class="text-muted mb-0 mt-2">{{ t('Build season plans, watch your working-capital gap, log daily field activity, and get location-aware farming suggestions in one workflow.') }}</p>
         </div>
         <div class="text-lg-end">
-            <div class="small text-muted">Latest crop plan</div>
-            <div class="fw-semibold">{{ latest_plan.crop_name if latest_plan else 'No season plan saved yet' }}</div>
-            <div class="small text-muted">{{ profile.location_name if profile and profile.location_name else 'Add location for climate guidance' }}</div>
+            <div class="small text-muted">{{ t('Latest crop plan') }}</div>
+            <div class="fw-semibold">{{ latest_plan.crop_name if latest_plan else t('No season plan saved yet') }}</div>
+            <div class="small text-muted">{{ profile.location_name if profile and profile.location_name else t('Add location for climate guidance') }}</div>
         </div>
     </div>
 </div>
@@ -71,30 +71,30 @@
 <div class="row g-3 mb-4">
     <div class="col-md-6 col-xl-3">
         <div class="farmer-kpi">
-            <div class="farmer-kpi-label">Season Cost</div>
+            <div class="farmer-kpi-label">{{ t('Season Cost') }}</div>
             <div class="farmer-kpi-value">₹{{ (metrics.total_cost if metrics else 0)|inr }}</div>
-            <div class="small text-muted">Latest saved crop budget</div>
+            <div class="small text-muted">{{ t('Latest saved crop budget') }}</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
         <div class="farmer-kpi">
-            <div class="farmer-kpi-label">Expected Profit</div>
+            <div class="farmer-kpi-label">{{ t('Expected Profit') }}</div>
             <div class="farmer-kpi-value {% if metrics and metrics.expected_profit < 0 %}text-danger{% else %}text-success{% endif %}">₹{{ (metrics.expected_profit if metrics else 0)|inr }}</div>
-            <div class="small text-muted">Revenue minus total crop cost</div>
+            <div class="small text-muted">{{ t('Revenue minus total crop cost') }}</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
         <div class="farmer-kpi">
-            <div class="farmer-kpi-label">Working Capital Gap</div>
+            <div class="farmer-kpi-label">{{ t('Working Capital Gap') }}</div>
             <div class="farmer-kpi-value">₹{{ working_capital_gap|inr }}</div>
-            <div class="small text-muted">Season cost minus cash and short-term credit</div>
+            <div class="small text-muted">{{ t('Season cost minus cash and short-term credit') }}</div>
         </div>
     </div>
     <div class="col-md-6 col-xl-3">
         <div class="farmer-kpi">
-            <div class="farmer-kpi-label">Loan Safety</div>
-            <div class="farmer-kpi-value">{{ loan_safety or 'Not ready' }}</div>
-            <div class="small text-muted">Annual burden view for irregular farm income</div>
+            <div class="farmer-kpi-label">{{ t('Loan Safety') }}</div>
+            <div class="farmer-kpi-value">{{ loan_safety or t('Not ready') }}</div>
+            <div class="small text-muted">{{ t('Annual burden view for irregular farm income') }}</div>
         </div>
     </div>
 </div>
@@ -102,92 +102,92 @@
 <div class="row g-4">
     <div class="col-xl-6">
         <div class="farmer-panel">
-            <h4>Farmer Profile</h4>
+            <h4>{{ t('Farmer Profile') }}</h4>
             <form method="post">
                 <input type="hidden" name="action" value="save_profile">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Location</label>
-                        <input type="text" class="form-control" name="location_name" value="{{ profile.location_name if profile else '' }}" placeholder="Village / town / district">
+                        <label class="form-label">{{ t('Location') }}</label>
+                        <input type="text" class="form-control" name="location_name" value="{{ profile.location_name if profile else '' }}" placeholder="{{ t('Village / town / district') }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">District</label>
+                        <label class="form-label">{{ t('District') }}</label>
                         <input type="text" class="form-control" name="district" value="{{ profile.district if profile else '' }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">State</label>
+                        <label class="form-label">{{ t('State') }}</label>
                         <input type="text" class="form-control" name="state_name" value="{{ profile.state_name if profile else '' }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Land Size (Acres)</label>
+                        <label class="form-label">{{ t('Land Size (Acres)') }}</label>
                         <input type="number" step="0.01" class="form-control" name="land_size_acres" value="{{ profile.land_size_acres if profile else '' }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Irrigation Type</label>
+                        <label class="form-label">{{ t('Irrigation Type') }}</label>
                         <select class="form-select" name="irrigation_type">
                             {% set irrigation = profile.irrigation_type if profile else '' %}
-                            <option value="">Select</option>
-                            <option value="Rainfed" {% if irrigation == 'Rainfed' %}selected{% endif %}>Rainfed</option>
-                            <option value="Canal" {% if irrigation == 'Canal' %}selected{% endif %}>Canal</option>
-                            <option value="Borewell" {% if irrigation == 'Borewell' %}selected{% endif %}>Borewell</option>
-                            <option value="Drip" {% if irrigation == 'Drip' %}selected{% endif %}>Drip</option>
-                            <option value="Mixed" {% if irrigation == 'Mixed' %}selected{% endif %}>Mixed</option>
+                            <option value="">{{ t('Select') }}</option>
+                            <option value="Rainfed" {% if irrigation == 'Rainfed' %}selected{% endif %}>{{ t('Rainfed') }}</option>
+                            <option value="Canal" {% if irrigation == 'Canal' %}selected{% endif %}>{{ t('Canal') }}</option>
+                            <option value="Borewell" {% if irrigation == 'Borewell' %}selected{% endif %}>{{ t('Borewell') }}</option>
+                            <option value="Drip" {% if irrigation == 'Drip' %}selected{% endif %}>{{ t('Drip') }}</option>
+                            <option value="Mixed" {% if irrigation == 'Mixed' %}selected{% endif %}>{{ t('Mixed') }}</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Soil Type</label>
-                        <input type="text" class="form-control" name="soil_type" value="{{ profile.soil_type if profile else '' }}" placeholder="Red / black / loamy / sandy">
+                        <label class="form-label">{{ t('Soil Type') }}</label>
+                        <input type="text" class="form-control" name="soil_type" value="{{ profile.soil_type if profile else '' }}" placeholder="{{ t('Red / black / loamy / sandy') }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Main Crop</label>
-                        <input type="text" class="form-control" name="main_crop" value="{{ profile.main_crop if profile else '' }}" placeholder="Paddy / maize / groundnut">
+                        <label class="form-label">{{ t('Main Crop') }}</label>
+                        <input type="text" class="form-control" name="main_crop" value="{{ profile.main_crop if profile else '' }}" placeholder="{{ t('Paddy / maize / groundnut') }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Annual Farm Income</label>
+                        <label class="form-label">{{ t('Annual Farm Income') }}</label>
                         <input type="number" step="0.01" class="form-control" name="annual_farm_income" value="{{ profile.annual_farm_income if profile else '' }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Annual Household Income</label>
+                        <label class="form-label">{{ t('Annual Household Income') }}</label>
                         <input type="number" step="0.01" class="form-control" name="annual_household_income" value="{{ profile.annual_household_income if profile else '' }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Available Cash</label>
+                        <label class="form-label">{{ t('Available Cash') }}</label>
                         <input type="number" step="0.01" class="form-control" name="available_cash" value="{{ profile.available_cash if profile else '' }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Available Short-Term Credit</label>
+                        <label class="form-label">{{ t('Available Short-Term Credit') }}</label>
                         <input type="number" step="0.01" class="form-control" name="available_credit" value="{{ profile.available_credit if profile else '' }}">
                     </div>
                 </div>
-                <button class="btn btn-success mt-3" type="submit">Save Farmer Profile</button>
+                <button class="btn btn-success mt-3" type="submit">{{ t('Save Farmer Profile') }}</button>
             </form>
         </div>
     </div>
 
     <div class="col-xl-6">
         <div class="farmer-panel">
-            <h4>Climate Advisory</h4>
+            <h4>{{ t('Climate Advisory') }}</h4>
             {% if weather_summary %}
             <div class="farmer-weather mb-3">
                 <div class="farmer-weather-card">
-                    <div class="small text-muted">Condition</div>
+                    <div class="small text-muted">{{ t('Condition') }}</div>
                     <div class="fw-semibold">{{ weather_summary.weather_text }}</div>
                 </div>
                 <div class="farmer-weather-card">
-                    <div class="small text-muted">Temperature</div>
+                    <div class="small text-muted">{{ t('Temperature') }}</div>
                     <div class="fw-semibold">{{ weather_summary.temp_c }} °C</div>
                 </div>
                 <div class="farmer-weather-card">
-                    <div class="small text-muted">Rain Chance</div>
+                    <div class="small text-muted">{{ t('Rain Chance') }}</div>
                     <div class="fw-semibold">{{ weather_summary.chance_of_rain }}%</div>
                 </div>
                 <div class="farmer-weather-card">
-                    <div class="small text-muted">Wind</div>
+                    <div class="small text-muted">{{ t('Wind') }}</div>
                     <div class="fw-semibold">{{ weather_summary.wind_kmph }} km/h</div>
                 </div>
             </div>
             {% else %}
-            <div class="alert alert-secondary">Add a location in your farmer profile to load weather-backed climate suggestions.</div>
+            <div class="alert alert-secondary">{{ t('Add a location in your farmer profile to load weather-backed climate suggestions.') }}</div>
             {% endif %}
 
             <div>
@@ -200,53 +200,53 @@
 
     <div class="col-xl-7">
         <div class="farmer-panel">
-            <h4>Crop Budget and Break-Even Plan</h4>
+            <h4>{{ t('Crop Budget and Break-Even Plan') }}</h4>
             <form method="post">
                 <input type="hidden" name="action" value="save_plan">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Crop Name</label>
+                        <label class="form-label">{{ t('Crop Name') }}</label>
                         <input type="text" class="form-control" name="crop_name" value="{{ latest_plan.crop_name if latest_plan else '' }}" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Season</label>
-                        <input type="text" class="form-control" name="season_name" value="{{ latest_plan.season_name if latest_plan else '' }}" placeholder="Kharif / Rabi / Summer">
+                        <label class="form-label">{{ t('Season') }}</label>
+                        <input type="text" class="form-control" name="season_name" value="{{ latest_plan.season_name if latest_plan else '' }}" placeholder="{{ t('Kharif / Rabi / Summer') }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Acreage</label>
+                        <label class="form-label">{{ t('Acreage') }}</label>
                         <input type="number" step="0.01" class="form-control" name="acreage" value="{{ latest_plan.acreage if latest_plan else (profile.land_size_acres if profile else '') }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Sowing Date</label>
+                        <label class="form-label">{{ t('Sowing Date') }}</label>
                         <input type="date" class="form-control" name="sowing_date" value="{{ latest_plan.sowing_date if latest_plan and latest_plan.sowing_date else '' }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Expected Yield</label>
+                        <label class="form-label">{{ t('Expected Yield') }}</label>
                         <input type="number" step="0.01" class="form-control" name="expected_yield" value="{{ latest_plan.expected_yield if latest_plan else '' }}">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Expected Price</label>
+                        <label class="form-label">{{ t('Expected Price') }}</label>
                         <input type="number" step="0.01" class="form-control" name="expected_price" value="{{ latest_plan.expected_price if latest_plan else '' }}">
                     </div>
-                    <div class="col-md-4"><label class="form-label">Seed Cost</label><input type="number" step="0.01" class="form-control" name="seed_cost" value="{{ latest_plan.seed_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Fertilizer Cost</label><input type="number" step="0.01" class="form-control" name="fertilizer_cost" value="{{ latest_plan.fertilizer_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Pesticide Cost</label><input type="number" step="0.01" class="form-control" name="pesticide_cost" value="{{ latest_plan.pesticide_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Labor Cost</label><input type="number" step="0.01" class="form-control" name="labor_cost" value="{{ latest_plan.labor_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Irrigation Cost</label><input type="number" step="0.01" class="form-control" name="irrigation_cost" value="{{ latest_plan.irrigation_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Machinery Cost</label><input type="number" step="0.01" class="form-control" name="machinery_cost" value="{{ latest_plan.machinery_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Transport Cost</label><input type="number" step="0.01" class="form-control" name="transport_cost" value="{{ latest_plan.transport_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Interest Cost</label><input type="number" step="0.01" class="form-control" name="interest_cost" value="{{ latest_plan.interest_cost if latest_plan else '' }}"></div>
-                    <div class="col-md-4"><label class="form-label">Miscellaneous</label><input type="number" step="0.01" class="form-control" name="misc_cost" value="{{ latest_plan.misc_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Seed Cost') }}</label><input type="number" step="0.01" class="form-control" name="seed_cost" value="{{ latest_plan.seed_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Fertilizer Cost') }}</label><input type="number" step="0.01" class="form-control" name="fertilizer_cost" value="{{ latest_plan.fertilizer_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Pesticide Cost') }}</label><input type="number" step="0.01" class="form-control" name="pesticide_cost" value="{{ latest_plan.pesticide_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Labor Cost') }}</label><input type="number" step="0.01" class="form-control" name="labor_cost" value="{{ latest_plan.labor_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Irrigation Cost') }}</label><input type="number" step="0.01" class="form-control" name="irrigation_cost" value="{{ latest_plan.irrigation_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Machinery Cost') }}</label><input type="number" step="0.01" class="form-control" name="machinery_cost" value="{{ latest_plan.machinery_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Transport Cost') }}</label><input type="number" step="0.01" class="form-control" name="transport_cost" value="{{ latest_plan.transport_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Interest Cost') }}</label><input type="number" step="0.01" class="form-control" name="interest_cost" value="{{ latest_plan.interest_cost if latest_plan else '' }}"></div>
+                    <div class="col-md-4"><label class="form-label">{{ t('Miscellaneous') }}</label><input type="number" step="0.01" class="form-control" name="misc_cost" value="{{ latest_plan.misc_cost if latest_plan else '' }}"></div>
                 </div>
-                <button class="btn btn-success mt-3" type="submit">Save Season Plan</button>
+                <button class="btn btn-success mt-3" type="submit">{{ t('Save Season Plan') }}</button>
             </form>
 
             {% if metrics %}
             <div class="row g-3 mt-2">
-                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">Cost Per Acre</div><div class="fw-semibold">₹{{ metrics.cost_per_acre|inr }}</div></div></div>
-                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">Gross Revenue</div><div class="fw-semibold">₹{{ metrics.gross_revenue|inr }}</div></div></div>
-                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">Break-Even Price</div><div class="fw-semibold">₹{{ metrics.break_even_price|inr }}</div></div></div>
-                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">Break-Even Yield</div><div class="fw-semibold">{{ metrics.break_even_yield }}</div></div></div>
+                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">{{ t('Cost Per Acre') }}</div><div class="fw-semibold">₹{{ metrics.cost_per_acre|inr }}</div></div></div>
+                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">{{ t('Gross Revenue') }}</div><div class="fw-semibold">₹{{ metrics.gross_revenue|inr }}</div></div></div>
+                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">{{ t('Break-Even Price') }}</div><div class="fw-semibold">₹{{ metrics.break_even_price|inr }}</div></div></div>
+                <div class="col-md-6 col-lg-4"><div class="farmer-note mb-0"><div class="small text-muted">{{ t('Break-Even Yield') }}</div><div class="fw-semibold">{{ metrics.break_even_yield }}</div></div></div>
             </div>
             {% endif %}
         </div>
@@ -254,56 +254,56 @@
 
     <div class="col-xl-5">
         <div class="farmer-panel">
-            <h4>Daily Farm Log</h4>
+            <h4>{{ t('Daily Farm Log') }}</h4>
             <form method="post">
                 <input type="hidden" name="action" value="save_log">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Entry Type</label>
+                        <label class="form-label">{{ t('Entry Type') }}</label>
                         <select class="form-select" name="entry_type" required>
-                            <option value="">Select</option>
-                            <option value="expense">Expense</option>
-                            <option value="labor">Labor</option>
-                            <option value="irrigation">Irrigation</option>
-                            <option value="spray">Spray</option>
-                            <option value="sale">Sale</option>
-                            <option value="note">Note</option>
+                            <option value="">{{ t('Select') }}</option>
+                            <option value="expense">{{ t('Expense') }}</option>
+                            <option value="labor">{{ t('Labor') }}</option>
+                            <option value="irrigation">{{ t('Irrigation') }}</option>
+                            <option value="spray">{{ t('Spray') }}</option>
+                            <option value="sale">{{ t('Sale') }}</option>
+                            <option value="note">{{ t('Note') }}</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Category</label>
-                        <input type="text" class="form-control" name="category" placeholder="Seed / wages / diesel / trader">
+                        <label class="form-label">{{ t('Category') }}</label>
+                        <input type="text" class="form-control" name="category" placeholder="{{ t('Seed / wages / diesel / trader') }}">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Amount</label>
+                        <label class="form-label">{{ t('Amount') }}</label>
                         <input type="number" step="0.01" class="form-control" name="amount">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Quantity</label>
+                        <label class="form-label">{{ t('Quantity') }}</label>
                         <input type="number" step="0.01" class="form-control" name="quantity">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Entry Date</label>
+                        <label class="form-label">{{ t('Entry Date') }}</label>
                         <input type="date" class="form-control" name="entry_date" value="{{ today }}">
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Notes</label>
-                        <textarea class="form-control" name="notes" rows="3" placeholder="Optional task or field notes"></textarea>
+                        <label class="form-label">{{ t('Notes') }}</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="{{ t('Optional task or field notes') }}"></textarea>
                     </div>
                 </div>
-                <button class="btn btn-outline-success mt-3" type="submit">Add Farm Log</button>
+                <button class="btn btn-outline-success mt-3" type="submit">{{ t('Add Farm Log') }}</button>
             </form>
 
             <hr>
-            <h4 class="mt-0">Recent Activity</h4>
+            <h4 class="mt-0">{{ t('Recent Activity') }}</h4>
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th class="text-end">Amount</th>
+                            <th>{{ t('Date') }}</th>
+                            <th>{{ t('Type') }}</th>
+                            <th>{{ t('Category') }}</th>
+                            <th class="text-end">{{ t('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -315,7 +315,7 @@
                             <td class="text-end">₹{{ item.amount|inr }}</td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="4" class="text-muted text-center py-4">No farm logs yet.</td></tr>
+                        <tr><td colspan="4" class="text-muted text-center py-4">{{ t('No farm logs yet.') }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -325,12 +325,12 @@
 
     <div class="col-xl-7">
         <div class="farmer-panel">
-            <h4>Farmer Assistant</h4>
+            <h4>{{ t('Farmer Assistant') }}</h4>
             <form method="post">
                 <input type="hidden" name="action" value="ask_assistant">
-                <label class="form-label">Ask a farm budgeting or climate question</label>
-                <textarea class="form-control" name="farmer_query" rows="3" placeholder="Can I afford tractor EMI? Is tomorrow good for spray? What is my break-even price?"></textarea>
-                <button class="btn btn-success mt-3" type="submit">Ask Assistant</button>
+                <label class="form-label">{{ t('Ask a farm budgeting or climate question') }}</label>
+                <textarea class="form-control" name="farmer_query" rows="3" placeholder="{{ t('Can I afford tractor EMI? Is tomorrow good for spray? What is my break-even price?') }}"></textarea>
+                <button class="btn btn-success mt-3" type="submit">{{ t('Ask Assistant') }}</button>
             </form>
             {% if assistant_answer %}
             <div class="alert alert-success mt-3 mb-0">{{ assistant_answer }}</div>
@@ -340,14 +340,14 @@
 
     <div class="col-xl-5">
         <div class="farmer-panel">
-            <h4>Recent Saved Crop Plans</h4>
+            <h4>{{ t('Recent Saved Crop Plans') }}</h4>
             <div class="table-responsive">
                 <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Crop</th>
-                            <th>Season</th>
-                            <th class="text-end">Acres</th>
+                            <th>{{ t('Crop') }}</th>
+                            <th>{{ t('Season') }}</th>
+                            <th class="text-end">{{ t('Acres') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -358,7 +358,7 @@
                             <td class="text-end">{{ item.acreage }}</td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="3" class="text-muted text-center py-4">No crop plans saved yet.</td></tr>
+                        <tr><td colspan="3" class="text-muted text-center py-4">{{ t('No crop plans saved yet.') }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
