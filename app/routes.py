@@ -767,6 +767,12 @@ def login():
         ).first()
         
         if user:
+            if user.is_admin:
+                if user.failed_login_count or user.locked_until:
+                    user.failed_login_count = 0
+                    user.locked_until = None
+                    db.session.commit()
+
             # Check account lockout
             now_utc = datetime.now(timezone.utc)
             locked_until = user.locked_until
@@ -831,13 +837,14 @@ def login():
                 return redirect(url_for('main.verify_login_otp'))
             else:
                 # Increment failed login count
-                user.failed_login_count = (user.failed_login_count or 0) + 1
-                if user.failed_login_count >= Config.MAX_FAILED_LOGINS:
-                    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=Config.ACCOUNT_LOCKOUT_MINUTES)
+                if not user.is_admin:
+                    user.failed_login_count = (user.failed_login_count or 0) + 1
+                    if user.failed_login_count >= Config.MAX_FAILED_LOGINS:
+                        user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=Config.ACCOUNT_LOCKOUT_MINUTES)
+                        db.session.commit()
+                        flash(f'Account locked for {Config.ACCOUNT_LOCKOUT_MINUTES} minutes due to {Config.MAX_FAILED_LOGINS} failed attempts.', 'danger')
+                        return render_template('login.html')
                     db.session.commit()
-                    flash(f'Account locked for {Config.ACCOUNT_LOCKOUT_MINUTES} minutes due to {Config.MAX_FAILED_LOGINS} failed attempts.', 'danger')
-                    return render_template('login.html')
-                db.session.commit()
         flash('Invalid credentials.', 'danger')
     return render_template('login.html')
 
