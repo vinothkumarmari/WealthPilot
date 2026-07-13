@@ -241,6 +241,12 @@
                             {% else %}
                             <span class="badge bg-danger">Disabled</span>
                             {% endif %}
+                            {% if user.locked_until %}
+                            <div class="small text-danger mt-1">Locked</div>
+                            <div class="small text-muted">Attempts: {{ user.failed_login_count or 0 }}</div>
+                            {% elif user.failed_login_count %}
+                            <div class="small text-muted mt-1">Attempts: {{ user.failed_login_count }}</div>
+                            {% endif %}
                         </td>
                         <td>
                             {% if user.is_admin %}
@@ -276,6 +282,12 @@
                                     onclick="openResetPwModal({{ user.id }}, '{{ user.username }}')">
                                 <span class="material-icons-outlined" style="font-size: 16px;">lock_reset</span>
                             </button>
+                            <form method="POST" action="{{ url_for('main.admin_unlock_user', id=user.id) }}" style="display:inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Unlock Account">
+                                    <span class="material-icons-outlined" style="font-size: 16px;">lock_open</span>
+                                </button>
+                            </form>
                             <form method="POST" action="{{ url_for('main.admin_toggle_user_otp', id=user.id) }}" style="display:inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="btn btn-sm btn-outline-{{ 'success' if user.skip_otp else 'secondary' }}"

@@ -4887,6 +4887,20 @@ def admin_reset_password(id):
     return redirect(url_for('main.admin_panel'))
 
 
+@main.route('/admin/unlock-user/<int:id>', methods=['POST'])
+@admin_required
+def admin_unlock_user(id):
+    user = db.session.get(User, id)
+    if not user:
+        flash('User not found.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    user.failed_login_count = 0
+    user.locked_until = None
+    db.session.commit()
+    flash(f'Login lock cleared for "{user.username}".', 'success')
+    return redirect(url_for('main.admin_panel'))
+
+
 @main.route('/admin/toggle-otp', methods=['POST'])
 @admin_required
 def admin_toggle_otp():
