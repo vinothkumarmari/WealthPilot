@@ -96,6 +96,22 @@
     margin-bottom: 22px;
 }
 
+.story-illustration {
+    position: relative;
+    border-radius: 20px;
+    padding: 10px;
+    margin-bottom: 20px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(143, 182, 201, 0.08));
+    border: 1px solid rgba(143, 182, 201, 0.16);
+    overflow: hidden;
+}
+
+.story-illustration svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
 .story-pill {
     border: 1px solid rgba(143, 182, 201, 0.24);
     color: #c7d9e7;
@@ -383,6 +399,48 @@
                     '<h2 class="story-title">' + d.headline + '</h2>' +
                     '<p class="story-sub">' + d.sub + '</p>' +
                     '<div class="story-pill-row">' + pills + '</div>' +
+                    '<div class="story-illustration">' +
+                        '<svg viewBox="0 0 540 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                            '<defs>' +
+                                '<linearGradient id="hillA" x1="0" x2="1">' +
+                                    '<stop offset="0%" stop-color="#315b7a" stop-opacity="0.85"/>' +
+                                    '<stop offset="100%" stop-color="#5687a8" stop-opacity="0.75"/>' +
+                                '</linearGradient>' +
+                                '<linearGradient id="hillB" x1="0" x2="1">' +
+                                    '<stop offset="0%" stop-color="#466f59" stop-opacity="0.82"/>' +
+                                    '<stop offset="100%" stop-color="#72946c" stop-opacity="0.72"/>' +
+                                '</linearGradient>' +
+                                '<linearGradient id="cardGlow" x1="0" x2="1">' +
+                                    '<stop offset="0%" stop-color="#9ec2d6" stop-opacity="0.55"/>' +
+                                    '<stop offset="100%" stop-color="#d4b482" stop-opacity="0.35"/>' +
+                                '</linearGradient>' +
+                            '</defs>' +
+                            '<rect x="0" y="0" width="540" height="180" rx="18" fill="#132645"/>' +
+                            '<circle cx="428" cy="42" r="20" fill="#d7b17e" fill-opacity="0.75"/>' +
+                            '<path d="M0 138 C60 118 132 112 205 130 C284 150 350 146 430 126 C476 114 507 111 540 118 L540 180 L0 180 Z" fill="url(#hillA)"/>' +
+                            '<path d="M0 148 C78 130 130 132 203 149 C266 164 346 162 433 142 C482 130 514 128 540 133 L540 180 L0 180 Z" fill="url(#hillB)"/>' +
+                            '<rect x="62" y="54" width="118" height="74" rx="14" fill="#f5f7fb" fill-opacity="0.96"/>' +
+                            '<rect x="74" y="68" width="46" height="10" rx="5" fill="#6b8fb0" fill-opacity="0.55"/>' +
+                            '<rect x="74" y="86" width="92" height="8" rx="4" fill="#8aa6bf" fill-opacity="0.34"/>' +
+                            '<rect x="74" y="100" width="68" height="8" rx="4" fill="#8aa6bf" fill-opacity="0.24"/>' +
+                            '<circle cx="148" cy="48" r="18" fill="url(#cardGlow)"/>' +
+                            '<path d="M147 39 C155 41 159 47 159 55 C159 64 153 70 145 70 C136 70 130 63 130 55 C130 47 135 41 143 39 L143 45 C138 47 136 50 136 55 C136 60 140 64 145 64 C150 64 153 60 153 55 C153 50 150 46 145 45 Z" fill="#315b7a" fill-opacity="0.92"/>' +
+                            '<rect x="225" y="58" width="118" height="66" rx="14" fill="#f5f7fb" fill-opacity="0.92"/>' +
+                            '<path d="M246 102 L264 84 L279 96 L302 72 L320 84" fill="none" stroke="#537f9e" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>' +
+                            '<circle cx="320" cy="84" r="5" fill="#d4b482"/>' +
+                            '<rect x="380" y="44" width="108" height="88" rx="18" fill="#f2f6fb" fill-opacity="0.92"/>' +
+                            '<rect x="408" y="64" width="50" height="38" rx="10" fill="#6e8faa" fill-opacity="0.26"/>' +
+                            '<path d="M420 99 C426 86 432 80 439 80 C447 80 451 86 458 99" fill="none" stroke="#527e5f" stroke-width="5" stroke-linecap="round"/>' +
+                            '<path d="M433 100 L433 73" stroke="#527e5f" stroke-width="4" stroke-linecap="round"/>' +
+                            '<path d="M445 100 L445 71" stroke="#527e5f" stroke-width="4" stroke-linecap="round"/>' +
+                            '<path d="M120 142 L120 108" stroke="#7ea06d" stroke-width="5" stroke-linecap="round"/>' +
+                            '<path d="M112 123 C117 117 122 115 128 116" fill="none" stroke="#98bc84" stroke-width="4" stroke-linecap="round"/>' +
+                            '<path d="M112 133 C117 127 122 125 128 126" fill="none" stroke="#98bc84" stroke-width="4" stroke-linecap="round"/>' +
+                            '<path d="M466 142 L466 108" stroke="#7ea06d" stroke-width="5" stroke-linecap="round"/>' +
+                            '<path d="M458 123 C463 117 468 115 474 116" fill="none" stroke="#98bc84" stroke-width="4" stroke-linecap="round"/>' +
+                            '<path d="M458 133 C463 127 468 125 474 126" fill="none" stroke="#98bc84" stroke-width="4" stroke-linecap="round"/>' +
+                        '</svg>' +
+                    '</div>' +
                     '<div class="pulse-card">' +
                         '<div class="pulse-head"><strong>' + d.card1.title + '</strong><span class="pulse-time">Just now</span></div>' +
                         '<div>' + d.card1.text + '</div>' +

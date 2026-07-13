@@ -6,6 +6,32 @@
     <p class="text-muted">{{ t('Calculate SIP, Lumpsum, EMI, FD & Retirement returns') }}</p>
 </div>
 
+<div class="card mb-4 border-0" style="background: linear-gradient(135deg, rgba(34, 139, 94, 0.12), rgba(33, 97, 140, 0.08)); border: 1px solid rgba(34, 139, 94, 0.16) !important;">
+    <div class="card-body d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+        <div>
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill mb-2" style="background: rgba(34, 139, 94, 0.12); color: #23684f; font-weight: 700;">
+                <span class="material-icons-outlined">agriculture</span>
+                {{ t('Farmer Smart Package') }}
+            </div>
+            <h5 class="mb-1">Crop budget, daily farm log, climate advisory, and farmer assistant</h5>
+            <p class="text-muted mb-0">Use the dedicated farmer workflow for seasonal crop planning, working-capital gaps, loan affordability, and weather-aware decisions.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            {% if has_access('main.farmer_package') %}
+            <a href="{{ url_for('main.farmer_package') }}" class="btn btn-success">
+                <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">launch</span>
+                Open Farmer Smart
+            </a>
+            {% else %}
+            <a href="{{ url_for('main.pricing') }}" class="btn btn-outline-success">
+                <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">workspace_premium</span>
+                Unlock Farmer Smart
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
 <!-- Calculator Tabs -->
 <ul class="nav nav-pills calc-tabs mb-4" role="tablist">
     <li class="nav-item"><a class="nav-link active" data-bs-toggle="pill" href="#sipCalc"><span class="material-icons-outlined">autorenew</span> {{ t('SIP Calculator') }}</a></li>
@@ -14,6 +40,7 @@
     <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#affordCalc"><span class="material-icons-outlined">verified</span> {{ t('Can I Afford?') }}</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#fdCalc"><span class="material-icons-outlined">account_balance</span> FD</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#retireCalc"><span class="material-icons-outlined">elderly</span> {{ t('Retirement Planner') }}</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="pill" href="#farmerCalc"><span class="material-icons-outlined">agriculture</span> {{ t('Farmer Smart') }}</a></li>
 </ul>
 
 <div class="tab-content">
@@ -294,6 +321,71 @@
                         <div class="text-center text-muted py-5">
                             <span class="material-icons-outlined" style="font-size:48px">elderly</span>
                             <p>Fill the form and click Calculate to see your retirement plan</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="farmerCalc">
+        <div class="row">
+            <div class="col-lg-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header" style="background: linear-gradient(135deg, #2f855a, #2b6cb0); color: #fff;">
+                        <h6 class="mb-0"><span class="material-icons-outlined me-1">agriculture</span>{{ t('Farmer Smart Package') }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">This module is built for farmers and rural households who need crop budgeting, seasonal cash-flow tracking, daily farm logs, climate guidance, and quick farming queries.</p>
+                        <ul class="small text-muted mb-4">
+                            <li>Crop budget and break-even planning</li>
+                            <li>Working-capital gap and farm-loan safety</li>
+                            <li>Daily farm expenses, labor, irrigation, and spray logs</li>
+                            <li>Location-based weather advisory and farmer assistant</li>
+                        </ul>
+                        {% if has_access('main.farmer_package') %}
+                        <a href="{{ url_for('main.farmer_package') }}" class="btn btn-success">
+                            <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">launch</span>
+                            Open Farmer Smart
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('main.pricing') }}" class="btn btn-outline-success">
+                            <span class="material-icons-outlined" style="font-size:18px;vertical-align:middle">workspace_premium</span>
+                            View Pricing
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mb-3">
+                <div class="card h-100">
+                    <div class="card-header"><h6 class="mb-0">Best Uses</h6></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3" style="background: rgba(47, 133, 90, 0.08); border: 1px solid rgba(47, 133, 90, 0.12);">
+                                    <div class="fw-semibold mb-1">Before Sowing</div>
+                                    <div class="small text-muted">Estimate total crop investment, expected revenue, and break-even rate before committing to a season.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3" style="background: rgba(43, 108, 176, 0.08); border: 1px solid rgba(43, 108, 176, 0.12);">
+                                    <div class="fw-semibold mb-1">Daily Farm Use</div>
+                                    <div class="small text-muted">Log seed, wages, diesel, irrigation, and field activity so the season cost stays accurate.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3" style="background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.12);">
+                                    <div class="fw-semibold mb-1">Before Borrowing</div>
+                                    <div class="small text-muted">Check whether crop spend or equipment EMI is still safe relative to annual farm and household income.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded-3" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.12);">
+                                    <div class="fw-semibold mb-1">Weather-Aware Tasks</div>
+                                    <div class="small text-muted">Use the location advisory before spraying, irrigating, or planning time-sensitive field work.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
