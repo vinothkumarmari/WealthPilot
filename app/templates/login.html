@@ -8,11 +8,68 @@
     align-items: center;
     justify-content: center;
     padding: 32px 18px;
+    position: relative;
+    overflow: hidden;
     background:
-    radial-gradient(circle at 8% 8%, rgba(96, 142, 162, 0.16) 0%, rgba(96, 142, 162, 0) 32%),
-    radial-gradient(circle at 92% 18%, rgba(198, 162, 112, 0.18) 0%, rgba(198, 162, 112, 0) 35%),
-    radial-gradient(circle at 52% 100%, rgba(120, 156, 205, 0.18) 0%, rgba(120, 156, 205, 0) 40%),
-        linear-gradient(125deg, #0f172a 0%, #10254d 45%, #133765 100%);
+        radial-gradient(circle at 12% 15%, rgba(94, 234, 212, 0.08) 0%, rgba(94, 234, 212, 0) 30%),
+        radial-gradient(circle at 88% 20%, rgba(245, 158, 11, 0.07) 0%, rgba(245, 158, 11, 0) 35%),
+        radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0) 45%),
+        linear-gradient(135deg, #090d16 0%, #0f1c3f 50%, #152d58 100%);
+}
+
+/* Elegant glowing cyber lines (grid background) in the empty area */
+.login-page::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: rotate(15deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Smooth slow glowing floating orbs for added elegance */
+.login-page::after {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    top: 10%;
+    left: 5%;
+    border-radius: 50%;
+    animation: slow-float 25s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.secondary-orb {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, rgba(94, 234, 212, 0.05) 0%, transparent 70%);
+    bottom: 10%;
+    right: 5%;
+    border-radius: 50%;
+    animation: slow-float-reverse 30s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes slow-float {
+    0% { transform: translateY(0) scale(1) rotate(0deg); }
+    100% { transform: translateY(40px) scale(1.1) rotate(10deg); }
+}
+
+@keyframes slow-float-reverse {
+    0% { transform: translateY(0) scale(1) rotate(0deg); }
+    100% { transform: translateY(-40px) scale(1.08) rotate(-10deg); }
 }
 
 .login-shell {
@@ -24,6 +81,8 @@
     border: 1px solid rgba(255, 255, 255, 0.14);
     box-shadow: 0 28px 56px rgba(7, 12, 28, 0.48), 0 0 80px rgba(59, 130, 246, 0.08);
     backdrop-filter: blur(4px);
+    position: relative;
+    z-index: 5; /* Pushes the main cards ahead of background grid/orbs */
 }
 
 .login-story {
@@ -460,6 +519,7 @@
 </style>
 
 <div class="login-page">
+    <div class="secondary-orb"></div>
     <div class="login-shell">
         <section class="login-story">
             <div class="story-brand">
