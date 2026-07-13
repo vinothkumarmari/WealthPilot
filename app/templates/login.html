@@ -16,7 +16,7 @@
 /* Fine-ruled aesthetic layout borders on the top, bottom, left and right edges */
 .page-border-line {
     position: absolute;
-    background: rgba(255, 255, 255, 0.05); /* Soft, natural layout guidelines */
+    background: rgba(255, 255, 255, 0.12); /* Increased opacity from 0.05 to 0.12 so lines are clearly visible */
     pointer-events: none;
     z-index: 1;
 }
@@ -61,7 +61,7 @@
 .corner-tick::before, .corner-tick::after {
     content: '';
     position: absolute;
-    background: rgba(255, 255, 255, 0.12); /* Extremely subtle physical markings */
+    background: rgba(255, 255, 255, 0.28); /* Boosted opacity from 0.12 to 0.28 */
 }
 
 .tick-tl { top: 26px; left: 26px; }
@@ -83,11 +83,11 @@
 /* Subtle design numbers simulating micro CAD dimensions in standard dark blue */
 .blueprint-coordinate {
     position: absolute;
-    color: rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.38); /* Significantly increased text coordinate opacity from 0.16 to 0.38 */
     font-family: monospace;
-    font-size: 0.62rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.8px;
     pointer-events: none;
     z-index: 2;
 }
@@ -102,14 +102,14 @@
     position: absolute;
     pointer-events: none;
     z-index: 2;
-    opacity: 0.15; /* Heavily softened so it acts as integrated blueprints instead of colorful overlays */
-    color: rgba(255, 255, 255, 0.22);
+    opacity: 0.28; /* Increased default baseline opacity from 0.15 to 0.28 */
+    color: rgba(255, 255, 255, 0.32);
     transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .login-page:hover .blueprint-corner {
-    opacity: 0.26;
-    color: rgba(255, 255, 255, 0.35);
+    opacity: 0.48; /* Increased hover opacity from 0.26 to 0.48 */
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .blueprint-tl {
