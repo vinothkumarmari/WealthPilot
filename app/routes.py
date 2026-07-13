@@ -776,6 +776,10 @@ def login():
                 remaining = int((locked_until - now_utc).total_seconds() / 60) + 1
                 flash(f'Account locked due to too many failed attempts. Try again in {remaining} minute(s).', 'danger')
                 return render_template('login.html')
+            if locked_until and locked_until <= now_utc:
+                user.locked_until = None
+                user.failed_login_count = 0
+                db.session.commit()
             
             if check_password_hash(user.password_hash, password):
                 # Reset failed attempts on success
