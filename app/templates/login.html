@@ -10,109 +10,134 @@
     padding: 32px 18px;
     position: relative;
     overflow: hidden;
-    background:
-        radial-gradient(circle at 12% 15%, rgba(94, 234, 212, 0.1) 0%, rgba(94, 234, 212, 0) 30%),
-        radial-gradient(circle at 88% 20%, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0) 35%),
-        radial-gradient(circle at 50% 85%, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0) 45%),
-        linear-gradient(135deg, #090d16 0%, #0f1c3f 50%, #152d58 100%);
+    background: #0f1624; /* Rich natural deep slate blue - matte corporate premium scale */
 }
 
-/* Elegant glowing cyber lines (grid background) in the empty area */
-.login-page::before {
+/* Fine-ruled aesthetic layout borders on the top, bottom, left and right edges */
+.page-border-line {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.05); /* Soft, natural layout guidelines */
+    pointer-events: none;
+    z-index: 1;
+}
+
+.line-top {
+    top: 36px;
+    left: 36px;
+    right: 36px;
+    height: 1px;
+}
+
+.line-bottom {
+    bottom: 36px;
+    left: 36px;
+    right: 36px;
+    height: 1px;
+}
+
+.line-left {
+    left: 36px;
+    top: 36px;
+    bottom: 36px;
+    width: 1px;
+}
+
+.line-right {
+    right: 36px;
+    top: 36px;
+    bottom: 36px;
+    width: 1px;
+}
+
+/* Elegant, thin engineering guidelines & crosshair markings in all 4 intersections */
+.corner-tick {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.corner-tick::before, .corner-tick::after {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: 60px 60px;
-    transform: rotate(15deg);
-    pointer-events: none;
-    z-index: 1;
+    background: rgba(255, 255, 255, 0.12); /* Extremely subtle physical markings */
 }
 
-/* Smooth slow glowing floating orbs for added elegance - Slightly faster and highly responsive to eye attention */
-.login-page::after {
-    content: '';
+.tick-tl { top: 26px; left: 26px; }
+.tick-tl::before { top: 10px; left: 0; right: 0; height: 1px; }
+.tick-tl::after { left: 10px; top: 0; bottom: 0; width: 1px; }
+
+.tick-tr { top: 26px; right: 26px; }
+.tick-tr::before { top: 10px; left: 0; right: 0; height: 1px; }
+.tick-tr::after { right: 10px; top: 0; bottom: 0; width: 1px; }
+
+.tick-bl { bottom: 26px; left: 26px; }
+.tick-bl::before { bottom: 10px; left: 0; right: 0; height: 1px; }
+.tick-bl::after { left: 10px; top: 0; bottom: 0; width: 1px; }
+
+.tick-br { bottom: 26px; right: 26px; }
+.tick-br::before { bottom: 10px; left: 0; right: 0; height: 1px; }
+.tick-br::after { right: 10px; top: 0; bottom: 0; width: 1px; }
+
+/* Subtle design numbers simulating micro CAD dimensions in standard dark blue */
+.blueprint-coordinate {
     position: absolute;
-    width: 550px;
-    height: 550px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.11) 0%, transparent 70%);
-    top: 10%;
-    left: 4%;
-    border-radius: 50%;
-    animation: slow-float 15s ease-in-out infinite alternate;
+    color: rgba(255, 255, 255, 0.16);
+    font-family: monospace;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
 }
 
-.secondary-orb {
-    position: absolute;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(94, 234, 212, 0.08) 0%, transparent 70%);
-    bottom: 8%;
-    right: 4%;
-    border-radius: 50%;
-    animation: slow-float-reverse 18s ease-in-out infinite alternate;
-    pointer-events: none;
-    z-index: 1;
-}
+.coord-tl { top: 20px; left: 45px; }
+.coord-tr { top: 20px; right: 45px; }
+.coord-bl { bottom: 20px; left: 45px; }
+.coord-br { bottom: 20px; right: 45px; }
 
 /* Corner Vector blueprints representation (WealthPilot blueprint designs for all 4 corners) */
 .blueprint-corner {
     position: absolute;
     pointer-events: none;
     z-index: 2;
-    opacity: 0.18;
-    color: rgba(143, 182, 201, 0.45);
-    transition: all 0.5s ease;
+    opacity: 0.15; /* Heavily softened so it acts as integrated blueprints instead of colorful overlays */
+    color: rgba(255, 255, 255, 0.22);
+    transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .login-page:hover .blueprint-corner {
-    opacity: 0.35;
-    color: rgba(94, 234, 212, 0.65);
+    opacity: 0.26;
+    color: rgba(255, 255, 255, 0.35);
 }
 
 .blueprint-tl {
-    top: 24px;
-    left: 24px;
-    width: 140px;
-    height: 140px;
+    top: 48px;
+    left: 48px;
+    width: 65px; /* Scaled down for a highly elegant, non-intrusive aesthetic */
+    height: 65px;
 }
 
 .blueprint-tr {
-    top: 24px;
-    right: 24px;
-    width: 140px;
-    height: 140px;
+    top: 48px;
+    right: 48px;
+    width: 65px;
+    height: 65px;
 }
 
 .blueprint-bl {
-    bottom: 24px;
-    left: 24px;
-    width: 140px;
-    height: 140px;
+    bottom: 48px;
+    left: 48px;
+    width: 65px;
+    height: 65px;
 }
 
 .blueprint-br {
-    bottom: 24px;
-    right: 24px;
-    width: 140px;
-    height: 140px;
-}
-
-@keyframes slow-float {
-    0% { transform: translateY(0) scale(1) rotate(0deg); }
-    100% { transform: translateY(35px) scale(1.08) rotate(8deg); }
-}
-
-@keyframes slow-float-reverse {
-    0% { transform: translateY(0) scale(1) rotate(0deg); }
-    100% { transform: translateY(-35px) scale(1.06) rotate(-8deg); }
+    bottom: 48px;
+    right: 48px;
+    width: 65px;
+    height: 65px;
 }
 
 .login-shell {
@@ -562,7 +587,23 @@
 </style>
 
 <div class="login-page">
-    <div class="secondary-orb"></div>
+    <!-- Fine-ruled aesthetic layout borders -->
+    <div class="page-border-line line-top"></div>
+    <div class="page-border-line line-bottom"></div>
+    <div class="page-border-line line-left"></div>
+    <div class="page-border-line line-right"></div>
+    
+    <!-- Mathematical layout alignment tick markers inside the border intersections -->
+    <div class="corner-tick tick-tl"></div>
+    <div class="corner-tick tick-tr"></div>
+    <div class="corner-tick tick-bl"></div>
+    <div class="corner-tick tick-br"></div>
+
+    <!-- Architectural dimension numbers simulating organic manual draft designs -->
+    <div class="blueprint-coordinate coord-tl">X-COORD // 048.2</div>
+    <div class="blueprint-coordinate coord-tr">WP-SYS // PL-v1</div>
+    <div class="blueprint-coordinate coord-bl">SCALE // 1:2.4</div>
+    <div class="blueprint-coordinate coord-br">Y-COORD // 096.8</div>
     
     <!-- Decorative blueprint vectors for the 4 corners of the background (Top-Left, Top-Right, Bottom-Left, Bottom-Right) -->
     <!-- 1. Top-Left: Digital target dots and connected node web -->
