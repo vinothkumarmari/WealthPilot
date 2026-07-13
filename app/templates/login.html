@@ -295,32 +295,54 @@
     margin-bottom: 24px;
 }
 
-/* 3D Spin Animation for Product Logo */
+/* 3D Vertical Spin Animation for Product Logo (Y-Axis) */
 .spinning-logo {
-    animation: constant-spin 16s linear infinite;
     transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
-/* Hyper spin feedback upon interactive cursor focus anywhere inside the form */
-.login-card:focus-within .spinning-logo {
-    animation: constant-spin 4s linear infinite; /* Spin 4x faster during user actions */
-    transform: scale(1.1) rotateY(15deg);
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+/* Medium-fast vertical vertical spin when cursor comes close to the icon */
+.spinning-logo:hover {
+    animation: vertical-medium-spin 1.2s ease-in-out infinite; /* Spins vertically on hover */
+    filter: drop-shadow(0 0 15px rgba(37, 99, 235, 0.45));
+    cursor: pointer;
 }
 
-/* Spin even faster upon tapping inputs or submitting */
-.spinning-logo:active,
-.login-card .form-control:focus ~ .spinning-logo {
-    animation: constant-spin 1.5s linear infinite;
+/* Aggressive fast spin if the login form contains invalid flash messages (authentication alert feedback) */
+.flash-error-spin {
+    animation: vertical-wild-spin 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) 3 !important;
 }
 
-@keyframes constant-spin {
+@keyframes vertical-medium-spin {
     0% {
-        transform: rotate(0deg);
+        transform: rotateY(0deg);
     }
     100% {
-        transform: rotate(360deg);
+        transform: rotateY(360deg);
+    }
+}
+
+@keyframes vertical-wild-spin {
+    0% {
+        transform: rotateY(0deg) scale(1) translateX(0);
+    }
+    15% {
+        transform: rotateY(180deg) scale(1.15) translateX(-6px);
+    }
+    30% {
+        transform: rotateY(360deg) scale(1.15) translateX(5px);
+    }
+    45% {
+        transform: rotateY(540deg) scale(1.15) translateX(-4px);
+    }
+    60% {
+        transform: rotateY(720deg) scale(1.1) translateX(3px);
+    }
+    75% {
+        transform: rotateY(900deg) scale(1.05) translateX(-1px);
+    }
+    100% {
+        transform: rotateY(1080deg) scale(1) translateX(0);
     }
 }
 
@@ -600,7 +622,7 @@
             </svg>
 
             <div class="login-head">
-                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" class="spinning-logo" style="width:48px;height:48px;border-radius:10px">
+                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" class="spinning-logo {% if get_flashed_messages(category_filter=['danger']) %}flash-error-spin{% endif %}" id="productLogo" style="width:48px;height:48px;border-radius:10px">
                 <h3>{{ t('Welcome Back') }}</h3>
                 <p>{{ t('Login to MyWealthPilot') }}</p>
             </div>
