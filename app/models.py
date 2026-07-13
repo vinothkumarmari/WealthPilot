@@ -81,6 +81,9 @@ class User(UserMixin, db.Model):
     notifications = db.relationship('Notification', backref='user', lazy=True, cascade='all, delete-orphan')
     gold_alerts = db.relationship('GoldPriceAlert', backref='user', lazy=True, cascade='all, delete-orphan')
     payment_transactions = db.relationship('PaymentTransaction', backref='user', lazy=True, cascade='all, delete-orphan')
+    farmer_profile = db.relationship('FarmerProfile', backref='user', uselist=False, lazy=True, cascade='all, delete-orphan')
+    farmer_logs = db.relationship('FarmerLog', backref='user', lazy=True, cascade='all, delete-orphan')
+    farmer_season_plans = db.relationship('FarmerSeasonPlan', backref='user', lazy=True, cascade='all, delete-orphan')
 
 
 class Income(db.Model):
@@ -363,6 +366,66 @@ class PaymentTransaction(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     paid_at = db.Column(db.DateTime)
     expires_at = db.Column(db.DateTime)  # subscription end date
+
+
+class FarmerProfile(db.Model):
+    __table_args__ = (
+        db.Index('ix_farmer_profile_user', 'user_id'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    location_name = db.Column(db.String(150))
+    district = db.Column(db.String(100))
+    state_name = db.Column(db.String(100))
+    land_size_acres = db.Column(db.Float, default=0)
+    irrigation_type = db.Column(db.String(50))
+    soil_type = db.Column(db.String(50))
+    main_crop = db.Column(db.String(100))
+    annual_farm_income = db.Column(db.Float, default=0)
+    annual_household_income = db.Column(db.Float, default=0)
+    available_cash = db.Column(db.Float, default=0)
+    available_credit = db.Column(db.Float, default=0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class FarmerSeasonPlan(db.Model):
+    __table_args__ = (
+        db.Index('ix_farmer_plan_user_date', 'user_id', 'created_at'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    crop_name = db.Column(db.String(100), nullable=False)
+    season_name = db.Column(db.String(50))
+    acreage = db.Column(db.Float, default=0)
+    sowing_date = db.Column(db.Date)
+    expected_yield = db.Column(db.Float, default=0)
+    expected_price = db.Column(db.Float, default=0)
+    seed_cost = db.Column(db.Float, default=0)
+    fertilizer_cost = db.Column(db.Float, default=0)
+    pesticide_cost = db.Column(db.Float, default=0)
+    labor_cost = db.Column(db.Float, default=0)
+    irrigation_cost = db.Column(db.Float, default=0)
+    machinery_cost = db.Column(db.Float, default=0)
+    transport_cost = db.Column(db.Float, default=0)
+    interest_cost = db.Column(db.Float, default=0)
+    misc_cost = db.Column(db.Float, default=0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class FarmerLog(db.Model):
+    __table_args__ = (
+        db.Index('ix_farmer_log_user_date', 'user_id', 'entry_date'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    entry_type = db.Column(db.String(30), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    amount = db.Column(db.Float, default=0)
+    quantity = db.Column(db.Float, default=0)
+    notes = db.Column(db.String(400))
+    entry_date = db.Column(db.Date, default=lambda: datetime.now(timezone.utc).date())
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 
 class FamilyMember(db.Model):

@@ -79,11 +79,12 @@
                 Current plan:
                 <strong>
                     {% if current_plan_code == 'pro_monthly' %}MyWealthPilot Pro
+                    {% elif current_plan_code == 'farmer_monthly' %}MyWealthPilot Farmer Smart
                     {% elif current_plan_code == 'family_monthly' %}MyWealthPilot Family
                     {% else %}MyWealthPilot Starter{% endif %}
                 </strong>
                 {% if suggested_plan_code %}
-                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}MyWealthPilot Family{% else %}MyWealthPilot Pro{% endif %}</strong></span>
+                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}MyWealthPilot Family{% elif suggested_plan_code == 'farmer_monthly' %}MyWealthPilot Farmer Smart{% else %}MyWealthPilot Pro{% endif %}</strong></span>
                 {% endif %}
             </p>
             {% endif %}
@@ -170,6 +171,44 @@
                                 {% endif %}
                             {% else %}
                             <a href="{{ url_for('main.register') }}" class="btn btn-accent w-100">Start 14-Day Free Trial</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Family Plan -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card">
+                        <div class="text-center mb-4">
+                            <span class="material-icons-outlined" style="font-size:48px; color: #55efc4;">agriculture</span>
+                            <h4 class="mt-2 fw-bold">Farmer Smart</h4>
+                            <div class="price">₹149 <small>/month</small></div>
+                            <span class="compare-badge">Farm budgeting + climate guidance</span>
+                            {% if current_user.is_authenticated and current_plan_code == 'farmer_monthly' %}
+                            <span class="plan-state plan-current">Current Plan</span>
+                            {% elif current_user.is_authenticated and suggested_plan_code == 'farmer_monthly' %}
+                            <span class="plan-state plan-suggested">Suggested Plan</span>
+                            {% endif %}
+                        </div>
+                        <ul class="feature-list">
+                            <li><span class="material-icons-outlined check">check_circle</span> Crop budget and break-even calculator</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Seasonal cash-flow and working-capital view</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Farmer loan affordability guidance</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Daily farm expense and activity log</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Location-based climate advisory summary</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Farming assistant for budget, crop, and scheme queries</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Saved crop plans and recent field history</li>
+                            <li><span class="material-icons-outlined cross">remove_circle</span> <span class="text-secondary">No family dashboards included</span></li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            {% if current_user.is_authenticated %}
+                                {% if current_plan_code == 'farmer_monthly' %}
+                                <a href="{{ url_for('main.farmer_package') }}" class="btn btn-outline-secondary w-100">Open Farmer Smart</a>
+                                {% else %}
+                                <button class="btn btn-outline-accent w-100 buy-plan-btn" data-plan="farmer_monthly">Buy Farmer Smart</button>
+                                {% endif %}
+                            {% else %}
+                            <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Start Farmer Smart</a>
                             {% endif %}
                         </div>
                     </div>

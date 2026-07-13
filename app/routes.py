@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone, date, timedelta
 from dateutil.relativedelta import relativedelta
 from functools import wraps
-from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge, WealthCard, CrisisAlert
+from .models import db, User, Income, Expense, Investment, Asset, FinancialGoal, InsurancePolicy, Scheme, PremiumPayment, SIP, Budget, Loan, BankAccount, ProvidentFund, Feedback, Notification, FamilyMember, GoldPriceAlert, TrackedProduct, PriceHistory, UserStreak, UserBadge, WealthCard, CrisisAlert, FarmerProfile, FarmerLog, FarmerSeasonPlan
 from .ml_engine import FinancialAdvisor
 from .config import Config
 from . import limiter, csrf
@@ -418,9 +418,17 @@ def admin_required(f):
 
 
 # ── Subscription plan helpers ─────────────────────────────
-# Plan hierarchy: starter < pro_monthly < family_monthly
+# Plan hierarchy: starter < paid package < family_monthly
 # Admin users always get full access.
-PLAN_HIERARCHY = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'family_monthly': 2}
+PLAN_HIERARCHY = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'farmer_monthly': 1, 'family_monthly': 2}
+
+PLAN_COMPATIBILITY = {
+    'starter': {'starter', 'free', 'pro_monthly', 'farmer_monthly', 'family_monthly'},
+    'free': {'starter', 'free', 'pro_monthly', 'farmer_monthly', 'family_monthly'},
+    'pro_monthly': {'pro_monthly', 'family_monthly'},
+    'farmer_monthly': {'farmer_monthly', 'family_monthly'},
+    'family_monthly': {'family_monthly'},
+}
 
 # Module → minimum plan required
 MODULE_PLAN_REQUIREMENTS = {
@@ -462,6 +470,7 @@ MODULE_PLAN_REQUIREMENTS = {
     'main.rate_monitor': 'pro_monthly',
     'main.business_ideas': 'pro_monthly',
     'main.notifications': 'pro_monthly',
+    'main.farmer_package': 'farmer_monthly',
     # Family modules
     'main.future_planner': 'family_monthly',
     'main.govt_schemes': 'family_monthly',
@@ -503,6 +512,12 @@ def _plan_level(plan_code):
     return PLAN_HIERARCHY.get(plan_code, 0)
 
 
+def plan_satisfies_requirement(user_plan, required_plan):
+    if required_plan in PLAN_COMPATIBILITY:
+        return user_plan in PLAN_COMPATIBILITY[required_plan]
+    return _plan_level(user_plan) >= _plan_level(required_plan)
+
+
 def subscription_required(min_plan):
     """Decorator: restrict route to users with at least `min_plan` subscription."""
     def decorator(f):
@@ -512,8 +527,8 @@ def subscription_required(min_plan):
             if current_user.is_admin:
                 return f(*args, **kwargs)
             user_plan = get_user_plan()
-            if _plan_level(user_plan) < _plan_level(min_plan):
-                plan_names = {'pro_monthly': 'Pro', 'family_monthly': 'Family'}
+            if not plan_satisfies_requirement(user_plan, min_plan):
+                plan_names = {'pro_monthly': 'Pro', 'farmer_monthly': 'Farmer Smart', 'family_monthly': 'Family'}
                 name = plan_names.get(min_plan, min_plan)
                 flash(f'This feature requires a {name} subscription. Please upgrade your plan.', 'warning')
                 return redirect(url_for('main.pricing'))
@@ -1192,6 +1207,7 @@ def _complete_mfa_login(user):
 
 PLAN_PRICING = {
     'pro_monthly': {'amount_paise': 9900, 'name': 'MyWealthPilot Pro (Monthly)'},
+    'farmer_monthly': {'amount_paise': 14900, 'name': 'MyWealthPilot Farmer Smart (Monthly)'},
     'family_monthly': {'amount_paise': 19900, 'name': 'MyWealthPilot Family (Monthly)'},
 }
 
@@ -3451,6 +3467,270 @@ def delete_bank_account(id):
 @login_required
 def calculators():
     return render_template('calculators.html')
+
+
+def _safe_float(value, default=0.0):
+    try:
+        if value is None or value == '':
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _calculate_farmer_plan_metrics(plan_like):
+    seed_cost = _safe_float(getattr(plan_like, 'seed_cost', 0))
+    fertilizer_cost = _safe_float(getattr(plan_like, 'fertilizer_cost', 0))
+    pesticide_cost = _safe_float(getattr(plan_like, 'pesticide_cost', 0))
+    labor_cost = _safe_float(getattr(plan_like, 'labor_cost', 0))
+    irrigation_cost = _safe_float(getattr(plan_like, 'irrigation_cost', 0))
+    machinery_cost = _safe_float(getattr(plan_like, 'machinery_cost', 0))
+    transport_cost = _safe_float(getattr(plan_like, 'transport_cost', 0))
+    interest_cost = _safe_float(getattr(plan_like, 'interest_cost', 0))
+    misc_cost = _safe_float(getattr(plan_like, 'misc_cost', 0))
+    acreage = max(_safe_float(getattr(plan_like, 'acreage', 0)), 0)
+    expected_yield = max(_safe_float(getattr(plan_like, 'expected_yield', 0)), 0)
+    expected_price = max(_safe_float(getattr(plan_like, 'expected_price', 0)), 0)
+
+    total_cost = (
+        seed_cost + fertilizer_cost + pesticide_cost + labor_cost + irrigation_cost +
+        machinery_cost + transport_cost + interest_cost + misc_cost
+    )
+    gross_revenue = expected_yield * expected_price
+    expected_profit = gross_revenue - total_cost
+    break_even_price = (total_cost / expected_yield) if expected_yield > 0 else 0
+    break_even_yield = (total_cost / expected_price) if expected_price > 0 else 0
+    return {
+        'acreage': acreage,
+        'total_cost': round(total_cost, 2),
+        'cost_per_acre': round(total_cost / acreage, 2) if acreage > 0 else 0,
+        'gross_revenue': round(gross_revenue, 2),
+        'expected_profit': round(expected_profit, 2),
+        'break_even_price': round(break_even_price, 2),
+        'break_even_yield': round(break_even_yield, 2),
+        'expected_yield': expected_yield,
+        'expected_price': expected_price,
+    }
+
+
+def _fetch_weather_summary(location_name):
+    if not location_name:
+        return None
+    try:
+        response = requests.get(f'https://wttr.in/{location_name}?format=j1', timeout=5)
+        response.raise_for_status()
+        payload = response.json()
+        current = (payload.get('current_condition') or [{}])[0]
+        today = (payload.get('weather') or [{}])[0]
+        hourly = (today.get('hourly') or [{}])[0]
+        desc = current.get('weatherDesc') or [{}]
+        weather_text = desc[0].get('value', 'Normal conditions') if desc else 'Normal conditions'
+        return {
+            'temp_c': _safe_float(current.get('temp_C', 0)),
+            'humidity': _safe_float(current.get('humidity', 0)),
+            'wind_kmph': _safe_float(current.get('windspeedKmph', 0)),
+            'chance_of_rain': _safe_float(hourly.get('chanceofrain', 0)),
+            'weather_text': weather_text,
+        }
+    except Exception:
+        return None
+
+
+def _build_farmer_advisory(profile, latest_plan, metrics, weather_summary):
+    notes = []
+    crop_name = (getattr(latest_plan, 'crop_name', '') or getattr(profile, 'main_crop', '') or 'your crop').strip()
+    month = datetime.now().month
+    irrigation_type = (getattr(profile, 'irrigation_type', '') or '').lower()
+
+    if weather_summary:
+        if weather_summary['chance_of_rain'] >= 60:
+            notes.append(f"High rain chance near {profile.location_name or 'your location'}: avoid pesticide spray unless the product is rain-safe.")
+        if weather_summary['wind_kmph'] >= 20:
+            notes.append('Strong wind is likely: postpone foliar spray or use extra caution to avoid drift.')
+        if weather_summary['temp_c'] >= 35:
+            notes.append(f'Heat stress risk for {crop_name}: prefer early-morning irrigation and avoid noon spray activity.')
+        if weather_summary['humidity'] >= 80:
+            notes.append('High humidity can increase fungal risk. Inspect leaves and avoid over-irrigation.')
+        if not notes:
+            notes.append(f"Current weather looks manageable for routine field work around {profile.location_name or 'your area'}.")
+    else:
+        if month in (6, 7, 8, 9):
+            notes.append('Monsoon season: plan field tasks around rainfall windows and avoid unnecessary input wastage before heavy rain.')
+        else:
+            notes.append('Track soil moisture closely and time irrigation to reduce avoidable water cost.')
+
+    if irrigation_type == 'rainfed':
+        notes.append('Rainfed farming profile detected: keep a closer watch on working-capital gap and irrigation backup options.')
+
+    if metrics:
+        if metrics['expected_profit'] < 0:
+            notes.append('Current crop economics show a likely loss. Revisit yield assumption, selling price, or input intensity before committing full spend.')
+        elif metrics['expected_profit'] < metrics['total_cost'] * 0.15:
+            notes.append('Projected profit is thin. Compare at least one alternate crop or reduce discretionary input costs where agronomically safe.')
+
+    return notes[:5]
+
+
+def _build_farmer_assistant_answer(query, profile, latest_plan, metrics, weather_summary):
+    text = (query or '').strip().lower()
+    if not text:
+        return ''
+
+    if 'loan' in text or 'emi' in text or 'afford' in text:
+        annual_income = _safe_float(getattr(profile, 'annual_farm_income', 0)) + _safe_float(getattr(profile, 'annual_household_income', 0))
+        total_cost = metrics['total_cost'] if metrics else 0
+        if annual_income <= 0:
+            return 'Add annual farm income and household income in the farmer profile first. Then I can judge whether the loan burden is safe.'
+        safe_annual_outflow = annual_income * 0.25
+        return f'Keep total annual loan outflow ideally below about Rs. {safe_annual_outflow:,.0f}. Based on your current season budget of Rs. {total_cost:,.0f}, borrow only if repayment still stays within that range.'
+
+    if 'spray' in text or 'pesticide' in text:
+        if weather_summary and (weather_summary['chance_of_rain'] >= 60 or weather_summary['wind_kmph'] >= 20):
+            return 'Current location conditions are not ideal for spraying. Rain or wind may reduce effectiveness and increase wastage. Wait for a calmer, drier window if possible.'
+        return 'Spray is more suitable in a dry, low-wind window. Prefer early morning or late afternoon and confirm the crop-stage recommendation for the product.'
+
+    if 'irrig' in text or 'water' in text:
+        if weather_summary and weather_summary['chance_of_rain'] >= 60:
+            return 'Rain probability is meaningful, so avoid over-irrigating today. Use a lighter irrigation decision unless the field is already moisture-stressed.'
+        return 'Base irrigation on soil moisture, crop stage, and next 2 to 3 days of rain risk. Frequent light decisions are safer than fixed-date irrigation.'
+
+    if 'subsidy' in text or 'scheme' in text:
+        return 'Prioritize PM-KISAN, crop insurance, irrigation subsidy, KCC, and state equipment support. The next useful product step is to add state-specific rule matching and reminder tracking.'
+
+    if 'crop' in text or 'sow' in text or 'season' in text:
+        crop_name = getattr(latest_plan, 'crop_name', None) or getattr(profile, 'main_crop', None)
+        if crop_name:
+            return f'Use {crop_name} as your base plan, but compare it with one alternative crop on required investment, water use, and break-even price before sowing.'
+        return 'Choose crops by season, water availability, and expected local selling rate. Add your main crop and acreage first so I can compare options more precisely.'
+
+    if 'profit' in text or 'break-even' in text or 'breakeven' in text:
+        if not metrics:
+            return 'Save at least one crop budget first. Then I can answer profit and break-even questions with your own numbers.'
+        return f"Your latest plan breaks even near Rs. {metrics['break_even_price']:,.0f} per unit price and {metrics['break_even_yield']:,.2f} units of yield. Expected profit is about Rs. {metrics['expected_profit']:,.0f}."
+
+    return 'I can help with crop budgeting, break-even price, irrigation timing, spray caution, subsidies, and loan affordability. Ask a more specific farm question for a stronger answer.'
+
+
+@main.route('/farmer-package', methods=['GET', 'POST'])
+@subscription_required('farmer_monthly')
+def farmer_package():
+    profile = FarmerProfile.query.filter_by(user_id=current_user.id).first()
+    latest_plan = FarmerSeasonPlan.query.filter_by(user_id=current_user.id).order_by(FarmerSeasonPlan.created_at.desc()).first()
+    assistant_answer = ''
+
+    if request.method == 'POST':
+        action = (request.form.get('action') or '').strip()
+
+        if action == 'save_profile':
+            if not profile:
+                profile = FarmerProfile(user_id=current_user.id)
+                db.session.add(profile)
+            profile.location_name = (request.form.get('location_name') or '').strip()
+            profile.district = (request.form.get('district') or '').strip()
+            profile.state_name = (request.form.get('state_name') or '').strip()
+            profile.land_size_acres = _safe_float(request.form.get('land_size_acres'))
+            profile.irrigation_type = (request.form.get('irrigation_type') or '').strip()
+            profile.soil_type = (request.form.get('soil_type') or '').strip()
+            profile.main_crop = (request.form.get('main_crop') or '').strip()
+            profile.annual_farm_income = _safe_float(request.form.get('annual_farm_income'))
+            profile.annual_household_income = _safe_float(request.form.get('annual_household_income'))
+            profile.available_cash = _safe_float(request.form.get('available_cash'))
+            profile.available_credit = _safe_float(request.form.get('available_credit'))
+            db.session.commit()
+            flash('Farmer profile saved.', 'success')
+
+        elif action == 'save_log':
+            category = (request.form.get('category') or '').strip()
+            entry_type = (request.form.get('entry_type') or '').strip()
+            if not category or not entry_type:
+                flash('Entry type and category are required for a farm log.', 'danger')
+            else:
+                db.session.add(FarmerLog(
+                    user_id=current_user.id,
+                    entry_type=entry_type,
+                    category=category,
+                    amount=_safe_float(request.form.get('amount')),
+                    quantity=_safe_float(request.form.get('quantity')),
+                    notes=(request.form.get('notes') or '').strip(),
+                    entry_date=datetime.strptime(request.form.get('entry_date'), '%Y-%m-%d').date() if request.form.get('entry_date') else datetime.now(timezone.utc).date(),
+                ))
+                db.session.commit()
+                flash('Farm log added.', 'success')
+
+        elif action == 'save_plan':
+            crop_name = (request.form.get('crop_name') or '').strip()
+            if not crop_name:
+                flash('Crop name is required to save a season plan.', 'danger')
+            else:
+                latest_plan = FarmerSeasonPlan(
+                    user_id=current_user.id,
+                    crop_name=crop_name,
+                    season_name=(request.form.get('season_name') or '').strip(),
+                    acreage=_safe_float(request.form.get('acreage')),
+                    sowing_date=datetime.strptime(request.form.get('sowing_date'), '%Y-%m-%d').date() if request.form.get('sowing_date') else None,
+                    expected_yield=_safe_float(request.form.get('expected_yield')),
+                    expected_price=_safe_float(request.form.get('expected_price')),
+                    seed_cost=_safe_float(request.form.get('seed_cost')),
+                    fertilizer_cost=_safe_float(request.form.get('fertilizer_cost')),
+                    pesticide_cost=_safe_float(request.form.get('pesticide_cost')),
+                    labor_cost=_safe_float(request.form.get('labor_cost')),
+                    irrigation_cost=_safe_float(request.form.get('irrigation_cost')),
+                    machinery_cost=_safe_float(request.form.get('machinery_cost')),
+                    transport_cost=_safe_float(request.form.get('transport_cost')),
+                    interest_cost=_safe_float(request.form.get('interest_cost')),
+                    misc_cost=_safe_float(request.form.get('misc_cost')),
+                )
+                db.session.add(latest_plan)
+                db.session.commit()
+                flash('Season plan saved.', 'success')
+
+        elif action == 'ask_assistant':
+            assistant_answer = _build_farmer_assistant_answer(
+                request.form.get('farmer_query'),
+                profile or FarmerProfile(user_id=current_user.id),
+                latest_plan,
+                _calculate_farmer_plan_metrics(latest_plan) if latest_plan else None,
+                _fetch_weather_summary((profile.location_name if profile else '') or (request.form.get('location_name') or '').strip()),
+            )
+
+        profile = FarmerProfile.query.filter_by(user_id=current_user.id).first()
+        latest_plan = FarmerSeasonPlan.query.filter_by(user_id=current_user.id).order_by(FarmerSeasonPlan.created_at.desc()).first()
+
+    metrics = _calculate_farmer_plan_metrics(latest_plan) if latest_plan else None
+    weather_summary = _fetch_weather_summary(profile.location_name) if profile and profile.location_name else None
+    advisories = _build_farmer_advisory(profile or FarmerProfile(user_id=current_user.id), latest_plan, metrics, weather_summary)
+    recent_logs = FarmerLog.query.filter_by(user_id=current_user.id).order_by(FarmerLog.entry_date.desc(), FarmerLog.id.desc()).limit(8).all()
+    recent_plans = FarmerSeasonPlan.query.filter_by(user_id=current_user.id).order_by(FarmerSeasonPlan.created_at.desc()).limit(5).all()
+
+    working_capital_gap = 0
+    loan_safety = None
+    if profile and metrics:
+        available_buffer = _safe_float(profile.available_cash) + _safe_float(profile.available_credit)
+        working_capital_gap = round(max(metrics['total_cost'] - available_buffer, 0), 2)
+        annual_income = _safe_float(profile.annual_farm_income) + _safe_float(profile.annual_household_income)
+        if annual_income > 0:
+            burden_ratio = metrics['total_cost'] / annual_income
+            if burden_ratio <= 0.25:
+                loan_safety = 'Low risk'
+            elif burden_ratio <= 0.40:
+                loan_safety = 'Caution'
+            else:
+                loan_safety = 'High risk'
+
+    return render_template(
+        'farmer_package.html',
+        profile=profile,
+        latest_plan=latest_plan,
+        recent_logs=recent_logs,
+        recent_plans=recent_plans,
+        metrics=metrics,
+        weather_summary=weather_summary,
+        advisories=advisories,
+        working_capital_gap=working_capital_gap,
+        loan_safety=loan_safety,
+        assistant_answer=assistant_answer,
+        today=date.today(),
+    )
 
 
 @main.route('/api/calculate', methods=['POST'])

@@ -160,6 +160,9 @@ def create_app():
                     elif latest_paid and latest_paid.plan_code == 'family_monthly':
                         user_plan_code = 'family_monthly'
                         current_plan = 'MyWealthPilot Family'
+                    elif latest_paid and latest_paid.plan_code == 'farmer_monthly':
+                        user_plan_code = 'farmer_monthly'
+                        current_plan = 'MyWealthPilot Farmer Smart'
                     elif latest_paid:
                         current_plan = latest_paid.plan_code
 
@@ -180,6 +183,13 @@ def create_app():
                         'price': '₹199/month',
                         'reason': 'add family members and shared financial dashboards',
                     }
+                elif user_plan_code == 'farmer_monthly':
+                    suggestion = {
+                        'plan_code': 'family_monthly',
+                        'plan_name': 'MyWealthPilot Family',
+                        'price': '₹199/month',
+                        'reason': 'combine farmer tools with family-wide planning and shared dashboards',
+                    }
 
                 if suggestion:
                     banner_key = f"sub-banner-{_cu.id}-{current_plan}-{suggestion['plan_code']}"
@@ -196,14 +206,11 @@ def create_app():
             app.logger.warning(f'Subscription banner skipped due to transient error: {e}')
 
         # Plan level helper for sidebar lock icons
-        plan_levels = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'family_monthly': 2}
-        user_level = plan_levels.get(user_plan_code, 0)
-
         def has_access(endpoint):
             """Check if current user's plan allows access to endpoint."""
-            from .routes import MODULE_PLAN_REQUIREMENTS
+            from .routes import MODULE_PLAN_REQUIREMENTS, plan_satisfies_requirement
             req = MODULE_PLAN_REQUIREMENTS.get(endpoint, 'starter')
-            return user_level >= plan_levels.get(req, 0)
+            return plan_satisfies_requirement(user_plan_code, req)
 
         return {
             't': get_translator(lang),
