@@ -4668,6 +4668,9 @@ def admin_panel():
     for txn in paid_txns:
         if txn.user_id not in latest_paid_by_user:
             latest_paid_by_user[txn.user_id] = txn.plan_code
+    for user in users:
+        if user.is_admin:
+            latest_paid_by_user[user.id] = 'family_monthly'
 
     # Parse database connection info
     db_url = str(db.engine.url)

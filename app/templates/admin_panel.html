@@ -220,8 +220,12 @@
                         <td>{{ user.mobile or '-' }}</td>
                         <td>
                             {% set plan_code = user_plan_map.get(user.id, 'free') %}
-                            {% if plan_code == 'pro_monthly' %}
+                            {% if user.is_admin %}
+                            <span class="badge bg-dark">Full Access</span>
+                            {% elif plan_code == 'pro_monthly' %}
                             <span class="badge bg-primary">Pro</span>
+                            {% elif plan_code == 'farmer_monthly' %}
+                            <span class="badge" style="background:#2f855a;color:#fff;">Farmer</span>
                             {% elif plan_code == 'family_monthly' %}
                             <span class="badge bg-success">Family</span>
                             {% else %}
@@ -251,6 +255,7 @@
                         <td>
                             {% if user.is_admin %}
                             <span class="badge bg-danger">Admin</span>
+                            <div class="small text-muted mt-1">Owner access</div>
                             {% else %}
                             <span class="badge bg-secondary">User</span>
                             {% endif %}
@@ -300,6 +305,7 @@
                                 <select name="plan_code" class="form-select form-select-sm d-inline-block" style="width:130px; min-width:130px;">
                                     <option value="free" {% if plan_code == 'free' %}selected{% endif %}>Free</option>
                                     <option value="pro_monthly" {% if plan_code == 'pro_monthly' %}selected{% endif %}>Pro</option>
+                                    <option value="farmer_monthly" {% if plan_code == 'farmer_monthly' %}selected{% endif %}>Farmer</option>
                                     <option value="family_monthly" {% if plan_code == 'family_monthly' %}selected{% endif %}>Family</option>
                                 </select>
                                 <button type="submit" class="btn btn-sm btn-outline-primary" title="Update Subscription">
@@ -307,7 +313,7 @@
                                 </button>
                             </form>
                             {% else %}
-                            <span class="text-muted">Owner</span>
+                            <span class="text-muted">Owner • Full Access</span>
                             {% endif %}
                         </td>
                     </tr>
