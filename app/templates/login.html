@@ -295,6 +295,35 @@
     margin-bottom: 24px;
 }
 
+/* 3D Spin Animation for Product Logo */
+.spinning-logo {
+    animation: constant-spin 16s linear infinite;
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+/* Hyper spin feedback upon interactive cursor focus anywhere inside the form */
+.login-card:focus-within .spinning-logo {
+    animation: constant-spin 4s linear infinite; /* Spin 4x faster during user actions */
+    transform: scale(1.1) rotateY(15deg);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+}
+
+/* Spin even faster upon tapping inputs or submitting */
+.spinning-logo:active,
+.login-card .form-control:focus ~ .spinning-logo {
+    animation: constant-spin 1.5s linear infinite;
+}
+
+@keyframes constant-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 .login-head .material-icons-outlined {
     font-size: 48px;
     color: #2563eb;
@@ -571,7 +600,7 @@
             </svg>
 
             <div class="login-head">
-                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" style="width:48px;height:48px;border-radius:10px">
+                <img src="{{ url_for('static', filename='favicon.svg') }}" alt="MyWealthPilot" class="spinning-logo" style="width:48px;height:48px;border-radius:10px">
                 <h3>{{ t('Welcome Back') }}</h3>
                 <p>{{ t('Login to MyWealthPilot') }}</p>
             </div>
