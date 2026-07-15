@@ -631,56 +631,82 @@
     <div class="corner-tick tick-br"></div>
 
     <!-- Architectural dimension numbers simulating organic manual draft designs -->
-    <div class="blueprint-coordinate coord-tl">X-COORD // 048.2</div>
-    <div class="blueprint-coordinate coord-tr">WP-SYS // PL-v1</div>
-    <div class="blueprint-coordinate coord-bl">SCALE // 1:2.4</div>
-    <div class="blueprint-coordinate coord-br">Y-COORD // 096.8</div>
+    <div class="blueprint-coordinate coord-tl">HASH-KEY // F03D.BC17</div>
+    <div class="blueprint-coordinate coord-tr">SECURE_MFA // SHA_256</div>
+    <div class="blueprint-coordinate coord-bl">ALGO-RATIO // 50_30_20</div>
+    <div class="blueprint-coordinate coord-br">PORTFOLIO // INR_MODE</div>
     
     <!-- Decorative blueprint vectors for the 4 corners of the background (Top-Left, Top-Right, Bottom-Left, Bottom-Right) -->
-    <!-- 1. Top-Left: Digital target dots and connected node web -->
+    <!-- 1. Top-Left: Cryptographic Ledger Block (Lock Cipher & Hash Chain Node) -->
     <svg viewBox="0 0 100 100" class="blueprint-corner blueprint-tl" fill="none" stroke="currentColor" stroke-width="1.2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="20" cy="20" r="10" stroke-dasharray="2 2"/>
-        <circle cx="20" cy="20" r="1.5" fill="currentColor"/>
-        <circle cx="60" cy="25" r="2.5" fill="currentColor"/>
-        <circle cx="35" cy="65" r="2"/>
-        <line x1="20" y1="20" x2="60" y2="25"/>
-        <line x1="20" y1="20" x2="35" y2="65"/>
-        <line x1="60" y1="25" x2="35" y2="65"/>
-        <line x1="60" y1="25" x2="90" y2="15" stroke-dasharray="4 2"/>
-        <line x1="35" y1="65" x2="10" y2="85" stroke-dasharray="4 2"/>
+        <!-- Cryptographic key container box -->
+        <rect x="15" y="15" width="45" height="45" rx="5" stroke-dasharray="3 2"/>
+        <rect x="23" y="23" width="29" height="29" rx="3"/>
+        <!-- Lock Cylinder Rings -->
+        <circle cx="37.5" cy="37.5" r="9" stroke-dasharray="2 1"/>
+        <circle cx="37.5" cy="37.5" r="4" fill="currentColor"/>
+        <!-- Blockchain Connection Hubs -->
+        <line x1="37.5" y1="15" x2="37.5" y2="5" stroke-dasharray="2 2"/>
+        <line x1="15" y1="37.5" x2="5" y2="37.5" stroke-dasharray="2 2"/>
+        <path d="M45 45 L75 75" stroke-dasharray="2 2"/>
+        <circle cx="75" cy="75" r="3.5" fill="currentColor"/>
+        <line x1="60" y1="37.5" x2="88" y2="37.5"/>
+        <polygon points="88,34 94,37.5 88,40" fill="currentColor"/>
+        <!-- Matrix Hash code references -->
+        <text x="18" y="70" font-family="monospace" font-size="6" fill="currentColor" stroke="none" font-weight="600">0x3AFB9</text>
     </svg>
 
-    <!-- 2. Top-Right: Abstract finance bars, percentage target crescent, and radar sweeps -->
+    <!-- 2. Top-Right: Fibonacci Spiral Ratio & Golden Section Investment Arc -->
     <svg viewBox="0 0 100 100" class="blueprint-corner blueprint-tr" fill="none" stroke="currentColor" stroke-width="1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M40 10 A 35 35 0 0 1 90 60" stroke-dasharray="3 3"/>
-        <path d="M30 10 A 45 45 0 0 1 90 70"/>
-        <rect x="55" y="18" width="5" height="15" rx="1"/>
-        <rect x="66" y="24" width="5" height="22" rx="1"/>
-        <rect x="77" y="32" width="5" height="30" rx="1"/>
-        <circle cx="90" cy="10" r="4" stroke-width="1.5"/>
-        <line x1="90" y1="10" x2="52" y2="48" stroke-dasharray="2 2"/>
+        <!-- Fibonacci grid partition boundaries -->
+        <rect x="10" y="10" width="80" height="80"/>
+        <line x1="60" y1="10" x2="60" y2="90"/>
+        <line x1="60" y1="60" x2="90" y2="60"/>
+        <line x1="41" y1="10" x2="41" y2="60"/>
+        <line x1="10" y1="41" x2="41" y2="41"/>
+        <!-- Logarithmic Ratio spiral curves -->
+        <path d="M10 90 A 80 80 0 0 1 90 10" stroke-width="1.5"/>
+        <path d="M90 10 A 30 30 0 0 1 60 40" stroke-dasharray="3 1.5"/>
+        <path d="M60 40 A 19 18 0 0 1 41 22" stroke-dasharray="2 2"/>
+        <!-- Golden segment vector points -->
+        <circle cx="60" cy="10" r="2.5" fill="currentColor"/>
+        <circle cx="60" cy="60" r="2.5" fill="currentColor"/>
+        <circle cx="41" cy="41" r="2" fill="currentColor"/>
+        <text x="65" y="24" font-family="monospace" font-size="5" fill="currentColor" stroke="none" font-weight="600">PHI=1.618</text>
     </svg>
 
-    <!-- 3. Bottom-Left: Technical circular dials and expanding investment waves -->
-    <svg viewBox="0 0 100 100" class="blueprint-corner blueprint-bl" fill="none" stroke="currentColor" stroke-width="1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <circle cx="25" cy="75" r="20" stroke-width="1.5"/>
-        <circle cx="25" cy="75" r="14" stroke-dasharray="4 4"/>
-        <circle cx="25" cy="75" r="8"/>
-        <line x1="25" y1="50" x2="25" y2="100"/>
-        <line x1="0" y1="75" x2="50" y2="75"/>
-        <path d="M52 52 L62 52 M52 52 L52 62" stroke-width="1.5"/>
-        <path d="M52 52 Q68 70 85 85" stroke-dasharray="3 3"/>
+    <!-- 3. Bottom-Left: Security Shield Key & Biometric Verification Ring -->
+    <svg viewBox="0 0 100 100" class="blueprint-corner blueprint-bl" fill="none" stroke="currentColor" stroke-width="1.1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- Multi-factor biometric scanning dials -->
+        <circle cx="35" cy="65" r="25" stroke-dasharray="4 2"/>
+        <circle cx="35" cy="65" r="18"/>
+        <!-- Shield Node overlay representating data fortification -->
+        <path d="M24 53 L35 48 L46 53 L46 68 C46 76 35 83 35 83 C35 83 24 76 24 68 Z" stroke-width="1.5" fill="none"/>
+        <circle cx="35" cy="61" r="3" fill="currentColor"/>
+        <!-- Grid axes coordinates reference -->
+        <line x1="35" y1="40" x2="35" y2="25" stroke-dasharray="3 3"/>
+        <line x1="60" y1="65" x2="85" y2="65" stroke-dasharray="3 3"/>
+        <circle cx="85" cy="65" r="2" fill="currentColor"/>
+        <text x="22" y="96" font-family="monospace" font-size="5.5" fill="currentColor" stroke="none" font-weight="600">SYS_SEC_V2</text>
     </svg>
 
-    <!-- 4. Bottom-Right: Growing grid matrix and abstract financial safety triangles -->
+    <!-- 4. Bottom-Right: Compound Financial Growth Vector & Regression Triangle -->
     <svg viewBox="0 0 100 100" class="blueprint-corner blueprint-br" fill="none" stroke="currentColor" stroke-width="1.2" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <polygon points="50,90 90,90 70,50" stroke-dasharray="4 2"/>
-        <polygon points="60,90 80,90 70,70"/>
-        <circle cx="70" cy="50" r="2" fill="currentColor"/>
-        <line x1="10" y1="90" x2="95" y2="90"/>
-        <line x1="90" y1="10" x2="90" y2="95"/>
-        <rect x="25" y="45" width="20" height="20" stroke-dasharray="2 2"/>
-        <line x1="25" y1="45" x2="45" y2="65"/>
+        <!-- Matrix trend coordinate planes -->
+        <line x1="10" y1="85" x2="90" y2="85" stroke-width="1.5"/>
+        <line x1="15" y1="10" x2="15" y2="90"/>
+        <!-- Trajectory vectors with future projection markers -->
+        <path d="M15 85 Q 40 78, 60 50 T 90 15" stroke-width="1.8"/>
+        <path d="M60 50 L 90 50" stroke-dasharray="3 2"/>
+        <path d="M60 50 L 60 85" stroke-dasharray="3 2"/>
+        <!-- Scatter regression delta metrics dots -->
+        <circle cx="38" cy="74" r="2" fill="currentColor"/>
+        <circle cx="50" cy="64" r="2" fill="currentColor"/>
+        <circle cx="73" cy="38" r="2 fill-opacity=0.6" fill="currentColor"/>
+        <circle cx="82" cy="27" r="2" fill="currentColor"/>
+        <!-- Triangular delta optimization marker -->
+        <polygon points="60,50 72,50 60,65" opacity="0.6"/>
+        <text x="22" y="24" font-family="monospace" font-size="5.5" fill="currentColor" stroke="none" font-weight="600">CAGR_OPT</text>
     </svg>
 
     <div class="login-shell">
