@@ -570,3 +570,130 @@ class WealthCard(db.Model):
     last_calculated = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     owner = db.relationship('User', backref=db.backref('wealth_card', uselist=False, lazy=True, cascade='all, delete-orphan'))
+
+
+# ======================== PREMIUM UPGRADE BUNDLES ========================
+
+class CreditCard(db.Model):
+    """Premium feature: Dedicated credit card tracker for bills and repayment analytics."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    card_name = db.Column(db.String(100), nullable=False)      # e.g. SBI SimplyClick, HDFC Regalia
+    bank_name = db.Column(db.String(100), nullable=False)      # e.g. SBI, HDFC bank
+    credit_limit = db.Column(db.Float, default=0.0)
+    outstanding_amount = db.Column(db.Float, default=0.0)
+    billing_day = db.Column(db.Integer, default=15)            # Day of the month billing statement is cut
+    due_day = db.Column(db.Integer, default=5)                 # Day of the month due
+    interest_rate = db.Column(db.Float, default=42.0)          # Typical annual % (APR)
+    notes = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('credit_cards', lazy=True, cascade='all, delete-orphan'))
+
+
+class SmsSyncLog(db.Model):
+    """Premium feature: Logs of SMS-to-ledger matching and parsing outputs."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    sender = db.Column(db.String(50))
+    message_body = db.Column(db.Text, nullable=False)
+    parsed_amount = db.Column(db.Float)
+    parsed_type = db.Column(db.String(25))                     # 'debit' or 'credit'
+    is_processed = db.Column(db.Boolean, default=True)
+    notes = db.Column(db.String(300))
+    received_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('sms_sync_logs', lazy=True, cascade='all, delete-orphan'))
+
+
+class CasHolding(db.Model):
+    """Premium feature: Consolidated Account Statement mutual fund holdings for Direct vs Regular tracking."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amfi_code = db.Column(db.String(20))
+    scheme_name = db.Column(db.String(250), nullable=False)
+    scheme_type = db.Column(db.String(50))                     # Equity, Debt, Hybrid
+    is_direct = db.Column(db.Boolean, default=False)
+    units = db.Column(db.Float, default=0.0)
+    nav_value = db.Column(db.Float, default=0.0)
+    holding_value = db.Column(db.Float, default=0.0)
+    expense_ratio = db.Column(db.Float, default=0.0)           # Annual %
+    regular_expense_ratio_est = db.Column(db.Float, default=0.0)
+    annual_potential_savings = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('cas_holdings', lazy=True, cascade='all, delete-orphan'))
+
+
+class EstateWill(db.Model):
+    """Premium feature: Estate Planning wills & nomination draft tracker."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    will_title = db.Column(db.String(150), nullable=False)
+    will_text = db.Column(db.Text, nullable=False)
+    draft_date = db.Column(db.Date)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('estate_wills', lazy=True, cascade='all, delete-orphan'))
+
+
+# ======================== RETAIL BUSINESS & SHOP OVERVIEW ========================
+
+class RetailShop(db.Model):
+    """Business Premium Package: Retailer and shopping mall registries."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    shop_name = db.Column(db.String(150), nullable=False)
+    business_type = db.Column(db.String(100), default='General Store') # Grocery, Apparel, Mall Outlet, Food, etc.
+    gstin = db.Column(db.String(15))
+    contact_phone = db.Column(db.String(20))
+    address = db.Column(db.String(300))
+    revenue_target = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    owner = db.relationship('User', backref=db.backref('retail_shops', lazy=True, cascade='all, delete-orphan'))
+    inventories = db.relationship('RetailInventory', backref='shop', lazy=True, cascade='all, delete-orphan')
+    invoices = db.relationship('RetailInvoice', backref='shop', lazy=True, cascade='all, delete-orphan')
+
+
+class RetailInventory(db.Model):
+    """Business Premium Package: Product item registers."""
+    __table_args__ = (
+        db.Index('ix_retail_inv_sku', 'sku'),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('retail_shop.id'), nullable=False)
+    product_name = db.Column(db.String(200), nullable=False)
+    sku = db.Column(db.String(100))                            # Barcode/SKU string
+    category = db.Column(db.String(100))                       # Goods type classification
+    cost_price = db.Column(db.Float, default=0.0)
+    retail_price = db.Column(db.Float, default=0.0)
+    stock_quantity = db.Column(db.Integer, default=0)
+    reorder_level = db.Column(db.Integer, default=5)
+    tax_rate_pct = db.Column(db.Float, default=18.0)           # GST tax allocation %
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class RetailInvoice(db.Model):
+    """Business Premium Package: POS Bill registries."""
+    id = db.Column(db.Integer, primary_key=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('retail_shop.id'), nullable=False)
+    invoice_number = db.Column(db.String(100), unique=True, nullable=False)
+    customer_name = db.Column(db.String(150), default='Walk-in Customer')
+    customer_phone = db.Column(db.String(20))
+    payment_mode = db.Column(db.String(25), default='Cash')   # Cash, UPI, Card, NetBanking
+    sub_total = db.Column(db.Float, default=0.0)
+    cgst_amount = db.Column(db.Float, default=0.0)
+    sgst_amount = db.Column(db.Float, default=0.0)
+    discount_amount = db.Column(db.Float, default=0.0)
+    grand_total = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    invoice_items = db.relationship('RetailInvoiceItem', backref='invoice', lazy=True, cascade='all, delete-orphan')
+
+
+class RetailInvoiceItem(db.Model):
+    """Business Premium Package: Itemized quantities inside bills."""
+    id = db.Column(db.Integer, primary_key=True)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('retail_invoice.id'), nullable=False)
+    product_name = db.Column(db.String(200), nullable=False)
+    quantity = db.Column(db.Integer, default=1)
+    unit_price = db.Column(db.Float, nullable=False)
+    total_tax = db.Column(db.Float, default=0.0)
+    subtotal = db.Column(db.Float, nullable=False)
+
+

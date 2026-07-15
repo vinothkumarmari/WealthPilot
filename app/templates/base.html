@@ -102,6 +102,10 @@
                 <span class="material-icons-outlined">credit_score</span>
                 <span>{{ t('Loans') }}</span>
             </a>
+            <a href="{{ url_for('main.credit_cards') }}" class="nav-link {% if request.endpoint == 'main.credit_cards' %}active{% endif %}" title="{{ t('Credit Cards') }}">
+                <span class="material-icons-outlined">credit_card</span>
+                <span>{{ t('Credit Cards') }}</span>
+            </a>
 
             <div class="sidebar-divider"><small>{{ t('INVESTMENTS') }}</small></div>
             <a href="{{ url_for('main.investments') }}" class="nav-link {% if request.endpoint == 'main.investments' %}active{% endif %}" title="{{ t('Investments') }}">
@@ -122,6 +126,11 @@
                 <span class="material-icons-outlined">auto_graph</span>
                 <span>{{ t('SIP Tracker') }}</span>
                 {% if not has_access('main.sips') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
+            </a>
+            <a href="{{ url_for('main.cas_analyzer') }}" class="nav-link {% if request.endpoint == 'main.cas_analyzer' %}active{% endif %}" title="{{ t('CAS MF Analyzer') }}">
+                <span class="material-icons-outlined">insights</span>
+                <span>{{ t('CAS MF Analyzer') }}</span>
+                {% if not has_access('main.cas_analyzer') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.gold_silver') }}" class="nav-link {% if request.endpoint == 'main.gold_silver' %}active{% endif %}" title="{{ t('Gold & Silver') }}">
                 <span class="material-icons-outlined">diamond</span>
@@ -205,6 +214,11 @@
                 <span>{{ t('Farmer Smart') }}</span>
                 {% if not has_access('main.farmer_package') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
+            <a href="{{ url_for('main.retail_billing') }}" class="nav-link {% if request.endpoint == 'main.retail_billing' %}active{% endif %}" title="{{ t('Retail POS Terminal') }}">
+                <span class="material-icons-outlined">storefront</span>
+                <span>{{ t('Retail POS Billing') }}</span>
+                {% if not has_access('main.retail_billing') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
+            </a>
             <a href="{{ url_for('main.indian_budget') }}" class="nav-link {% if request.endpoint == 'main.indian_budget' %}active{% endif %}" title="{{ t('Indian Budget') }}">
                 <span class="material-icons-outlined">receipt_long</span>
                 <span>{{ t('Indian Budget') }}</span>
@@ -230,6 +244,11 @@
             <a href="{{ url_for('main.emergency_fund') }}" class="nav-link {% if request.endpoint == 'main.emergency_fund' %}active{% endif %}" title="{{ t('Emergency Fund') }}">
                 <span class="material-icons-outlined">health_and_safety</span>
                 <span>{{ t('Emergency Fund') }}</span>
+            </a>
+            <a href="{{ url_for('main.estate_planner') }}" class="nav-link {% if request.endpoint == 'main.estate_planner' %}active{% endif %}" title="{{ t('Succession & Wills') }}">
+                <span class="material-icons-outlined">gavel</span>
+                <span>{{ t('Succession & Wills') }}</span>
+                {% if not has_access('main.estate_planner') %}<span class="material-icons-outlined text-warning sidebar-lock">lock</span>{% endif %}
             </a>
             <a href="{{ url_for('main.education_fund') }}" class="nav-link {% if request.endpoint == 'main.education_fund' %}active{% endif %}" title="{{ t('Education Fund') }}">
                 <span class="material-icons-outlined">school</span>

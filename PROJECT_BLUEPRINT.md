@@ -244,6 +244,14 @@ money_manager/
 | wttr.in Climate Advisory | `/farmer-package` | Climate-sensitive recommendations on fungicide drift windows, heat-stress irrigation, and rain safety |
 | Farmers AI Assistant | `/farmer-package` | Intelligent domain conversational assistant answering loan limits, irrigation frequencies, and soil care |
 
+### 5.7 Retail Business POS & Billing (Retail Smart Plan)
+| Feature | Route | Description |
+|---------|-------|-------------|
+| Outlet Store Registry | `/retail-billing` | Register multi-branch retail outlets and shopping mall chains with separate GSTIN, revenue metrics, and profiles |
+| Product Catalog Ledger | `/retail-billing` | Track retail pricing, raw purchase costs, SKU identifiers / barcodes, reorder level alerts, and custom GST tax brackets |
+| POS Billing Terminal | `/retail-billing` | Client invoice generating interface with tax (CGST + SGST) calculators and digital/cash payment settling |
+| Automatic Cash Transfer | `/retail-billing` | Auto-adds successfully generated shop invoices and receipt totals directly into overall WealthPilot Income ledgers |
+
 ---
 
 ## 6. Subscription System
@@ -251,10 +259,11 @@ money_manager/
 ### Tiers
 | Tier | Price | Key Features |
 |------|-------|-------------|
-| **Starter** | Free | Dashboard, Income, Expenses, Budget, Loans, Investments, Goals, Calculators, Net Worth, Emergency Fund, Crisis Alerts |
-| **Pro Monthly** | ₹99/mo | All Starter + AI tools, Tax Planning, Reports, Education Fund, Debt Planner, Budget Splitter, Expense Forecast |
+| **Starter** | Free | Dashboard, Income, Expenses, Budget, Loans, Investments, Goals, Calculators, Net Worth, Emergency Fund, Crisis Alerts, Credit Cards |
+| **Pro Monthly** | ₹99/mo | All Starter + AI tools, Tax Planning, Reports, Education Fund, Debt Planner, Budget Splitter, Expense Forecast, CAS MF Analyzer |
 | **Farmer Smart Monthly** | ₹149/mo | All Starter + Farmer Profile, Crop Budgets & Break-Even calculators, Farm Ledger entries, wttr.in Climate advisory, Farmers AI Assistant |
-| **Family Monthly** | ₹199/mo | All Pro + Farmer Smart + Family features, Custom Reports, Priority Support |
+| **Retail Smart Monthly** | ₹299/mo | All Starter + Outlet Registries, Product Stock Catalogs, POS Billing Terminal invoices, Automatic Revenue-to-Income ledgers integration |
+| **Family Monthly** | ₹199/mo | All Pro + Farmer Smart + Succession & Wills estate planners + Family features, Custom Reports, Priority Support |
 
 ### Access Control
 - `@subscription_required('pro_monthly')` decorator on pro routes

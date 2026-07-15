@@ -1,0 +1,435 @@
+{% extends 'base.html' %}
+{% block title %}Retail POS Billing Terminal - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h2 class="h3 mb-1 text-primary-emphasis">Retail Shop & POS Terminal</h2>
+        <p class="text-secondary mb-0">Generate customer invoices, monitor inventory stock catalogs, and record raw trade collections.</p>
+    </div>
+    <div class="col-auto">
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addShopModal">
+                <span class="material-icons-outlined align-middle me-1">add_business</span>Register Business Outlet
+            </button>
+            {% if active_shop %}
+            <button class="btn btn-accent ms-2" data-bs-toggle="modal" data-bs-target="#addInventoryModal">
+                <span class="material-icons-outlined align-middle me-1">inventory_2</span>Stock Product Catalog
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Business Analytics & Alerts -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(37,99,235,0.02) 100%)">
+            <div class="text-secondary small fw-semibold">Global Retail Volume (Revenue)</div>
+            <div class="h2 mb-1 text-primary mt-1">₹{{ total_sales_revenue | inr }}</div>
+            <span class="text-muted small">Auto-tracked inside WealthPilot Income database</span>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 100%)">
+            <div class="text-secondary small fw-semibold">Units In Catalog Inventory</div>
+            <div class="h2 mb-1 text-success mt-1">{{ total_inventory_items }} units</div>
+            <span class="text-muted small">Sum of items across active stock sheets</span>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="background: linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)">
+            <div class="text-secondary small fw-semibold">Low-Stock Reorder warnings</div>
+            <div class="h2 mb-1 text-danger mt-1">{{ low_stock_warnings }} alerts</div>
+            <span class="text-muted small">Units at or below reorder levels</span>
+        </div>
+    </div>
+</div>
+
+<!-- Outlet Selection Menu -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-2 d-flex align-items-center gap-2 overflow-auto">
+                <span class="fw-semibold text-secondary-emphasis small ms-2 me-1">Active Outlet:</span>
+                {% if not shops %}
+                <span class="text-muted small">No businesses registered yet. Click 'Register Business Outlet' to start!</span>
+                {% else %}
+                {% for s in shops %}
+                <a href="{{ url_for('main.retail_billing', shop_id=s.id) }}" class="btn btn-sm {% if s.id == active_shop.id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    <span class="material-icons-outlined align-middle me-1" style="font-size:16px">storefront</span>{{ s.shop_name }} ({{ s.business_type }})
+                </a>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if active_shop %}
+<div class="row g-4">
+    <!-- POS Billing Screen Terminal -->
+    <div class="col-12 col-md-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h5 class="card-title mb-0 text-primary-emphasis"><span class="material-icons-outlined align-middle me-1 text-accent">point_of_sale</span>Active Custom billing Terminal (POS)</h5>
+            </div>
+            <div class="card-body">
+                {% if not inventory %}
+                <div class="text-center py-5">
+                    <span class="material-icons-outlined text-muted" style="font-size:48px">library_add</span>
+                    <h5 class="mt-2 text-secondary">POS Terminal locked: Stock Product Catalog first</h5>
+                    <button class="btn btn-accent btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#addInventoryModal">
+                        Add My First Product
+                    </button>
+                </div>
+                {% else %}
+                <form method="POST" action="{{ url_for('main.create_retail_invoice') }}" id="billingForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="shop_id" value="{{ active_shop.id }}">
+                    
+                    <div class="bg-light p-3 rounded mb-3">
+                        <h6 class="fw-bold text-secondary mb-3">Customer & Transaction metadata</h6>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small">Customer Name</label>
+                                <input type="text" name="customer_name" class="form-control form-control-sm" value="Walk-in Customer" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small">Contact Mobile</label>
+                                <input type="text" name="customer_phone" class="form-control form-control-sm" placeholder="e.g. 9845012345">
+                            </div>
+                            <div class="col-12 mt-2">
+                                <label class="form-label small mb-1">Receipt Settlement mode</label>
+                                <div class="d-flex gap-3">
+                                    <label class="small"><input type="radio" name="payment_mode" value="UPI" checked class="me-1"> UPI / QR GPay</label>
+                                    <label class="small"><input type="radio" name="payment_mode" value="Cash" class="me-1"> Hard Cash Drawer</label>
+                                    <label class="small"><input type="radio" name="payment_mode" value="Card" class="me-1"> Credit/Debit Card</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-secondary border-bottom pb-2">Selected Line Items</h6>
+                    <div id="selectedItemsContainer" class="mb-4">
+                        <!-- Dynamic POS rows go here -->
+                        <div class="alert alert-light text-center py-4 small" id="emptyCartMsg">
+                            No items added to the bill yet. Click or select items from the sidebar to populate!
+                        </div>
+                    </div>
+
+                    <!-- Receipt Summary -->
+                    <div class="border-top pt-3 text-secondary small">
+                        <div class="d-flex justify-content-between py-1">
+                            <span>Subtotal (Net Price):</span>
+                            <span class="fw-bold" id="billSubtotal">₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1">
+                            <span>Composite GST input (CGST+SGST):</span>
+                            <span id="billTax">₹0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-top py-2 fs-5 fw-bold text-dark">
+                            <span>GRAND TOTAL RECEIVED:</span>
+                            <span class="text-primary" id="billGrandTotal">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-accent w-100 btn-lg mt-3" id="checkoutBtn" disabled>
+                        <span class="material-icons-outlined align-middle me-1">print</span>Settle Receipt & Logs Cash Inflow
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Product catalog selection -->
+    <div class="col-12 col-md-5">
+        <!-- Stock Finder lists -->
+        <div class="card shadow-sm border-0 mb-4" style="max-height: 400px; overflow-y: auto">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h5 class="card-title mb-0 text-primary-emphasis"><span class="material-icons-outlined align-middle me-1">content_paste_search</span>Product stock Catalog</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if not inventory %}
+                <div class="text-center py-4 text-secondary small">
+                    Catalog sheet clear. Click 'Stock Product Catalog' above to populate!
+                </div>
+                {% else %}
+                <div class="list-group list-group-flush">
+                    {% for item in inventory %}
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 {% if item.stock_quantity <= item.reorder_level %}list-group-item-danger{% endif %}" onclick="addItemToInvoice('{{ item.id }}', '{{ item.product_name }}', {{ item.retail_price }}, {{ item.tax_rate_pct }}, {{ item.stock_quantity }})">
+                        <div>
+                            <div class="fw-bold text-dark">{{ item.product_name }}</div>
+                            <span class="text-muted small">SKU: {{ item.sku }} | Stock: <strong>{{ item.stock_quantity }} units</strong></span>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-semibold text-primary d-block">₹{{ item.retail_price | inr }}</span>
+                            <span class="badge bg-secondary small">+{{ item.tax_rate_pct }}% Tax</span>
+                        </div>
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Invoices printed -->
+        <div class="card shadow-sm border-0" style="max-height: 400px; overflow-y: auto">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h5 class="card-title mb-0 text-primary-emphasis"><span class="material-icons-outlined align-middle me-1">history</span>Recent printed Invoices</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if not invoices %}
+                <div class="text-center py-4 text-secondary small">No bills processed today yet.</div>
+                {% else %}
+                <div class="list-group list-group-flush small">
+                    {% for inv in invoices %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between fw-bold">
+                            <span class="text-primary-emphasis">{{ inv.invoice_number }}</span>
+                            <span class="text-success">₹{{ inv.grand_total | inr }}</span>
+                        </div>
+                        <div class="text-muted d-flex justify-content-between mt-1">
+                            <span>Client: {{ inv.customer_name }}</span>
+                            <span>{{ inv.payment_mode }} (Settle)</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Business Modal -->
+<div class="modal fade" id="addShopModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.add_retail_shop') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Register Business Outlet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Shop/Outlet Name</label>
+                        <input type="text" name="shop_name" class="form-control" placeholder="e.g. Apex Supermarket, Fashion Hub" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Business Classification category</label>
+                        <select name="business_type" class="form-select">
+                            <option value="Grocery Supermarket">Grocery Supermarket</option>
+                            <option value="Apparel & Clothing">Apparel & Clothing</option>
+                            <option value="Medical Pharmacy">Medical Pharmacy</option>
+                            <option value="Food & Restaurant">Food & Restaurant</option>
+                            <option value="General Store">General Retail Store</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">GSTIN Identification Code (Optional)</label>
+                        <input type="text" name="gstin" class="form-control" maxlength="15" placeholder="e.g. 29AAAAA1111A1Z1">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Contact Mobile</label>
+                            <input type="text" name="contact_phone" class="form-control" placeholder="e.g. 9845012345">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Monthly revenue Target (₹)</label>
+                            <input type="number" step="0.01" name="revenue_target" class="form-control" placeholder="500000">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Store physical Address</label>
+                        <textarea name="address" class="form-control" rows="2" placeholder="Suite name, main road, Bangalore"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Initialize Business</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if active_shop %}
+<!-- Add Inventory Modal -->
+<div class="modal fade" id="addInventoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.add_retail_inventory') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="shop_id" value="{{ active_shop.id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Catalog Item entry: {{ active_shop.shop_name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" name="product_name" class="form-control" placeholder="e.g. Premium Basmati Rice 5kg" required>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SKU / Item Barcode</label>
+                            <input type="text" name="sku" class="form-control" placeholder="Autogenerated if empty" value="{{ sku_override }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Product categorization</label>
+                            <input type="text" name="category" class="form-control" placeholder="e.g. Food, Clothing">
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Wholesale Cost (₹)</label>
+                            <input type="number" step="0.01" name="cost_price" class="form-control" placeholder="100.00" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Retail Selling Price (₹)</label>
+                            <input type="number" step="0.01" name="retail_price" class="form-control" placeholder="140.00" required>
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Stock quantity (Units)</label>
+                            <input type="number" name="stock_quantity" class="form-control" placeholder="50" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Reorder Limit alert value</label>
+                            <input type="number" name="reorder_level" class="form-control" value="5" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Applicable GST Tax Rate (%)</label>
+                        <select name="tax_rate_pct" class="form-select">
+                            <option value="0">0% (Nil / Exempt)</option>
+                            <option value="5">5% (Essential Goods)</option>
+                            <option value="12">12% (Standard Commodities)</option>
+                            <option value="18" selected>18% (Standard Services/Items)</option>
+                            <option value="28">28% (Luxury Goods)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Catalog Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% block scripts %}
+<script>
+// Key POS Global tracking variables
+let invoiceCart = {};
+
+function addItemToInvoice(id, name, price, taxPct, stockQty) {
+    if (stockQty <= 0) {
+        wpAlert("Cannot sell: Item is completely out of stock!", "warning");
+        return;
+    }
+    
+    // Check cart limits
+    if (invoiceCart[id]) {
+        if (invoiceCart[id].quantity >= stockQty) {
+            wpAlert("Cannot exceed available warehouse stock constraints!", "error");
+            return;
+        }
+        invoiceCart[id].quantity += 1;
+    } else {
+        invoiceCart[id] = {
+            id: id,
+            name: name,
+            price: price,
+            taxPct: taxPct,
+            quantity: 1
+        };
+    }
+    
+    rebuildInvoiceDOM();
+}
+
+function updateCartQuantity(id, change, stockQty) {
+    if (!invoiceCart[id]) return;
+    
+    let newQty = invoiceCart[id].quantity + change;
+    if (newQty <= 0) {
+        delete invoiceCart[id];
+    } else if (newQty > stockQty) {
+        wpAlert("Cannot add: Exceeds warehouse stock count!", "error");
+        return;
+    } else {
+        invoiceCart[id].quantity = newQty;
+    }
+    rebuildInvoiceDOM();
+}
+
+function removeCartItem(id) {
+    delete invoiceCart[id];
+    rebuildInvoiceDOM();
+}
+
+function rebuildInvoiceDOM() {
+    const container = document.getElementById("selectedItemsContainer");
+    const emptyMsg = document.getElementById("emptyCartMsg");
+    const checkoutBtn = document.getElementById("checkoutBtn");
+    
+    let keys = Object.keys(invoiceCart);
+    
+    if (keys.length === 0) {
+        container.innerHTML = `<div class="alert alert-light text-center py-4 small" id="emptyCartMsg">No items added to the bill yet. Click or select items from the sidebar to populate!</div>`;
+        checkoutBtn.disabled = true;
+        updateTotalsDOM(0, 0, 0);
+        return;
+    }
+    
+    checkoutBtn.disabled = false;
+    let html = '';
+    let subtotalSum = 0;
+    let taxSum = 0;
+    
+    keys.forEach(key => {
+        let entry = invoiceCart[key];
+        let rowTotal = entry.price * entry.quantity;
+        let rowTax = rowTotal * (entry.taxPct / 100.0);
+        
+        subtotalSum += rowTotal;
+        taxSum += rowTax;
+        
+        html += `
+            <div class="row g-2 align-items-center mb-2 border-bottom pb-2">
+                <input type="hidden" name="item_ids[]" value="${entry.id}">
+                <div class="col-5">
+                    <span class="fw-bold text-dark d-block" style="font-size:14px">${entry.name}</span>
+                    <span class="text-muted small" style="font-size:11px">₹${entry.price} + ${entry.taxPct}% tax</span>
+                </div>
+                <div class="col-4 d-flex align-items-center gap-1">
+                    <button type="button" class="btn btn-xs btn-outline-secondary px-2" onclick="updateCartQuantity('${entry.id}', -1, 1000)">-</button>
+                    <input type="text" name="quantities[]" class="form-control form-control-sm text-center px-1" style="width:40px" value="${entry.quantity}" readonly>
+                    <button type="button" class="btn btn-xs btn-outline-secondary px-2" onclick="updateCartQuantity('${entry.id}', 1, 1000)">+</button>
+                </div>
+                <div class="col-2 fw-semibold text-dark text-end">₹${rowTotal.toFixed(2)}</div>
+                <div class="col-1 text-end">
+                    <button type="button" class="btn btn-xs text-danger" onclick="removeCartItem('${entry.id}')"><span class="material-icons-outlined align-middle" style="font-size:18px">delete</span></button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    updateTotalsDOM(subtotalSum, taxSum, subtotalSum + taxSum);
+}
+
+function updateTotalsDOM(sub, tax, grand) {
+    document.getElementById("billSubtotal").textContent = `₹${sub.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById("billTax").textContent = `₹${tax.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById("billGrandTotal").textContent = `₹${grand.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+}
+</script>
+{% endblock %}
