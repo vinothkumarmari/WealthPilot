@@ -420,13 +420,14 @@ def admin_required(f):
 # ── Subscription plan helpers ─────────────────────────────
 # Plan hierarchy: starter < paid package < family_monthly
 # Admin users always get full access.
-PLAN_HIERARCHY = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'farmer_monthly': 1, 'family_monthly': 2}
+PLAN_HIERARCHY = {'starter': 0, 'free': 0, 'pro_monthly': 1, 'farmer_monthly': 1, 'retail_smart': 1, 'family_monthly': 2}
 
 PLAN_COMPATIBILITY = {
-    'starter': {'starter', 'free', 'pro_monthly', 'farmer_monthly', 'family_monthly'},
-    'free': {'starter', 'free', 'pro_monthly', 'farmer_monthly', 'family_monthly'},
+    'starter': {'starter', 'free', 'pro_monthly', 'farmer_monthly', 'retail_smart', 'family_monthly'},
+    'free': {'starter', 'free', 'pro_monthly', 'farmer_monthly', 'retail_smart', 'family_monthly'},
     'pro_monthly': {'pro_monthly', 'family_monthly'},
     'farmer_monthly': {'farmer_monthly', 'family_monthly'},
+    'retail_smart': {'retail_smart', 'family_monthly'},
     'family_monthly': {'family_monthly'},
 }
 
@@ -531,7 +532,7 @@ def subscription_required(min_plan):
                 return f(*args, **kwargs)
             user_plan = get_user_plan()
             if not plan_satisfies_requirement(user_plan, min_plan):
-                plan_names = {'pro_monthly': 'Pro', 'farmer_monthly': 'Farmer Smart', 'family_monthly': 'Family'}
+                plan_names = {'pro_monthly': 'Pro', 'farmer_monthly': 'Farmer Smart', 'retail_smart': 'Retail Smart', 'family_monthly': 'Family'}
                 name = plan_names.get(min_plan, min_plan)
                 flash(f'This feature requires a {name} subscription. Please upgrade your plan.', 'warning')
                 return redirect(url_for('main.pricing'))
@@ -1222,6 +1223,7 @@ def _complete_mfa_login(user):
 PLAN_PRICING = {
     'pro_monthly': {'amount_paise': 9900, 'name': 'MyWealthPilot Pro (Monthly)'},
     'farmer_monthly': {'amount_paise': 14900, 'name': 'MyWealthPilot Farmer Smart (Monthly)'},
+    'retail_smart': {'amount_paise': 29900, 'name': 'MyWealthPilot Retail Smart (Monthly)'},
     'family_monthly': {'amount_paise': 19900, 'name': 'MyWealthPilot Family (Monthly)'},
 }
 
