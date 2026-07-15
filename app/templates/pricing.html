@@ -80,11 +80,12 @@
                 <strong>
                     {% if current_plan_code == 'pro_monthly' %}MyWealthPilot Pro
                     {% elif current_plan_code == 'farmer_monthly' %}MyWealthPilot Farmer Smart
+                    {% elif current_plan_code == 'retail_smart' %}MyWealthPilot Retail Smart
                     {% elif current_plan_code == 'family_monthly' %}MyWealthPilot Family
                     {% else %}MyWealthPilot Starter{% endif %}
                 </strong>
                 {% if suggested_plan_code %}
-                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}MyWealthPilot Family{% elif suggested_plan_code == 'farmer_monthly' %}MyWealthPilot Farmer Smart{% else %}MyWealthPilot Pro{% endif %}</strong></span>
+                <span class="ms-2">Suggested: <strong>{% if suggested_plan_code == 'family_monthly' %}MyWealthPilot Family{% elif suggested_plan_code == 'retail_smart' %}MyWealthPilot Retail Smart{% elif suggested_plan_code == 'farmer_monthly' %}MyWealthPilot Farmer Smart{% else %}MyWealthPilot Pro{% endif %}</strong></span>
                 {% endif %}
             </p>
             {% endif %}
@@ -209,6 +210,43 @@
                                 {% endif %}
                             {% else %}
                             <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Start Farmer Smart</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Retail Smart Plan -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="pricing-card">
+                        <div class="text-center mb-4">
+                            <span class="material-icons-outlined" style="font-size:48px; color: #a29bfe;">storefront</span>
+                            <h4 class="mt-2 fw-bold">Retail Smart</h4>
+                            <div class="price">₹299 <small>/month</small></div>
+                            <span class="compare-badge">POS Billing + stock sheets automation</span>
+                            {% if current_user.is_authenticated and current_plan_code == 'retail_smart' %}
+                            <span class="plan-state plan-current">Current Plan</span>
+                            {% elif current_user.is_authenticated and suggested_plan_code == 'retail_smart' %}
+                            <span class="plan-state plan-suggested">Suggested Plan</span>
+                            {% endif %}
+                        </div>
+                        <ul class="feature-list">
+                            <li><span class="material-icons-outlined check">check_circle</span> Enterprise outlet & store registries</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Customizable purchase & retail stock limits sheets</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Standard barcode SKU & category trackers</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Interactive POS Billing terminal drawer</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Auto computations of CGST + SGST tax brackets</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Direct settles revenue logs auto-sync to Income ledgers</li>
+                            <li><span class="material-icons-outlined check">check_circle</span> Real-time warehouse reorder warning notifications</li>
+                        </ul>
+                        <div class="text-center mt-4">
+                            {% if current_user.is_authenticated %}
+                                {% if current_plan_code == 'retail_smart' %}
+                                <a href="{{ url_for('main.retail_billing') }}" class="btn btn-outline-secondary w-100">Open POS Terminal</a>
+                                {% else %}
+                                <button class="btn btn-outline-accent w-100 buy-plan-btn" data-plan="retail_smart">Buy Retail Smart</button>
+                                {% endif %}
+                            {% else %}
+                            <a href="{{ url_for('main.register') }}" class="btn btn-outline-accent w-100">Start Retail Smart</a>
                             {% endif %}
                         </div>
                     </div>
