@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}CAS MF Analyzer - MyWealthPilot{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col">
+        <h2 class="h3 mb-1 text-primary-emphasis">CAS Mutual Fund Optimizer</h2>
+        <p class="text-secondary mb-0">Direct vs Regular funds analyzer. Find hidden commissions in NSDL/CDSL portfolios.</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#uploadCasModal">
+            <span class="material-icons-outlined align-middle me-1">upload_file</span>Upload CAS PDF Statement
+        </button>
+    </div>
+</div>
+
+<!-- Key Advisory Insights -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="background: linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(37,99,235,0.02) 100%)">
+            <div class="text-secondary small fw-semibold">Portfolio Mutual Funds Value</div>
+            <div class="h2 mb-1 text-primary mt-1">₹{{ total_value | inr }}</div>
+            <span class="text-muted small">Total analyzed holdings</span>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="background: linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%)">
+            <div class="text-secondary small fw-semibold">Annual Hidden Commission Loss</div>
+            <div class="h2 mb-1 text-danger mt-1">₹{{ total_savings | inr }}</div>
+            <span class="text-muted small">Wasted on third-party regularly</span>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm border-0 p-3 h-100" style="background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(34,197,94,0.02) 100%)">
+            <div class="text-secondary small fw-semibold">Estimated 10-Yr Savings Potential</div>
+            <div class="h2 mb-1 text-success mt-1">₹{{ projection_10y | inr }}</div>
+            <span class="text-muted small">Compound compounding delta advantage</span>
+        </div>
+    </div>
+</div>
+
+<!-- Compounding Delta Analysis Chart Tip -->
+{% if total_savings > 0 %}
+<div class="alert alert-success d-flex align-items-center mb-4 border-0 shadow-sm" role="alert">
+    <span class="material-icons-outlined me-2 text-success" style="font-size:24px">monetization_on</span>
+    <div>
+        <strong>Switch to Direct Mutual Funds and save:</strong> You are currently losing approximately <strong>₹{{ total_savings | inr }}</strong> every year to broker commissions. Moving your regular plans to Direct plans on Groww or Zerodha could yield an additional <strong>₹{{ projection_10y | inr }}</strong> in 10 years, and up to <strong>₹{{ projection_25y | inr }}</strong> in 25 years under standard 12% compounding averages!
+    </div>
+</div>
+{% endif %}
+
+<!-- CAS Holdings Grid -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-transparent border-bottom py-3">
+        <h5 class="card-title mb-0 text-primary-emphasis">Parsed Mutual Funds Holdings</h5>
+    </div>
+    <div class="card-body">
+        {% if not holdings %}
+        <div class="text-center py-5">
+            <span class="material-icons-outlined text-muted" style="font-size: 50px">insights</span>
+            <h5 class="mt-2 text-secondary">No CAS holding parsed yet</h5>
+            <p class="text-muted small">Upload your standard Consolidated Account Statement (CAS) PDF file (from CDSL, NSDL, or Karvy) to scan for broker leakages.</p>
+            <button class="btn btn-accent btn-sm mt-1" data-bs-toggle="modal" data-bs-target="#uploadCasModal">
+                <span class="material-icons-outlined align-middle me-1">upload_file</span>Upload NSDL/CDSL CAS
+            </button>
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Scheme Name</th>
+                        <th>Type</th>
+                        <th>Status / Plan</th>
+                        <th>Current Value</th>
+                        <th>Expense Ratio</th>
+                        <th>Annual Commission Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in holdings %}
+                    <tr>
+                        <td class="fw-bold text-primary-emphasis">{{ h.scheme_name }}</td>
+                        <td><span class="badge bg-light text-secondary">{{ h.scheme_type }}</span></td>
+                        <td>
+                            {% if h.is_direct %}
+                            <span class="badge bg-success-subtle text-success">Direct Plan (Safe)</span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning">Regular Plan (Commission)</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-semibold">₹{{ h.holding_value | inr }}</td>
+                        <td>{{ h.expense_ratio }}%</td>
+                        <td class="{% if h.is_direct %}text-success{% else %}text-danger fw-bold{% endif %}">
+                            {% if h.is_direct %}
+                            ₹0 (Optimal)
+                            {% else %}
+                            ₹{{ h.annual_potential_savings | inr }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Upload CAS Modal -->
+<div class="modal fade" id="uploadCasModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.upload_cas_statement') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload CDSL / NSDL CAS PDF</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <span class="material-icons-outlined text-accent" style="font-size: 54px">picture_as_pdf</span>
+                    <h6 class="mt-3 text-secondary-emphasis">Consolidated Account Statement Parser</h6>
+                    <p class="text-muted small px-3">We securely scan the scheme names dynamically to cross-examine regular plans with their corresponding direct alternatives. No values are shared with third parties.</p>
+                    
+                    <div class="mb-3 mt-4 text-start">
+                        <label class="form-label small fw-semibold">Select PDF / Excel Statement File</label>
+                        <input type="file" name="cas_file" class="form-control" accept=".pdf,.xls,.xlsx" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-accent">Parse & Optimize Portfolio</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
