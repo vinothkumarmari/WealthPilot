@@ -226,6 +226,8 @@
                             <span class="badge bg-primary">Pro</span>
                             {% elif plan_code == 'farmer_monthly' %}
                             <span class="badge" style="background:#2f855a;color:#fff;">Farmer</span>
+                            {% elif plan_code == 'retail_smart' %}
+                            <span class="badge bg-info text-dark">Retail POS</span>
                             {% elif plan_code == 'family_monthly' %}
                             <span class="badge bg-success">Family</span>
                             {% else %}
@@ -306,6 +308,7 @@
                                     <option value="free" {% if plan_code == 'free' %}selected{% endif %}>Free</option>
                                     <option value="pro_monthly" {% if plan_code == 'pro_monthly' %}selected{% endif %}>Pro</option>
                                     <option value="farmer_monthly" {% if plan_code == 'farmer_monthly' %}selected{% endif %}>Farmer</option>
+                                    <option value="retail_smart" {% if plan_code == 'retail_smart' %}selected{% endif %}>Retail POS</option>
                                     <option value="family_monthly" {% if plan_code == 'family_monthly' %}selected{% endif %}>Family</option>
                                 </select>
                                 <button type="submit" class="btn btn-sm btn-outline-primary" title="Update Subscription">
