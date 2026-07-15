@@ -8831,7 +8831,24 @@ def delete_estate_will(id):
 @login_required
 @subscription_required('retail_smart')
 def retail_billing():
-    shops = RetailShop.query.filter_by(user_id=current_user.id).all()
+    # Dynamic Database Auto-scaffolding: If new tables are missing in the Supabase/PostgreSQL schema,
+    # automatically generate them on-the-fly to prevent 500 errors!
+    try:
+        shops = RetailShop.query.filter_by(user_id=current_user.id).all()
+    except Exception as e:
+        db.session.rollback()
+        try:
+            from flask import current_app
+            current_app.logger.info("Retail POS tables missing. Dynamic db.create_all() auto-scaffold active...")
+            db.create_all()
+            shops = RetailShop.query.filter_by(user_id=current_user.id).all()
+        except Exception as inner_e:
+            db.session.rollback()
+            from flask import current_app
+            current_app.logger.error(f"Auto-scaffold of Retail POS tables failed: {inner_e}")
+            flash('Retail POS system database tables are initializing. Please reload in a moment.', 'warning')
+            return redirect(url_for('main.dashboard'))
+
     active_shop_id = request.args.get('shop_id', type=int)
     
     active_shop = None
