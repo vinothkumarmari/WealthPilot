@@ -167,7 +167,15 @@
 
     <div class="col-xl-6">
         <div class="farmer-panel">
-            <h4>{{ t('Climate Advisory') }}</h4>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">{{ t('Climate Advisory') }}</h4>
+                {% if weather_summary and weather_summary.map_url %}
+                <a href="{{ weather_summary.map_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                    <span class="material-icons-outlined" style="font-size:16px;">map</span>
+                    {{ t('View on Google Maps') }}
+                </a>
+                {% endif %}
+            </div>
             {% if weather_summary %}
             <div class="farmer-weather mb-3">
                 <div class="farmer-weather-card">
