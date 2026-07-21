@@ -104,6 +104,7 @@
         <div class="farmer-panel">
             <h4>{{ t('Farmer Profile') }}</h4>
             <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="save_profile">
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -202,6 +203,7 @@
         <div class="farmer-panel">
             <h4>{{ t('Crop Budget and Break-Even Plan') }}</h4>
             <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="save_plan">
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -256,6 +258,7 @@
         <div class="farmer-panel">
             <h4>{{ t('Daily Farm Log') }}</h4>
             <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="save_log">
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -327,6 +330,7 @@
         <div class="farmer-panel">
             <h4>{{ t('Farmer Assistant') }}</h4>
             <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="ask_assistant">
                 <label class="form-label">{{ t('Ask a farm budgeting or climate question') }}</label>
                 <textarea class="form-control" name="farmer_query" rows="3" placeholder="{{ t('Can I afford tractor EMI? Is tomorrow good for spray? What is my break-even price?') }}"></textarea>
