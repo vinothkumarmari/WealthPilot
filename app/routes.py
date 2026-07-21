@@ -3595,7 +3595,7 @@ def _fetch_weather_summary(location_name):
         }
 
 
-def _build_board_suggestions(user):
+def _build_farmer_advisory(profile, latest_plan, metrics, weather_summary):
     notes = []
     crop_name = (getattr(latest_plan, 'crop_name', '') or getattr(profile, 'main_crop', '') or 'your crop').strip()
     month = datetime.now().month
